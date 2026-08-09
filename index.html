@@ -742,5 +742,20 @@ boot();
 .bar .btn.primary{background:#5E8296;box-shadow:0 2px 0 #47636F}
 .bar .btn.primary:hover{background:#6D93A7}
 </style>
+  <style>
+.auth-wrap{background:
+  radial-gradient(1100px 700px at 88% 112%, rgba(227,155,24,.32), transparent 62%),
+  radial-gradient(1000px 700px at -12% -12%, rgba(39,51,201,.35), transparent 60%),
+  radial-gradient(900px 620px at 112% -18%, rgba(46,125,91,.3), transparent 60%),
+  radial-gradient(820px 620px at 18% 104%, rgba(222,74,31,.28), transparent 60%),
+  #ECE7DC}
+.auth-wrap::before{content:'';position:absolute;inset:-15%;z-index:0;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='900' viewBox='0 0 900 900'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.02' numOctaves='2' seed='7' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='120'/%3E%3CfeGaussianBlur stdDeviation='6'/%3E%3C/filter%3E%3Cg filter='url(%23w)' stroke-linecap='round' fill='none' opacity='.8'%3E%3Cpath d='M-50 150 Q225 90 450 150 T950 150' stroke='%232733C9' stroke-width='90'/%3E%3Cpath d='M-50 320 Q225 260 450 320 T950 320' stroke='%23DE4A1F' stroke-width='110'/%3E%3Cpath d='M-50 520 Q225 460 450 520 T950 520' stroke='%23E39B18' stroke-width='100'/%3E%3Cpath d='M-50 700 Q225 640 450 700 T950 700' stroke='%232E7D5B' stroke-width='120'/%3E%3Cpath d='M-50 860 Q225 800 450 860 T950 860' stroke='%232733C9' stroke-width='90'/%3E%3C/g%3E%3C/svg%3E") center/cover;
+  opacity:.4;mix-blend-mode:soft-light;
+  animation:paintdrift 28s ease-in-out infinite alternate}
+.auth-wrap .auth-card{position:relative;z-index:1}
+@keyframes paintdrift{from{transform:translate3d(-2%,-1%,0) rotate(-1.2deg) scale(1.06)}to{transform:translate3d(2%,2%,0) rotate(1.4deg) scale(1.14)}}
+@media (prefers-reduced-motion:reduce){.auth-wrap::before{animation:none}}
+</style>
 </body>
 </html>
