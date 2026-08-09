@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#191A20">
@@ -710,6 +714,20 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
   startAuthFlow();
 }
 boot();
+</script>
+  <button id="install-btn" style="display:none;position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:130;border:0;border-radius:999px;padding:12px 20px;font:600 14px 'Space Grotesk',sans-serif;background:#191A20;color:#F4F2EC;box-shadow:0 10px 30px rgba(0,0,0,.3);cursor:pointer">📥 Add Provenance to your home screen</button>
+<script>
+(function(){
+  var b=document.getElementById('install-btn'),ip=null;
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ip=e;b.style.display='block';});
+  window.addEventListener('appinstalled',function(){b.style.display='none';});
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent)){b.style.display='block';}
+  b.addEventListener('click',async function(){
+    if(ip){ip.prompt();await ip.userChoice;ip=null;b.style.display='none';}
+    else if(typeof toast==='function'){toast('Tap the Share icon, then "Add to Home Screen"');}
+  });
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}
+})();
 </script>
 </body>
 </html>
