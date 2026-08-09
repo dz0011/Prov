@@ -704,7 +704,8 @@ function startAuthFlow(){
     if(event==='SIGNED_IN'||event==='INITIAL_SESSION'){await loadJournal();showApp();}
   });
 }
-function boot(){
+try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;try{localStorage.setItem('provenance.anonKey',_k);}catch(e){}}}catch(e){}
+  function boot(){
   if(!anonKey){$('#setup-screen').style.display='flex';return;}
   startAuthFlow();
 }
