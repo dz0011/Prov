@@ -713,33 +713,41 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
   if(!anonKey){$('#setup-screen').style.display='flex';return;}
   startAuthFlow();
 }
-  /* ======== Studio Book export + Copy for Docs ======== */
+ /* ======== Studio Book export + Google Docs integration ======== */
 (function(){
-  // Inject menu buttons into existing menu
   const menu = document.getElementById('menu');
   if (menu && !menu.dataset.exportInjected) {
     menu.dataset.exportInjected = '1';
+    
+    // Remove old menu items (JSON export, Import, Sample)
+    const toRemove = ['export', 'import-click', 'load-sample'];
+    toRemove.forEach(action => {
+      const btn = menu.querySelector(`[data-action="${action}"]`);
+      if (btn) btn.remove();
+    });
+    
+    // Clean up extra <hr> tags
+    const hrs = menu.querySelectorAll('hr');
+    if (hrs.length > 1) hrs[0].remove();
+    
     const signOut = menu.querySelector('[data-action="sign-out"]');
-    const hr1 = document.createElement('hr');
-    menu.insertBefore(hr1, signOut);
     const btnBook = document.createElement('button');
     btnBook.dataset.action = 'studio-book';
     btnBook.innerHTML = '📖 Export studio book';
     menu.insertBefore(btnBook, signOut);
+    
     const btnDocs = document.createElement('button');
     btnDocs.dataset.action = 'copy-docs-menu';
     btnDocs.innerHTML = '📋 Copy for Google Docs';
     menu.insertBefore(btnDocs, signOut);
   }
   
-  // Add print-view container
   if (!document.getElementById('print-view')) {
     const pv = document.createElement('div');
     pv.id = 'print-view';
     document.body.appendChild(pv);
   }
   
-  // Inject print stylesheet
   if (!document.getElementById('print-style')) {
     const s = document.createElement('style');
     s.id = 'print-style';
@@ -796,12 +804,22 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     const currentP = currentId ? getP(currentId) : null;
     openModal(`<div class="overlay" data-action="overlay-close"><div class="panel">
       <div class="panel-head"><h2>📖 Export Studio Book</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
-      <p class="sub" style="margin-bottom:20px">Opens a print-ready book. In the print dialog, choose <b>Save as PDF</b> or print on paper.</p>
+      <p class="sub" style="margin-bottom:20px">Choose what to include:</p>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn ghost" data-action="print-book" data-mode="all" style="justify-content:flex-start">📚 Complete studio (everything)</button>
-        <button class="btn ghost" data-action="print-book" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog only</button>
-        <button class="btn ghost" data-action="print-book" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="print-book" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        <button class="btn ghost" data-action="export-choose" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
+        <button class="btn ghost" data-action="export-choose" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
+        <button class="btn ghost" data-action="export-choose" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
+        ${currentP ? `<button class="btn ghost" data-action="export-choose" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+      </div>
+    </div></div>`);
+  }
+  
+  function openExportFormatMenu(mode) {
+    openModal(`<div class="overlay" data-action="overlay-close"><div class="panel">
+      <div class="panel-head"><h2>Choose format</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        <button class="btn primary" data-action="save-pdf" data-mode="${mode}" style="justify-content:center;padding:14px">📄 Save as PDF</button>
+        <button class="btn ghost" data-action="print-book" data-mode="${mode}" style="justify-content:center">🖨 Print on paper</button>
       </div>
     </div></div>`);
   }
@@ -811,13 +829,13 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     const currentId = isOnPainting ? view.paintingId : null;
     const currentP = currentId ? getP(currentId) : null;
     openModal(`<div class="overlay" data-action="overlay-close"><div class="panel">
-      <div class="panel-head"><h2>📋 Copy for Google Docs</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
-      <p class="sub" style="margin-bottom:20px">Copy formatted text. Open a new Google Doc, then press Ctrl+V to paste.</p>
+      <div class="panel-head"><h2>📋 Open in Google Docs</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
+      <p class="sub" style="margin-bottom:20px">We'll copy formatted text and open a new Google Doc for you.</p>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn ghost" data-action="copy-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
-        <button class="btn ghost" data-action="copy-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
-        <button class="btn ghost" data-action="copy-docs" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="copy-docs" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        <button class="btn ghost" data-action="open-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
+        <button class="btn ghost" data-action="open-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
+        <button class="btn ghost" data-action="open-docs" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
+        ${currentP ? `<button class="btn ghost" data-action="open-docs" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
       </div>
     </div></div>`);
   }
@@ -964,13 +982,15 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     const t = e.target.closest('[data-action]');
     if (!t) return;
     const a = t.dataset.action;
+    
     if (a === 'studio-book') {
       document.getElementById('menu').classList.remove('open');
       openStudioBookMenu();
-    } else if (a === 'copy-docs-menu') {
-      document.getElementById('menu').classList.remove('open');
-      openCopyDocsMenu();
-    } else if (a === 'print-book') {
+    } else if (a === 'export-choose') {
+      const mode = t.dataset.mode;
+      closeModal();
+      openExportFormatMenu(mode);
+    } else if (a === 'save-pdf') {
       const mode = t.dataset.mode;
       const currentId = view.name === 'painting' ? view.paintingId : null;
       const html = buildBookHTML(mode, currentId);
@@ -980,17 +1000,32 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
       const originalTitle = document.title;
       const modeNames = {all:'Complete Studio', paintings:'Paintings Catalog', timeline:'Studio Timeline', current:'Single Painting'};
       document.title = 'Provenance - ' + (modeNames[mode] || 'Studio') + ' - ' + new Date().toISOString().slice(0,10);
+      setTimeout(() => {
+        window.print();
+        toast('💡 In the print dialog, choose "Save as PDF" as the destination');
+      }, 300);
+    } else if (a === 'print-book') {
+      const mode = t.dataset.mode;
+      const currentId = view.name === 'painting' ? view.paintingId : null;
+      const html = buildBookHTML(mode, currentId);
+      const pv = document.getElementById('print-view');
+      pv.innerHTML = html;
+      closeModal();
       setTimeout(() => window.print(), 300);
-    } else if (a === 'copy-docs') {
+    } else if (a === 'copy-docs-menu') {
+      document.getElementById('menu').classList.remove('open');
+      openCopyDocsMenu();
+    } else if (a === 'open-docs') {
       const mode = t.dataset.mode;
       const currentId = view.name === 'painting' ? view.paintingId : null;
       const text = buildDocsText(mode, currentId);
       try {
         await navigator.clipboard.writeText(text);
+        window.open('https://docs.google.com/document/u/0/create', '_blank');
         closeModal();
-        toast('✓ Copied! Open Google Docs and press Ctrl+V');
+        toast('✓ New doc opened! Press Ctrl+V (or tap and hold) to paste');
       } catch (err) {
-        toast('⚠ Could not copy to clipboard');
+        toast('⚠ Could not copy text');
       }
     }
   });
