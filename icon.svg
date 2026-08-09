@@ -13,6 +13,11 @@
     <rect x="84" y="300" width="270" height="48" fill="#E0D5C0"/>
   </g>
   <path d="M72 96 C190 60 320 84 448 70 C330 116 190 108 72 96 Z" fill="#3E4C55"/>
-  <path d="M318 236 c34 -34 82 -24 92 10 c10 34 -34 56 -66 46 c-34 -10 -44 -36 -26 -56 z" fill="#FBFAF7" stroke="#3E4C55" stroke-width="8"/>
-  <circle cx="352" cy="268" r="7" fill="#3E4C55"/>
+  <path d="M318 236 c34 -34 82 -24 92 10 c10 34 -34 56 -66 46 c-34 -10 -44 -36 -26 -56 z" fill="#FBFAF7" stroke="#5E7078" stroke-width="7" opacity=".92"/>
+  <circle cx="352" cy="268" r="5" fill="#6B7C85" opacity=".55"/>
+  <g stroke="#3E4C55" stroke-width="6" stroke-linecap="round" opacity=".45" fill="none">
+    <path d="M340 424 h100"/>
+    <path d="M340 448 h76"/>
+    <path d="M340 472 h88"/>
+  </g>
 </svg>
