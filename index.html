@@ -216,7 +216,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
     <div class="bar">
       <button class="brand" data-action="goto" data-view="timeline" aria-label="Provenance home">
         <span class="brand-dabs"><i></i><i></i><i></i></span>
-        <span class="brand-name"><span class="g1">Pro</span><span class="g2">ven</span><span class="g3">an</span><em>ce</em></span>
+        <span class="brand-name"><span class="s1">P</span><span class="s2">ro</span><span class="s3">ve</span><span class="s4">na</span><span class="s5">nce</span></span>
       </button>
       <nav class="tabs">
         <button class="tab" data-action="goto" data-view="timeline">Timeline</button>
@@ -247,7 +247,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
 <div id="auth-screen" class="auth-wrap" style="display:none">
   <div class="auth-card card">
     <div class="dabs" style="justify-content:center;margin-bottom:14px"><span class="dab" style="--c:var(--ultra)"></span><span class="dab" style="--c:var(--verm)"></span><span class="dab" style="--c:var(--ochre)"></span></div>
-    <h1 class="display">Provenance</h1>
+    <h1 class="display"><span class="s1">P</span><span class="s2">ro</span><span class="s3">ve</span><span class="s4">na</span><span class="s5">nce</span></h1>
     <p class="sub">Your art journal.</p>
     <label>Email</label>
     <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email">
@@ -779,5 +779,22 @@ boot();
   <style>
 .auth-card .display::after{bottom:-.43em}
 </style>
-</body>
+<style>
+.brand-name .s1,.auth-card .display .s1{transform:skewX(-2deg)}
+.brand-name .s2,.auth-card .display .s2{transform:skewX(-5deg)}
+.brand-name .s3,.auth-card .display .s3{transform:skewX(-8deg)}
+.brand-name .s4,.auth-card .display .s4{transform:skewX(-11deg)}
+.brand-name .s5,.auth-card .display .s5{transform:skewX(-14deg)}
+.brand-name .s1{color:#F4F1E8;-webkit-text-fill-color:#F4F1E8}
+.brand-name .s2{color:#E0DCCB;-webkit-text-fill-color:#E0DCCB}
+.brand-name .s3{color:#C9D6CF;-webkit-text-fill-color:#C9D6CF}
+.brand-name .s4{color:#AECBC9;-webkit-text-fill-color:#AECBC9}
+.brand-name .s5{color:#8FB6BF;-webkit-text-fill-color:#8FB6BF}
+.auth-card .display .s1{color:#23242B;-webkit-text-fill-color:#23242B}
+.auth-card .display .s2{color:#3A4A50;-webkit-text-fill-color:#3A4A50}
+.auth-card .display .s3{color:#4E6A70;-webkit-text-fill-color:#4E6A70}
+.auth-card .display .s4{color:#63888D;-webkit-text-fill-color:#63888D}
+.auth-card .display .s5{color:#7FA8B0;-webkit-text-fill-color:#7FA8B0}
+.auth-card .display span,.auth-card .display em{display:inline-block;font-style:normal}
+</style></body>
 </html>
