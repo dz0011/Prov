@@ -1,0 +1,13 @@
+{
+  "name": "Provenance — a studio journal for painters",
+  "short_name": "Provenance",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#F2F1EC",
+  "theme_color": "#191A20",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
