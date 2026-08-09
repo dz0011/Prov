@@ -824,7 +824,7 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     const currentP = currentId ? getP(currentId) : null;
     openModal(`<div class="overlay" data-action="overlay-close"><div class="panel">
       <div class="panel-head"><h2>📄 Export for Google Docs</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
-      <p class="sub" style="margin-bottom:20px">Downloads an HTML file. Open it in your browser, select all (Ctrl+A), copy, then paste into Google Docs — images and formatting will transfer perfectly.</p>
+Opens your journal in a new tab with a “Copy everything” button — then paste straight into Google Docs with images and formatting.
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="btn ghost" data-action="download-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
         <button class="btn ghost" data-action="download-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
@@ -965,7 +965,13 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
 .toc li{color:#191A20}
 .toc li b{font-style:italic;color:#2733C9}
 .colors,.images{margin-top:8px}
+#xbar{position:sticky;top:0;background:#191A20;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:10}
+#xbar button{border:0;border-radius:8px;padding:10px 14px;font:600 14px Arial,sans-serif;cursor:pointer;background:#3C7DA6;color:#fff}
+#xbar #xdocs{background:#2E7D4F}
+#xmsg{font-size:12px;color:#B9B7AE}
 </style></head><body>
+<div id="xbar"><button id="xcopy">📋 Copy everything</button><button id="xdocs">📄 Open Google Docs</button><span id="xmsg">1) Copy 2) Open Docs 3) Paste</span></div>
+<div id="xcontent">
 <h1>Provenance — Your art journal</h1>
 <p class="meta">${esc(modeTitle)} · Exported ${today}</p>`;
     
@@ -1022,7 +1028,10 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
         </div>`;
       }
     }
-    html += '</body></html>';
+    html += '</div><script>'
+      + 'document.getElementById("xcopy").onclick=function(){var r=document.createRange();r.selectNodeContents(document.getElementById("xcontent"));var s=getSelection();s.removeAllRanges();s.addRange(r);var ok=document.execCommand("copy");document.getElementById("xmsg").textContent=ok?"✓ Copied! Now tap Open Google Docs and paste.":"⚠ Long-press → Select all → Copy instead.";};'
+      + 'document.getElementById("xdocs").onclick=function(){window.open("https://docs.google.com/document/create","_blank");};'
+      + '</'+'script></body></html>';
     return html;
   }
   
@@ -1082,13 +1091,10 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
       const html = buildDocsHTML(mode, currentId);
       const blob = new Blob([html], {type: 'text/html'});
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'provenance-export-' + new Date().toISOString().slice(0,10) + '.html';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
+         window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
       closeModal();
-      toast('✓ File downloaded! Open it in your browser, select all, copy, then paste into Google Docs');
+      toast('✓ Export opened in a new tab — tap “Copy everything”, then paste into Google Docs');
     }
   });
   
