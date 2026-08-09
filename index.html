@@ -713,6 +713,294 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
   if(!anonKey){$('#setup-screen').style.display='flex';return;}
   startAuthFlow();
 }
+  /* ======== Studio Book export + Copy for Docs ======== */
+(function(){
+  // Inject menu buttons into existing menu
+  const menu = document.getElementById('menu');
+  if (menu && !menu.dataset.exportInjected) {
+    menu.dataset.exportInjected = '1';
+    const signOut = menu.querySelector('[data-action="sign-out"]');
+    const hr1 = document.createElement('hr');
+    menu.insertBefore(hr1, signOut);
+    const btnBook = document.createElement('button');
+    btnBook.dataset.action = 'studio-book';
+    btnBook.innerHTML = '📖 Export studio book';
+    menu.insertBefore(btnBook, signOut);
+    const btnDocs = document.createElement('button');
+    btnDocs.dataset.action = 'copy-docs-menu';
+    btnDocs.innerHTML = '📋 Copy for Google Docs';
+    menu.insertBefore(btnDocs, signOut);
+  }
+  
+  // Add print-view container
+  if (!document.getElementById('print-view')) {
+    const pv = document.createElement('div');
+    pv.id = 'print-view';
+    document.body.appendChild(pv);
+  }
+  
+  // Inject print stylesheet
+  if (!document.getElementById('print-style')) {
+    const s = document.createElement('style');
+    s.id = 'print-style';
+    s.textContent = `
+      #print-view{display:none}
+      @media print{
+        *{visibility:hidden}
+        #print-view,#print-view *{visibility:visible}
+        #print-view{position:absolute;left:0;top:0;width:100%;display:block}
+        @page{size:A4;margin:22mm 20mm}
+        .book-cover{page-break-after:always;text-align:center;padding:120px 40px 80px}
+        .book-cover-title{font-family:'Fraunces',serif;font-weight:640;font-size:80px;line-height:1.05;letter-spacing:-1px;margin-bottom:20px}
+        .book-cover-sub{font-family:'Space Grotesk',sans-serif;font-size:22px;color:#4A4B54;margin-bottom:60px}
+        .book-cover-meta{font-family:'Space Grotesk',sans-serif;font-size:14px;color:#9B988C;margin-top:8px}
+        .book-painting{page-break-before:always;padding:30px 0 60px}
+        .book-pnum{font-family:'Fraunces',serif;font-style:italic;font-weight:900;font-size:100px;line-height:.85;color:#2733C9;margin-bottom:8px}
+        .book-ptitle{font-family:'Fraunces',serif;font-weight:620;font-size:34px;line-height:1.15;margin:8px 0 10px}
+        .book-pmeta{font-family:'Space Grotesk',sans-serif;font-size:13px;color:#4A4B54;margin:4px 0}
+        .book-section-label{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#4A4B54;margin:28px 0 10px;border-bottom:1px solid #DAD6CA;padding-bottom:4px}
+        .book-chip{display:inline-flex;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;font-size:12px;padding:3px 9px 3px 5px;border:1px solid #DAD6CA;border-radius:999px;margin:3px 3px 3px 0;background:#fff}
+        .book-chip.small{font-size:11px;padding:2px 7px 2px 4px;margin:2px 2px 2px 0}
+        .book-dab{width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);display:inline-block;flex:none}
+        .book-chip.small .book-dab{width:10px;height:10px}
+        .book-entry{margin:18px 0;padding:14px 0;border-bottom:1px solid #E9E6DC}
+        .book-entry:last-child{border-bottom:0}
+        .book-entry-head{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px;font-family:'Space Grotesk',sans-serif;font-size:12.5px;color:#4A4B54;font-variant-numeric:tabular-nums}
+        .book-entry-stage{font-weight:600;color:#8A5B00;background:rgba(227,155,24,.16);padding:2px 9px;border-radius:4px;font-size:11.5px}
+        .book-entry-text{font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap;margin:8px 0;color:#191A20}
+        .book-img{max-width:180px;max-height:140px;object-fit:cover;border-radius:5px;margin:4px 5px 4px 0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+        .book-entry-images.small .book-img{max-width:110px;max-height:82px}
+        .book-filmgrid{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px}
+        .book-film{margin:0;text-align:center}
+        .book-film img{height:130px;width:auto;border-radius:5px}
+        .book-film figcaption{font-family:'Space Grotesk',sans-serif;font-size:11px;color:#4A4B54;margin-top:5px}
+        .book-section-title{font-family:'Fraunces',serif;font-weight:640;font-size:30px;margin:40px 0 22px;page-break-before:always}
+        .book-day{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#4A4B54;margin:28px 0 12px;padding-bottom:6px;border-bottom:2px solid #2733C9;display:inline-block}
+        .book-tl-entry{margin:16px 0;padding-bottom:16px;border-bottom:1px dashed #DAD6CA}
+        .book-tl-meta{display:flex;gap:10px;flex-wrap:wrap;font-family:'Space Grotesk',sans-serif;font-size:12.5px;color:#4A4B54;margin-bottom:5px}
+        .book-tl-paint{font-weight:600;color:#191A20}
+        .book-tl-stage{font-weight:600;color:#8A5B00;background:rgba(227,155,24,.16);padding:2px 8px;border-radius:4px;font-size:11.5px}
+        .book-tl-text{font-family:'Space Grotesk',sans-serif;font-size:13.5px;line-height:1.55;white-space:pre-wrap;margin:5px 0;color:#191A20}
+        .book-toc ol{font-family:'Fraunces',serif;font-size:16px;line-height:2.2;padding-left:20px;margin:20px 0}
+        .book-toc ol li{color:#191A20}
+        .book-toc ol li b{font-style:italic;color:#2733C9}
+        .book-entry-colors,.book-entry-images{margin-top:8px}
+      }
+    `;
+    document.head.appendChild(s);
+  }
+  
+  function openStudioBookMenu() {
+    const isOnPainting = view.name === 'painting';
+    const currentId = isOnPainting ? view.paintingId : null;
+    const currentP = currentId ? getP(currentId) : null;
+    openModal(`<div class="overlay" data-action="overlay-close"><div class="panel">
+      <div class="panel-head"><h2>📖 Export Studio Book</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
+      <p class="sub" style="margin-bottom:20px">Opens a print-ready book. In the print dialog, choose <b>Save as PDF</b> or print on paper.</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn ghost" data-action="print-book" data-mode="all" style="justify-content:flex-start">📚 Complete studio (everything)</button>
+        <button class="btn ghost" data-action="print-book" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog only</button>
+        <button class="btn ghost" data-action="print-book" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
+        ${currentP ? `<button class="btn ghost" data-action="print-book" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+      </div>
+    </div></div>`);
+  }
+  
+  function openCopyDocsMenu() {
+    const isOnPainting = view.name === 'painting';
+    const currentId = isOnPainting ? view.paintingId : null;
+    const currentP = currentId ? getP(currentId) : null;
+    openModal(`<div class="overlay" data-action="overlay-close"><div class="panel">
+      <div class="panel-head"><h2>📋 Copy for Google Docs</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
+      <p class="sub" style="margin-bottom:20px">Copy formatted text. Open a new Google Doc, then press Ctrl+V to paste.</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn ghost" data-action="copy-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
+        <button class="btn ghost" data-action="copy-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
+        <button class="btn ghost" data-action="copy-docs" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
+        ${currentP ? `<button class="btn ghost" data-action="copy-docs" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+      </div>
+    </div></div>`);
+  }
+  
+  function bookEntryHTML(e) {
+    const cols = e.colors || [];
+    return `<div class="book-entry">
+      <div class="book-entry-head">
+        <span class="book-entry-date">${fmtShort(e.date)} · ${fmtTime(e.date)}</span>
+        ${e.stage ? `<span class="book-entry-stage">${esc(e.stage)}</span>` : ''}
+      </div>
+      ${e.text ? `<p class="book-entry-text">${esc(e.text)}</p>` : ''}
+      ${e.images && e.images.length ? `<div class="book-entry-images">${e.images.map(src => `<img src="${src}" class="book-img" alt="">`).join('')}</div>` : ''}
+      ${cols.length ? `<div class="book-entry-colors">${cols.map(c => `<span class="book-chip small"><span class="book-dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }
+  
+  function bookTimelineHTML(entries) {
+    let html = '', lastDay = '';
+    for (const e of entries) {
+      const p = getP(e.paintingId);
+      const k = dayKey(e.date);
+      if (k !== lastDay) { lastDay = k; html += `<div class="book-day">${fmtDayLabel(new Date(e.date))}</div>`; }
+      html += `<div class="book-tl-entry">
+        <div class="book-tl-meta">
+          <span class="book-tl-paint">${p ? '№ ' + String(p.number).padStart(2,'0') + ' — ' + esc(p.title) : '(deleted painting)'}</span>
+          <span>${fmtTime(e.date)}</span>
+          ${e.stage ? `<span class="book-tl-stage">${esc(e.stage)}</span>` : ''}
+        </div>
+        ${e.text ? `<p class="book-tl-text">${esc(e.text)}</p>` : ''}
+        ${e.images && e.images.length ? `<div class="book-entry-images small">${e.images.map(src => `<img src="${src}" class="book-img" alt="">`).join('')}</div>` : ''}
+        ${e.colors && e.colors.length ? `<div class="book-entry-colors">${e.colors.map(c => `<span class="book-chip small"><span class="book-dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div>` : ''}
+      </div>`;
+    }
+    return html;
+  }
+  
+  function buildBookHTML(mode, currentPaintingId) {
+    const paintings = [...state.paintings].sort((a,b) => a.number - b.number);
+    const entries = [...state.entries].sort((a,b) => a.date < b.date ? -1 : 1);
+    const today = new Date().toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+    let rP = paintings, rE = entries, modeTitle = 'Complete Studio Book';
+    if (mode === 'current' && currentPaintingId) {
+      const p = getP(currentPaintingId);
+      rP = p ? [p] : [];
+      rE = entriesOf(currentPaintingId).sort((a,b) => a.date < b.date ? -1 : 1);
+      modeTitle = p ? '№ ' + String(p.number).padStart(2,'0') + ' — ' + p.title : 'Single Painting';
+    } else if (mode === 'timeline') { rP = []; modeTitle = 'Studio Timeline'; }
+    else if (mode === 'paintings') { rE = []; modeTitle = 'Paintings Catalog'; }
+    
+    let html = `<section class="book-cover">
+      <div class="book-cover-title">Provenance</div>
+      <div class="book-cover-sub">Your art journal</div>
+      <div class="book-cover-meta">${modeTitle}</div>
+      <div class="book-cover-meta">Exported ${today}</div>
+    </section>`;
+    
+    if ((mode === 'all' || mode === 'paintings') && paintings.length > 1) {
+      html += `<section class="book-toc"><h2 class="book-section-title">Contents</h2>
+        <ol>${paintings.map(p => `<li><b>№ ${String(p.number).padStart(2,'0')}</b> — ${esc(p.title)}</li>`).join('')}</ol>
+      </section>`;
+    }
+    
+    if (rP.length && mode !== 'timeline') {
+      for (const p of rP) {
+        const es = entriesOf(p.id).sort((a,b) => a.date < b.date ? -1 : 1);
+        const cols = uniqueColors(es);
+        const imgs = es.flatMap(e => (e.images || []).map(src => ({src, date: e.date})));
+        const first = es.length ? es[0].date : p.createdAt;
+        const last = es.length ? es[es.length-1].date : null;
+        html += `<section class="book-painting">
+          <div class="book-pnum">№ ${String(p.number).padStart(2,'0')}</div>
+          <h1 class="book-ptitle">${esc(p.title)}</h1>
+          <div class="book-pmeta">${esc(p.medium || 'Medium —')}${p.size ? ' · ' + esc(p.size) : ''} · ${p.status === 'finished' ? 'Finished' : 'In progress'}</div>
+          <div class="book-pmeta">Started ${fmtShort(first)} · ${es.length} ${plural('entry','entries',es.length)} · ${imgs.length} ${plural('photo','photos',imgs.length)}${last && first ? ' · ' + (Math.max(1, Math.round((new Date(last) - new Date(first)) / 864e5)) + 1) + ' days active' : ''}</div>
+          ${cols.length ? `<div class="book-palette"><div class="book-section-label">Palette</div><div>${cols.map(c => `<span class="book-chip"><span class="book-dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div></div>` : ''}
+          ${imgs.length ? `<div class="book-filmstrip"><div class="book-section-label">Progress</div><div class="book-filmgrid">${imgs.map(im => `<figure class="book-film"><img src="${im.src}" alt=""><figcaption>${fmtShort(im.date)}</figcaption></figure>`).join('')}</div></div>` : ''}
+          ${es.length ? `<div class="book-entries"><div class="book-section-label">Work log</div>${es.map(e => bookEntryHTML(e)).join('')}</div>` : '<p style="color:#9B988C;font-size:13px">No sessions logged yet.</p>'}
+        </section>`;
+      }
+    }
+    
+    if (mode === 'timeline' || mode === 'all') {
+      html += `<section class="book-timeline"><h2 class="book-section-title">${mode === 'all' ? 'Timeline' : 'Studio Timeline'}</h2>${bookTimelineHTML(rE)}</section>`;
+    }
+    return html;
+  }
+  
+  function buildDocsText(mode, currentPaintingId) {
+    const paintings = [...state.paintings].sort((a,b) => a.number - b.number);
+    const entries = [...state.entries].sort((a,b) => a.date < b.date ? -1 : 1);
+    const today = new Date().toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+    let rP = paintings, rE = entries;
+    if (mode === 'current' && currentPaintingId) {
+      const p = getP(currentPaintingId);
+      rP = p ? [p] : [];
+      rE = entriesOf(currentPaintingId).sort((a,b) => a.date < b.date ? -1 : 1);
+    } else if (mode === 'timeline') { rP = []; }
+    else if (mode === 'paintings') { rE = []; }
+    
+    let t = 'PROVENANCE — Your art journal\nExported: ' + today + '\n\n';
+    if (rP.length && mode !== 'timeline') {
+      t += '═══════════════════════════\nPAINTINGS\n═══════════════════════════\n\n';
+      for (const p of rP) {
+        const es = entriesOf(p.id).sort((a,b) => a.date < b.date ? -1 : 1);
+        const cols = uniqueColors(es);
+        const imgs = es.flatMap(e => (e.images || []).map(src => src));
+        t += '№ ' + String(p.number).padStart(2,'0') + ' — ' + p.title + '\n';
+        t += (p.medium || 'Medium —') + (p.size ? ' · ' + p.size : '') + ' · ' + (p.status === 'finished' ? 'Finished' : 'In progress') + '\n';
+        t += 'Started ' + fmtShort(p.createdAt) + ' · ' + es.length + ' ' + plural('entry','entries',es.length) + ' · ' + imgs.length + ' ' + plural('photo','photos',imgs.length) + '\n';
+        if (cols.length) t += 'Palette: ' + cols.map(c => c.name || c.hex).join(', ') + '\n';
+        t += '\n';
+        for (const e of es) {
+          t += '  ' + fmtShort(e.date) + ' · ' + fmtTime(e.date);
+          if (e.stage) t += ' · ' + e.stage;
+          t += '\n';
+          if (e.text) t += '  ' + e.text + '\n';
+          if (e.colors && e.colors.length) t += '  Colors: ' + e.colors.map(c => c.name || c.hex).join(', ') + '\n';
+          t += '\n';
+        }
+        t += '───────────────────────────\n\n';
+      }
+    }
+    if (mode === 'timeline' || mode === 'all') {
+      t += '═══════════════════════════\nTIMELINE\n═══════════════════════════\n\n';
+      let lastDay = '';
+      for (const e of rE) {
+        const p = getP(e.paintingId);
+        const k = dayKey(e.date);
+        if (k !== lastDay) { lastDay = k; t += '── ' + fmtDayLabel(new Date(e.date)).toUpperCase() + ' ──\n\n'; }
+        t += (p ? '№ ' + String(p.number).padStart(2,'0') + ' ' + p.title : '(deleted painting)');
+        t += ' · ' + fmtTime(e.date);
+        if (e.stage) t += ' · ' + e.stage;
+        t += '\n';
+        if (e.text) t += e.text + '\n';
+        if (e.colors && e.colors.length) t += 'Colors: ' + e.colors.map(c => c.name || c.hex).join(', ') + '\n';
+        t += '\n';
+      }
+    }
+    return t;
+  }
+  
+  document.addEventListener('click', async e => {
+    const t = e.target.closest('[data-action]');
+    if (!t) return;
+    const a = t.dataset.action;
+    if (a === 'studio-book') {
+      document.getElementById('menu').classList.remove('open');
+      openStudioBookMenu();
+    } else if (a === 'copy-docs-menu') {
+      document.getElementById('menu').classList.remove('open');
+      openCopyDocsMenu();
+    } else if (a === 'print-book') {
+      const mode = t.dataset.mode;
+      const currentId = view.name === 'painting' ? view.paintingId : null;
+      const html = buildBookHTML(mode, currentId);
+      const pv = document.getElementById('print-view');
+      pv.innerHTML = html;
+      closeModal();
+      const originalTitle = document.title;
+      const modeNames = {all:'Complete Studio', paintings:'Paintings Catalog', timeline:'Studio Timeline', current:'Single Painting'};
+      document.title = 'Provenance - ' + (modeNames[mode] || 'Studio') + ' - ' + new Date().toISOString().slice(0,10);
+      setTimeout(() => window.print(), 300);
+    } else if (a === 'copy-docs') {
+      const mode = t.dataset.mode;
+      const currentId = view.name === 'painting' ? view.paintingId : null;
+      const text = buildDocsText(mode, currentId);
+      try {
+        await navigator.clipboard.writeText(text);
+        closeModal();
+        toast('✓ Copied! Open Google Docs and press Ctrl+V');
+      } catch (err) {
+        toast('⚠ Could not copy to clipboard');
+      }
+    }
+  });
+  
+  window.addEventListener('afterprint', () => {
+    const pv = document.getElementById('print-view');
+    if (pv) pv.innerHTML = '';
+    document.title = 'Provenance – Your art journal';
+  });
+})();
 boot();
 </script>
   <button id="install-btn" style="display:none;position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:130;border:0;border-radius:999px;padding:12px 20px;font:600 14px 'Space Grotesk',sans-serif;background:#191A20;color:#F4F2EC;box-shadow:0 10px 30px rgba(0,0,0,.3);cursor:pointer">📥 Install as App</button>
