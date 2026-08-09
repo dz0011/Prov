@@ -283,8 +283,8 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
 /* Your address is filled in. Paste your anon key between the quotes on the EMBEDDED_KEY line. */
 const SUPABASE_URL='https://ouvmdjbcovqmxucruahs.supabase.co';
 const EMBEDDED_KEY='sb_publishable_d23fn1F8PlCQc-F3BCdJ7g_Z9bJ0OZf';
-let anonKey='';
-try{anonKey=localStorage.getItem('provenance.anonKey')||'';}catch(e){}
+let anonKey='sb_publishable_d23fn1F8PlCQc-F3BCdJ7g_Z9bJ0OZf';
+try{anonKey=localStorage.getItem('provenance.anonKey')||anonKey;}catch(e){}
 if(!anonKey&&!EMBEDDED_KEY.includes('PASTE'))anonKey=EMBEDDED_KEY;
 let db=null;
 
