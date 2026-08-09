@@ -713,32 +713,26 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
   if(!anonKey){$('#setup-screen').style.display='flex';return;}
   startAuthFlow();
 }
- /* ======== Studio Book export + Google Docs integration ======== */
+/* ======== Studio Book export + Google Docs integration ======== */
 (function(){
   const menu = document.getElementById('menu');
   if (menu && !menu.dataset.exportInjected) {
     menu.dataset.exportInjected = '1';
-    
-    // Remove old menu items (JSON export, Import, Sample)
     const toRemove = ['export', 'import-click', 'load-sample'];
     toRemove.forEach(action => {
       const btn = menu.querySelector(`[data-action="${action}"]`);
       if (btn) btn.remove();
     });
-    
-    // Clean up extra <hr> tags
     const hrs = menu.querySelectorAll('hr');
     if (hrs.length > 1) hrs[0].remove();
-    
     const signOut = menu.querySelector('[data-action="sign-out"]');
     const btnBook = document.createElement('button');
     btnBook.dataset.action = 'studio-book';
     btnBook.innerHTML = '📖 Export studio book';
     menu.insertBefore(btnBook, signOut);
-    
     const btnDocs = document.createElement('button');
     btnDocs.dataset.action = 'copy-docs-menu';
-    btnDocs.innerHTML = '📋 Copy for Google Docs';
+    btnDocs.innerHTML = '📄 Export for Google Docs';
     menu.insertBefore(btnDocs, signOut);
   }
   
@@ -816,10 +810,10 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
   
   function openExportFormatMenu(mode) {
     openModal(`<div class="overlay" data-action="overlay-close"><div class="panel">
-      <div class="panel-head"><h2>Choose format</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
+      <div class="panel-head"><h2>Save as PDF</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
+      <p class="sub" style="margin-bottom:16px">In the dialog that opens, choose <b>"Save as PDF"</b> as the destination.</p>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-        <button class="btn primary" data-action="save-pdf" data-mode="${mode}" style="justify-content:center;padding:14px">📄 Save as PDF</button>
-        <button class="btn ghost" data-action="print-book" data-mode="${mode}" style="justify-content:center">🖨 Print on paper</button>
+        <button class="btn primary" data-action="save-pdf" data-mode="${mode}" style="justify-content:center;padding:14px">📄 Save as PDF now</button>
       </div>
     </div></div>`);
   }
@@ -829,13 +823,13 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     const currentId = isOnPainting ? view.paintingId : null;
     const currentP = currentId ? getP(currentId) : null;
     openModal(`<div class="overlay" data-action="overlay-close"><div class="panel">
-      <div class="panel-head"><h2>📋 Open in Google Docs</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
-      <p class="sub" style="margin-bottom:20px">We'll copy formatted text and open a new Google Doc for you.</p>
+      <div class="panel-head"><h2>📄 Export for Google Docs</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>
+      <p class="sub" style="margin-bottom:20px">Downloads an HTML file. Open it in your browser, select all (Ctrl+A), copy, then paste into Google Docs — images and formatting will transfer perfectly.</p>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn ghost" data-action="open-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
-        <button class="btn ghost" data-action="open-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
-        <button class="btn ghost" data-action="open-docs" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="open-docs" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        <button class="btn ghost" data-action="download-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
+        <button class="btn ghost" data-action="download-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
+        <button class="btn ghost" data-action="download-docs" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
+        ${currentP ? `<button class="btn ghost" data-action="download-docs" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
       </div>
     </div></div>`);
   }
@@ -924,58 +918,124 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     return html;
   }
   
-  function buildDocsText(mode, currentPaintingId) {
+  function buildDocsHTML(mode, currentPaintingId) {
     const paintings = [...state.paintings].sort((a,b) => a.number - b.number);
     const entries = [...state.entries].sort((a,b) => a.date < b.date ? -1 : 1);
     const today = new Date().toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
-    let rP = paintings, rE = entries;
+    let rP = paintings, rE = entries, modeTitle = 'Complete Studio';
     if (mode === 'current' && currentPaintingId) {
       const p = getP(currentPaintingId);
       rP = p ? [p] : [];
       rE = entriesOf(currentPaintingId).sort((a,b) => a.date < b.date ? -1 : 1);
-    } else if (mode === 'timeline') { rP = []; }
-    else if (mode === 'paintings') { rE = []; }
+      modeTitle = p ? '№ ' + String(p.number).padStart(2,'0') + ' — ' + p.title : 'Single Painting';
+    } else if (mode === 'timeline') { rP = []; modeTitle = 'Studio Timeline'; }
+    else if (mode === 'paintings') { rE = []; modeTitle = 'Paintings Catalog'; }
     
-    let t = 'PROVENANCE — Your art journal\nExported: ' + today + '\n\n';
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Provenance - ${esc(modeTitle)}</title>
+<style>
+body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.6;color:#191A20}
+h1{font-family:'Georgia',serif;font-size:32px;margin:30px 0 10px;border-bottom:2px solid #2733C9;padding-bottom:8px}
+h2{font-family:'Georgia',serif;font-size:24px;margin:24px 0 8px;color:#2733C9}
+h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;margin:20px 0 8px}
+.meta{color:#4A4B54;font-size:13px;margin:4px 0}
+.entry{margin:16px 0;padding:12px 0;border-bottom:1px solid #E9E6DC}
+.entry:last-child{border-bottom:0}
+.entry-head{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;font-size:12.5px;color:#4A4B54}
+.entry-stage{font-weight:600;color:#8A5B00;background:rgba(227,155,24,.16);padding:2px 9px;border-radius:4px;font-size:11.5px}
+.entry-text{font-size:14px;line-height:1.6;white-space:pre-wrap;margin:8px 0}
+.entry-img{max-width:180px;max-height:140px;object-fit:cover;border-radius:5px;margin:4px 5px 4px 0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.entry-img.small{max-width:110px;max-height:82px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px 3px 5px;border:1px solid #DAD6CA;border-radius:999px;margin:3px 3px 3px 0;background:#fff}
+.chip.small{font-size:11px;padding:2px 7px 2px 4px}
+.dab{width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);display:inline-block;flex:none}
+.chip.small .dab{width:10px;height:10px}
+.film{display:inline-block;margin:4px;text-align:center}
+.film img{height:130px;width:auto;border-radius:5px}
+.film figcaption{font-size:11px;color:#4A4B54;margin-top:5px}
+.day{font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#4A4B54;margin:28px 0 12px;padding-bottom:6px;border-bottom:2px solid #2733C9;display:inline-block}
+.tl-entry{margin:16px 0;padding-bottom:16px;border-bottom:1px dashed #DAD6CA}
+.tl-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:12.5px;color:#4A4B54;margin-bottom:5px}
+.tl-paint{font-weight:600;color:#191A20}
+.tl-stage{font-weight:600;color:#8A5B00;background:rgba(227,155,24,.16);padding:2px 8px;border-radius:4px;font-size:11.5px}
+.tl-text{font-size:13.5px;line-height:1.55;white-space:pre-wrap;margin:5px 0}
+.painting{margin:30px 0;padding:20px;background:#FCFBF7;border-radius:8px;border:1px solid #DAD6CA}
+.pnum{font-family:'Georgia',serif;font-style:italic;font-weight:900;font-size:48px;line-height:.85;color:#2733C9;margin-bottom:8px}
+.ptitle{font-family:'Georgia',serif;font-weight:620;font-size:24px;margin:8px 0 10px}
+.toc{font-size:16px;line-height:2.2}
+.toc li{color:#191A20}
+.toc li b{font-style:italic;color:#2733C9}
+.colors,.images{margin-top:8px}
+</style></head><body>
+<h1>Provenance — Your art journal</h1>
+<p class="meta">${esc(modeTitle)} · Exported ${today}</p>`;
+    
+    if ((mode === 'all' || mode === 'paintings') && paintings.length > 1) {
+      html += `<h2>Contents</h2><ol class="toc">${paintings.map(p => `<li><b>№ ${String(p.number).padStart(2,'0')}</b> — ${esc(p.title)}</li>`).join('')}</ol>`;
+    }
+    
     if (rP.length && mode !== 'timeline') {
-      t += '═══════════════════════════\nPAINTINGS\n═══════════════════════════\n\n';
       for (const p of rP) {
         const es = entriesOf(p.id).sort((a,b) => a.date < b.date ? -1 : 1);
         const cols = uniqueColors(es);
-        const imgs = es.flatMap(e => (e.images || []).map(src => src));
-        t += '№ ' + String(p.number).padStart(2,'0') + ' — ' + p.title + '\n';
-        t += (p.medium || 'Medium —') + (p.size ? ' · ' + p.size : '') + ' · ' + (p.status === 'finished' ? 'Finished' : 'In progress') + '\n';
-        t += 'Started ' + fmtShort(p.createdAt) + ' · ' + es.length + ' ' + plural('entry','entries',es.length) + ' · ' + imgs.length + ' ' + plural('photo','photos',imgs.length) + '\n';
-        if (cols.length) t += 'Palette: ' + cols.map(c => c.name || c.hex).join(', ') + '\n';
-        t += '\n';
-        for (const e of es) {
-          t += '  ' + fmtShort(e.date) + ' · ' + fmtTime(e.date);
-          if (e.stage) t += ' · ' + e.stage;
-          t += '\n';
-          if (e.text) t += '  ' + e.text + '\n';
-          if (e.colors && e.colors.length) t += '  Colors: ' + e.colors.map(c => c.name || c.hex).join(', ') + '\n';
-          t += '\n';
-        }
-        t += '───────────────────────────\n\n';
+        const imgs = es.flatMap(e => (e.images || []).map(src => ({src, date: e.date})));
+        const first = es.length ? es[0].date : p.createdAt;
+        const last = es.length ? es[es.length-1].date : null;
+        html += `<div class="painting">
+          <div class="pnum">№ ${String(p.number).padStart(2,'0')}</div>
+          <div class="ptitle">${esc(p.title)}</div>
+          <div class="meta">${esc(p.medium || 'Medium —')}${p.size ? ' · ' + esc(p.size) : ''} · ${p.status === 'finished' ? 'Finished' : 'In progress'}</div>
+          <div class="meta">Started ${fmtShort(first)} · ${es.length} ${plural('entry','entries',es.length)} · ${imgs.length} ${plural('photo','photos',imgs.length)}${last && first ? ' · ' + (Math.max(1, Math.round((new Date(last) - new Date(first)) / 864e5)) + 1) + ' days active' : ''}</div>
+          ${cols.length ? `<h3>Palette</h3><div class="colors">${cols.map(c => `<span class="chip"><span class="dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div>` : ''}
+          ${imgs.length ? `<h3>Progress</h3><div>${imgs.map(im => `<figure class="film"><img src="${im.src}" alt=""><figcaption>${fmtShort(im.date)}</figcaption></figure>`).join('')}</div>` : ''}
+          ${es.length ? `<h3>Work log</h3>${es.map(e => {
+            const entryCols = e.colors || [];
+            return `<div class="entry">
+              <div class="entry-head">
+                <span>${fmtShort(e.date)} · ${fmtTime(e.date)}</span>
+                ${e.stage ? `<span class="entry-stage">${esc(e.stage)}</span>` : ''}
+              </div>
+              ${e.text ? `<p class="entry-text">${esc(e.text)}</p>` : ''}
+              ${e.images && e.images.length ? `<div class="images">${e.images.map(src => `<img src="${src}" class="entry-img" alt="">`).join('')}</div>` : ''}
+              ${entryCols.length ? `<div class="colors">${entryCols.map(c => `<span class="chip small"><span class="dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div>` : ''}
+            </div>`;
+          }).join('')}` : '<p style="color:#9B988C">No sessions logged yet.</p>'}
+        </div>`;
       }
     }
+    
     if (mode === 'timeline' || mode === 'all') {
-      t += '═══════════════════════════\nTIMELINE\n═══════════════════════════\n\n';
+      html += `<h2>${mode === 'all' ? 'Timeline' : 'Studio Timeline'}</h2>`;
       let lastDay = '';
       for (const e of rE) {
         const p = getP(e.paintingId);
         const k = dayKey(e.date);
-        if (k !== lastDay) { lastDay = k; t += '── ' + fmtDayLabel(new Date(e.date)).toUpperCase() + ' ──\n\n'; }
-        t += (p ? '№ ' + String(p.number).padStart(2,'0') + ' ' + p.title : '(deleted painting)');
-        t += ' · ' + fmtTime(e.date);
-        if (e.stage) t += ' · ' + e.stage;
-        t += '\n';
-        if (e.text) t += e.text + '\n';
-        if (e.colors && e.colors.length) t += 'Colors: ' + e.colors.map(c => c.name || c.hex).join(', ') + '\n';
-        t += '\n';
+        if (k !== lastDay) { lastDay = k; html += `<div class="day">${fmtDayLabel(new Date(e.date))}</div>`; }
+        html += `<div class="tl-entry">
+          <div class="tl-meta">
+            <span class="tl-paint">${p ? '№ ' + String(p.number).padStart(2,'0') + ' — ' + esc(p.title) : '(deleted painting)'}</span>
+            <span>${fmtTime(e.date)}</span>
+            ${e.stage ? `<span class="tl-stage">${esc(e.stage)}</span>` : ''}
+          </div>
+          ${e.text ? `<p class="tl-text">${esc(e.text)}</p>` : ''}
+          ${e.images && e.images.length ? `<div class="images">${e.images.map(src => `<img src="${src}" class="entry-img small" alt="">`).join('')}</div>` : ''}
+          ${e.colors && e.colors.length ? `<div class="colors">${e.colors.map(c => `<span class="chip small"><span class="dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div>` : ''}
+        </div>`;
       }
     }
-    return t;
+    html += '</body></html>';
+    return html;
+  }
+  
+  function waitForImages(container) {
+    const imgs = container.querySelectorAll('img');
+    const promises = Array.from(imgs).map(img => {
+      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    });
+    return Promise.all(promises);
   }
   
   document.addEventListener('click', async e => {
@@ -996,43 +1056,56 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
       const html = buildBookHTML(mode, currentId);
       const pv = document.getElementById('print-view');
       pv.innerHTML = html;
+      pv.style.display = 'block';
+      pv.style.position = 'fixed';
+      pv.style.left = '0';
+      pv.style.top = '0';
+      pv.style.width = '100%';
+      pv.style.height = '100%';
+      pv.style.overflow = 'auto';
+      pv.style.background = 'white';
+      pv.style.zIndex = '9999';
       closeModal();
-      const originalTitle = document.title;
       const modeNames = {all:'Complete Studio', paintings:'Paintings Catalog', timeline:'Studio Timeline', current:'Single Painting'};
       document.title = 'Provenance - ' + (modeNames[mode] || 'Studio') + ' - ' + new Date().toISOString().slice(0,10);
+      await waitForImages(pv);
       setTimeout(() => {
         window.print();
-        toast('💡 In the print dialog, choose "Save as PDF" as the destination');
-      }, 300);
-    } else if (a === 'print-book') {
-      const mode = t.dataset.mode;
-      const currentId = view.name === 'painting' ? view.paintingId : null;
-      const html = buildBookHTML(mode, currentId);
-      const pv = document.getElementById('print-view');
-      pv.innerHTML = html;
-      closeModal();
-      setTimeout(() => window.print(), 300);
+        toast('💡 Choose "Save as PDF" as the destination');
+      }, 500);
     } else if (a === 'copy-docs-menu') {
       document.getElementById('menu').classList.remove('open');
       openCopyDocsMenu();
-    } else if (a === 'open-docs') {
+    } else if (a === 'download-docs') {
       const mode = t.dataset.mode;
       const currentId = view.name === 'painting' ? view.paintingId : null;
-      const text = buildDocsText(mode, currentId);
-      try {
-        await navigator.clipboard.writeText(text);
-        window.open('https://docs.google.com/document/u/0/create', '_blank');
-        closeModal();
-        toast('✓ New doc opened! Press Ctrl+V (or tap and hold) to paste');
-      } catch (err) {
-        toast('⚠ Could not copy text');
-      }
+      const html = buildDocsHTML(mode, currentId);
+      const blob = new Blob([html], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'provenance-export-' + new Date().toISOString().slice(0,10) + '.html';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      closeModal();
+      toast('✓ File downloaded! Open it in your browser, select all, copy, then paste into Google Docs');
     }
   });
   
   window.addEventListener('afterprint', () => {
     const pv = document.getElementById('print-view');
-    if (pv) pv.innerHTML = '';
+    if (pv) {
+      pv.innerHTML = '';
+      pv.style.display = 'none';
+      pv.style.position = '';
+      pv.style.left = '';
+      pv.style.top = '';
+      pv.style.width = '';
+      pv.style.height = '';
+      pv.style.overflow = '';
+      pv.style.background = '';
+      pv.style.zIndex = '';
+    }
     document.title = 'Provenance – Your art journal';
   });
 })();
