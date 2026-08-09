@@ -216,7 +216,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
     <div class="bar">
       <button class="brand" data-action="goto" data-view="timeline" aria-label="Provenance home">
         <span class="brand-dabs"><i></i><i></i><i></i></span>
-        <span class="brand-name">Proven<em>ance</em></span>
+        <span class="brand-name"><span class="g1">Pro</span><span class="g2">ven</span><span class="g3">an</span><em>ce</em></span>
       </button>
       <nav class="tabs">
         <button class="tab" data-action="goto" data-view="timeline">Timeline</button>
@@ -767,6 +767,17 @@ boot();
   <style>
 .brand-name::after,.auth-card .display::after{bottom:-.22em;height:.2em;opacity:.45;filter:blur(4px)}
 .auth-card .sub{margin-top:20px}
+</style>
+  <style>
+.brand-name{background:none;background-clip:border-box;-webkit-background-clip:border-box}
+.brand-name span,.brand-name em{display:inline-block;font-style:normal}
+.brand-name .g1{color:#F4F1E8;-webkit-text-fill-color:#F4F1E8;transform:skewX(0deg)}
+.brand-name .g2{color:#E0DCCB;-webkit-text-fill-color:#E0DCCB;transform:skewX(-5deg)}
+.brand-name .g3{color:#BFD4D0;-webkit-text-fill-color:#BFD4D0;transform:skewX(-9deg)}
+.brand-name em{color:#8FB6BF;-webkit-text-fill-color:#8FB6BF;transform:skewX(-13deg)}
+</style>
+  <style>
+.auth-card .display::after{bottom:-.43em}
 </style>
 </body>
 </html>
