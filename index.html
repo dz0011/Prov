@@ -734,6 +734,10 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     btnDocs.dataset.action = 'copy-docs-menu';
     btnDocs.innerHTML = '📄 Export for Google Docs';
     menu.insertBefore(btnDocs, signOut);
+        const btnSupport = document.createElement('button');
+    btnSupport.dataset.action = 'report-issue';
+    btnSupport.innerHTML = '🐛 Report an issue';
+    menu.insertBefore(btnSupport, signOut);
   }
   
   if (!document.getElementById('print-view')) {
@@ -1046,7 +1050,30 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
     });
     return Promise.all(promises);
   }
-  
+    function openTicketModal(){
+    db.auth.getUser().then(({data})=>{
+      const email=(data&&data.user&&data.user.email)||'';
+      openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="ticket-form">'
+        +'<div class="panel-head"><h2>🐛 Report an issue</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
+        +'<p class="sub" style="margin-bottom:14px">Tell us what went wrong — your report goes straight to the developer.</p>'
+        +'<label>What happened?</label>'
+        +'<textarea name="message" placeholder="Describe the issue — what you tapped, what you expected, what happened instead…" required style="min-height:120px"></textarea>'
+        +'<label>Your reply-to email</label>'
+        +'<input type="email" name="email" value="'+esc(email)+'">'
+        +'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Cancel</button><button class="btn primary">Send report</button></div>'
+        +'</form></div>');
+      $('#ticket-form').addEventListener('submit',async ev=>{
+        ev.preventDefault();
+        const f=new FormData(ev.target);
+        const msg=(f.get('message')||'').toString().trim();
+        if(!msg){toast('Please describe the issue first');return;}
+        const {data:{user}}=await db.auth.getUser();
+        const {error}=await db.from('tickets').insert({user_id:user.id,email:(f.get('email')||'').toString().trim(),message:msg});
+        if(error){toast('⚠ Could not send — try again later');}
+        else{closeModal();toast('✓ Report sent — thank you!');}
+      });
+    });
+  }
   document.addEventListener('click', async e => {
     const t = e.target.closest('[data-action]');
     if (!t) return;
@@ -1082,6 +1109,9 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
         window.print();
         toast('💡 Choose "Save as PDF" as the destination');
       }, 500);
+          } else if (a === 'report-issue') {
+      document.getElementById('menu').classList.remove('open');
+      openTicketModal();
     } else if (a === 'copy-docs-menu') {
       document.getElementById('menu').classList.remove('open');
       openCopyDocsMenu();
