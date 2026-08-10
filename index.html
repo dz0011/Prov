@@ -1906,5 +1906,29 @@ body.dark .top::after{
   });
 })();
 </script>
+<style>
+/* ---- Viewer pill: special, but quieter than the essential pair ---- */
+.tab.tab-viewer{
+  font-size:13.5px;font-weight:500;letter-spacing:.3px;
+  padding:6px 13px;
+  opacity:.65;
+  color:var(--ink-soft);
+  text-shadow:none;
+  border-color:hsla(calc(205 + var(--hue-shift,0)),40%,50%,.22);
+  background-image:linear-gradient(120deg,
+    hsla(calc(205 + var(--hue-shift,0)),50%,60%,.12),
+    hsla(calc(18 + var(--hue-shift,0)),50%,55%,.12) 30%,
+    hsla(calc(152 + var(--hue-shift,0)),45%,45%,.12) 62%,
+    hsla(calc(205 + var(--hue-shift,0)),50%,60%,.12));
+  animation:viewshimmer 9s ease-in-out infinite;
+}
+.tab.tab-viewer:hover{opacity:.85;color:var(--ink)}
+.tab.tab-viewer.active{
+  opacity:.95;color:var(--ink);
+  box-shadow:inset 0 0 0 1px hsla(calc(205 + var(--hue-shift,0)),50%,45%,.35);
+}
+body.dark .tab.tab-viewer{color:#B9B7AE;border-color:hsla(calc(205 + var(--hue-shift,0)),50%,70%,.28);text-shadow:none}
+body.dark .tab.tab-viewer.active{color:#E7E5DD}
+</style>
 </body>
 </html>
