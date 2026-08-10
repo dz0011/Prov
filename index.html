@@ -32,8 +32,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;opac
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");}
 body.locked{overflow:hidden}
 button{font-family:inherit}
-.top{position:sticky;top:0;z-index:40;color:#F4F2EC;background:linear-gradient(135deg,hsl(calc(var(--brand-hue,235) + var(--hue-shift,0)),65%,22%),hsl(calc(var(--brand-hue,235) + var(--hue-shift,0) + 40),55%,28%))}
-  .bar{max-width:1100px;margin:auto;display:flex;align-items:center;gap:14px;padding:10px 18px;flex-wrap:wrap}
+.top{position:sticky;top:0;z-index:40;color:#F4F2EC;background:linear-gradient(120deg,hsl(var(--brand-hue,235),60%,24%),hsl(calc(var(--brand-hue,235) + 139),62%,30%) 55%,hsl(calc(var(--brand-hue,235) + 163),70%,34%))}  .bar{max-width:1100px;margin:auto;display:flex;align-items:center;gap:14px;padding:10px 18px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;background:none;border:0;color:inherit;cursor:pointer;padding:4px 0}
 .brand-dabs{display:flex}
 .brand-dabs i{width:13px;height:13px;display:block;margin-left:-4px;border:1.5px solid rgba(244,242,236,.85);border-radius:47% 53% 50% 50%/52% 48% 55% 45%}
@@ -65,6 +64,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
 .search{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:10px 18px;font:500 14px 'Space Grotesk';min-width:240px;transition:.2s;color:var(--ink)}
 .search:focus{outline:none;border-color:var(--ultra);box-shadow:0 0 0 3px rgba(39,51,201,.15)}
 .foot{text-align:center;color:#9B988C;font-size:12.5px;padding:0 18px 40px;position:relative;z-index:2}
+@media(max-width:640px){.foot{padding:0 18px 170px}}
 .day-head{display:flex;align-items:center;gap:10px;margin:30px 0 14px;font:700 12px 'Space Grotesk';letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
 .day-head::before{content:'';width:10px;height:10px;background:var(--ultra);border-radius:47% 53% 50% 50%/52% 48% 55% 45%;flex:none}
 .day-head::after{content:'';flex:1;height:1px;background:var(--line)}
@@ -80,7 +80,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
 .etools{position:absolute;right:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:2px;opacity:0;transition:.2s;padding-right:4px}
 .etools .icon-btn{font-size:13px;padding:5px 6px}
 .entry:hover .etools{opacity:1}
-.entry-top{position:relative}
+.entry{position:relative}
 @media (hover:none){.etools{opacity:1}}
 .etext{margin:12px 2px 4px;font-size:15px;line-height:1.55;white-space:pre-wrap;color:#26272E}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -1294,8 +1294,9 @@ body.locked #install-btn{display:none!important}
 </style>
   <style>
 @media (hover:none){
-  .etools{opacity:1;gap:6px}
-  .etools .icon-btn{font-size:17px;padding:9px 10px}
+  .etools{opacity:1;gap:2px}
+  .etools .icon-btn{font-size:13px;padding:5px 6px}
+  .entry{padding-right:46px}
 }
 </style>
   <style>.entry[data-action]{cursor:pointer}</style>
@@ -1371,20 +1372,15 @@ body{filter:none!important}
   document.body.appendChild(e);document.body.appendChild(w);
 })();
 </script>
-/* Hide FABs when the auth/setup screens are visible */
-body.auth-screen-active .float-btn { display: none !important; }
-
-/* Fix mobile safe area so buttons aren't hidden by the home indicator */
-.entry-fab { bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
-.work-fab { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
 <style>
-.float-btn{position:fixed;left:18px;z-index:50;width:58px;height:58px;border:0;border-radius:50%;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+.float-btn{position:fixed;right:18px;z-index:50;width:58px;height:58px;border:0;border-radius:50%;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Space Grotesk',sans-serif}
 .entry-fab{bottom:90px;background:#C4708C;box-shadow:0 8px 20px -6px rgba(150,80,105,.5)}
 .work-fab{bottom:18px;background:#C05B3C;box-shadow:0 10px 26px -6px rgba(150,70,45,.5)}
-.float-btn::before{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8B877C;opacity:.7;white-space:nowrap;pointer-events:none}
+.float-btn::before{position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8B877C;opacity:.7;white-space:nowrap;pointer-events:none}
 body.auth-screen-active .float-btn { display: none !important; }
 .entry-fab { bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
-.work-fab { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }.entry-fab::before{content:'New entry'}
+.work-fab { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+.entry-fab::before{content:'New entry'}
 .work-fab::before{content:'New work'}
 </style>
   <style>
