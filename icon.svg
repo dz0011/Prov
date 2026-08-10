@@ -5,8 +5,8 @@
     </filter>
   </defs>
   <rect width="512" height="512" rx="112" fill="#F6F4EF"/>
-  <path d="M64 372 Q240 336 448 360" stroke="#A98F72" stroke-width="10" fill="none" opacity=".55" stroke-linecap="round"/>
-  <path d="M96 404 Q260 380 416 396" stroke="#7C8B94" stroke-width="6" fill="none" opacity=".35" stroke-linecap="round"/>
+  <path d="M64 360 Q240 400 448 370" stroke="#A98F72" stroke-width="10" fill="none" opacity=".55" stroke-linecap="round"/>
+  <path d="M96 396 Q260 424 416 406" stroke="#7C8B94" stroke-width="6" fill="none" opacity=".35" stroke-linecap="round"/>
   <g filter="url(#smear)" transform="skewX(-8)">
     <rect x="96" y="150" width="330" height="64" fill="#6C8EA0"/>
     <rect x="140" y="228" width="330" height="64" fill="#A7C4C8"/>
