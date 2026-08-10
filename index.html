@@ -3749,5 +3749,30 @@ document.addEventListener('click',function(e){
   if(typeof paintCurrent==='function'&&typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]===0)paintCurrent();
 });
 </script>
+<script>
+/* ---- Tiny speed creature beside the refresh button ---- */
+(function(){
+  var _vh9=viewerHTML;
+  viewerHTML=function(){
+    return _vh9().replace('>↻</button>','>↻</button><span id="vspeed-ico" style="margin-left:12px;font-size:15px;line-height:1;opacity:.85" aria-label="Current movement speed"></span>');
+  };
+})();
+function syncSpeedIco(){
+  var el=document.getElementById('vspeed-ico');if(!el)return;
+  var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));
+  var label=vSpeedIdx===0?'Stopped (tap to start)':'Speed '+vSpeedIdx+' of 10';
+  if(el.textContent!==ic){
+    el.textContent=ic;
+    if(el.animate)el.animate([{transform:'scale(.5)',opacity:.3},{transform:'scale(1.15)',opacity:.9,offset:.7},{transform:'scale(1)',opacity:.85}],{duration:280,easing:'ease-out'});
+  }
+  el.title=label;
+  el.setAttribute('aria-label',label);
+}
+var _dv3=drawViewer;
+drawViewer=function(){_dv3.apply(this,arguments);syncSpeedIco();};
+document.addEventListener('click',function(e){
+  if(e.target.closest('#viewer-canvas'))syncSpeedIco();
+});
+</script>
 </body>
 </html>
