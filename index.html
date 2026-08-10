@@ -1869,5 +1869,42 @@ body.dark .top::after{
   viewerHTML=function(){return _vh().replace('A generative remix','An original view');};
 })();
 </script>
+<style>
+/* ---- Slow crossfade layer for the wordmark theme toggle ---- */
+#theme-fade{position:fixed;inset:0;z-index:200;pointer-events:none;opacity:0}
+</style>
+<script>
+/* ---- Provenance wordmark: slow-paced light/dark toggle when already on Timeline ---- */
+(function(){
+  var busy=false;
+  function slowThemeToggle(){
+    if(busy)return;busy=true;
+    var dark=!document.body.classList.contains('dark');
+    var ov=document.getElementById('theme-fade');
+    if(!ov){ov=document.createElement('div');ov.id='theme-fade';document.body.appendChild(ov);}
+    ov.style.background=dark
+      ?'radial-gradient(90% 70% at 50% 42%, #23242B 0%, #191A20 70%)'
+      :'radial-gradient(90% 70% at 50% 42%, #FCFBF7 0%, #F2F1EC 70%)';
+    ov.style.transition='none';ov.style.opacity='0';
+    void ov.offsetWidth;
+    ov.style.transition='opacity .75s ease-in';
+    ov.style.opacity='1';
+    setTimeout(function(){
+      document.body.classList.toggle('dark',dark);
+      try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e){}
+      var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+      if(typeof view!=='undefined'&&view.name==='viewer'&&typeof drawViewer==='function')drawViewer();
+      ov.style.transition='opacity 1.15s ease-out';
+      ov.style.opacity='0';
+      setTimeout(function(){busy=false;},1200);
+    },780);
+  }
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('.brand'))return;
+    if(typeof view==='undefined'||view.name!=='timeline')return;
+    slowThemeToggle();
+  });
+})();
+</script>
 </body>
 </html>
