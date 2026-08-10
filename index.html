@@ -1832,5 +1832,42 @@ function drawViewer(){
   img.src=c.toDataURL('image/jpeg',.9);
 }
 </script>
+<style>
+/* ---- Kill any leftover hairline + auto-blend header into body ---- */
+.top{box-shadow:none!important;border:none!important}
+.top::after{
+  content:'';position:absolute;left:0;right:0;top:calc(100% - 8px);height:34px;pointer-events:none;
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(900px 500px at 92% -80px, hsla(calc(205 + var(--hue-shift,0)),45%,60%,.16), transparent 60%),
+    radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),50%,45%,.13), transparent 60%),
+    radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),35%,28%,.13), transparent 60%),
+    radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.6), transparent 60%);
+  background-attachment:fixed;
+  -webkit-mask-image:linear-gradient(to bottom,transparent,black 30%,black 70%,transparent);
+  mask-image:linear-gradient(to bottom,transparent,black 30%,black 70%,transparent);
+}
+body.dark .top::after{
+  background-color:#191A20;
+  background-image:
+    radial-gradient(900px 500px at 92% -80px, hsla(calc(205 + var(--hue-shift,0)),50%,55%,.18), transparent 60%),
+    radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),55%,52%,.13), transparent 60%),
+    radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),40%,42%,.14), transparent 60%),
+    radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.05), transparent 60%);
+}
+/* ---- Entry tools: a touch lower on Timeline and Work pages ---- */
+.entry .etools{top:34px}
+/* ---- Slightly darker lift for the + buttons and their labels ---- */
+.entry-fab{box-shadow:0 10px 24px -6px rgba(20,18,12,.40),0 4px 10px -2px rgba(20,18,12,.28)}
+.work-fab{box-shadow:0 12px 26px -6px rgba(20,18,12,.42),0 4px 10px -2px rgba(20,18,12,.30)}
+.float-btn::before{text-shadow:0 1px 0 var(--card),0 -1px 0 var(--card),1px 0 0 var(--card),-1px 0 0 var(--card),0 0 6px var(--card),0 0 12px var(--card),0 2px 6px rgba(20,18,12,.35)}
+</style>
+<script>
+/* ---- Viewer subtitle rewording ---- */
+(function(){
+  var _vh=viewerHTML;
+  viewerHTML=function(){return _vh().replace('A generative remix','An original view');};
+})();
+</script>
 </body>
 </html>
