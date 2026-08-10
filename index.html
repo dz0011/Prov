@@ -1320,7 +1320,6 @@ img, .pcover, .film img, .thumb img, .book-img, .entry-img, .book-film img, .lig
   <style>
 body{filter:none!important}
 #app-shell,#auth-screen,#setup-screen{filter:hue-rotate(var(--hue-shift,0deg))}
-#app-shell[style*="none"] ~ .float-btn{display:none!important}
 .float-btn{position:fixed;right:18px;z-index:50;width:58px;height:58px;border:0;border-radius:50%;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Space Grotesk',sans-serif}
 .entry-fab{bottom:90px;background:#C4708C;box-shadow:0 8px 20px -6px rgba(150,80,105,.5)}
 .work-fab{bottom:18px;background:#C05B3C;box-shadow:0 10px 26px -6px rgba(150,70,45,.5)}
@@ -1331,7 +1330,6 @@ body{filter:none!important}
   <style>
 body{filter:none!important}
 #app-shell,#auth-screen,#setup-screen{filter:hue-rotate(var(--hue-shift,0deg))}
-#app-shell[style*="none"] ~ .float-btn{display:none!important}
 .float-btn{position:fixed;right:18px;z-index:50;width:58px;height:58px;border:0;border-radius:50%;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Space Grotesk',sans-serif}
 .entry-fab{bottom:90px;background:#C4708C;box-shadow:0 8px 20px -6px rgba(150,80,105,.5)}
 .work-fab{bottom:18px;background:#C05B3C;box-shadow:0 10px 26px -6px rgba(150,70,45,.5)}
@@ -1351,6 +1349,12 @@ body{filter:none!important}
   document.body.appendChild(e);document.body.appendChild(w);
 })();
 </script>
+/* Hide FABs when the auth/setup screens are visible */
+body.auth-screen-active .float-btn { display: none !important; }
+
+/* Fix mobile safe area so buttons aren't hidden by the home indicator */
+.entry-fab { bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
+.work-fab { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
 <style>
 .float-btn{position:fixed;left:18px;z-index:50;width:58px;height:58px;border:0;border-radius:50%;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Space Grotesk',sans-serif}
 .entry-fab{bottom:90px;background:#C4708C;box-shadow:0 8px 20px -6px rgba(150,80,105,.5)}
@@ -1358,7 +1362,6 @@ body{filter:none!important}
 .float-btn::before{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8B877C;opacity:.7;white-space:nowrap;pointer-events:none}
 .entry-fab::before{content:'New entry'}
 .work-fab::before{content:'New work'}
-#app-shell[style*="none"] ~ .float-btn{display:none!important}
 </style>
   <style>
 .cover-opt{opacity:.75}
