@@ -355,7 +355,7 @@ function filteredEntries(){
 }
 function timelineHTML(){
   return '<div class="page-head"><div><h1 class="display">Studio timeline</h1>'
-    +'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('painting','paintings',state.paintings.length)+' · newest first</p></div>'
+    +'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('work','works',state.paintings.length)+' · newest first</p></div>'
     +(state.paintings.length?'<input id="tl-search" class="search" type="search" placeholder="Search notes, entries…" value="'+esc(view.q)+'">':'')
     +'</div><div id="tl-list">'+timelineListHTML(filteredEntries())+'</div>';
 }
@@ -387,7 +387,7 @@ function entryCardHTML(e,i){
     +'<button class="icon-btn" data-action="delete-entry" data-id="'+e.id+'" title="Delete">✕</button></span></div>'
     +(e.text?'<p class="etext">'+esc(e.text)+'</p>':'')
     +(imgs?'<div class="thumbs">'+imgs+'</div>':'')
-    +cols+'</article>';
+    +'</article>';
 }
 function paintingsHTML(){
   const ps=[...state.paintings].sort((a,b)=>a.number-b.number);
@@ -406,7 +406,6 @@ function pcardHTML(p,i){
     +'<span class="status '+(p.status==='finished'?'done':'wip')+'">'+(p.status==='finished'?'Finished':'In progress')+'</span></div>'
     +'<div class="pinfo"><div class="prow"><span class="pnum">'+numTag(p.number)+'</span><span class="ptitle">'+esc(p.title)+'</span></div>'
     +'<div class="pmeta">'+(p.medium||'—')+(p.size?' · '+esc(p.size):'')+' · '+es.length+' '+plural('entry','entries',es.length)+(es.length?' · '+timeAgo(lastActivity(p)):'')+'</div>'
-    +(cols.length?'<div class="dabs sm">'+cols.map(c=>'<span class="dab" style="--c:'+esc(c.hex)+'"></span>').join('')+'</div>':'')
     +'</div></article>';
 }
 function paintingDetailHTML(id){
@@ -426,9 +425,8 @@ function paintingDetailHTML(id){
     +'<button class="btn primary" data-action="new-entry" data-painting="'+p.id+'">+ Add entry</button>'
     +'<button class="btn ghost" data-action="toggle-status" data-id="'+p.id+'">'+(p.status==='finished'?'Reopen':'Mark finished')+'</button>'
     +'<button class="btn ghost" data-action="edit-painting" data-id="'+p.id+'">Edit</button>'
-    +'<button class="icon-btn" data-action="delete-painting" data-id="'+p.id+'" title="Delete painting">🗑</button>'
+    +'<button class="icon-btn" data-action="delete-painting" data-id="'+p.id+'" title="Delete work">🗑</button>'
     +'</div></div>'
-    +(cols.length?'<section><h3 class="h3">Palette used</h3><div class="pal-chips">'+cols.map(c=>'<span class="pal-chip"><span class="dab" style="--c:'+esc(c.hex)+'"></span>'+esc(c.name||c.hex)+'</span>').join('')+'</div></section>':'')
     +(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div></section>':'')
     +'<section><h3 class="h3">Work log · oldest first</h3>'
     +(es.length?es.map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">No sessions logged yet.</div>')+'</section>';
@@ -436,8 +434,8 @@ function paintingDetailHTML(id){
 function emptyStudioHTML(){
   return '<div class="empty"><div class="dabs"><span class="dab" style="--c:var(--ultra)"></span><span class="dab" style="--c:var(--verm)"></span><span class="dab" style="--c:var(--ochre)"></span></div>'
     +'<h2 class="display">Start your studio log</h2>'
-    +'<p>Catalog each canvas, then log sessions as the work develops — progress photos, notes, and the exact colors on your palette.</p>'
-    +'<div class="empty-actions"><button class="btn primary" data-action="new-painting">+ Create your first painting</button>'
+    +'<p>Catalog each work, then log progress as the work develops — progress photos, notes, and the exact colors on your palette.</p>'
+    +'<div class="empty-actions"><button class="btn primary" data-action="new-painting">+ Create your first work</button>'
     +'</div></div>';
 }
 
@@ -451,8 +449,8 @@ function openComposer(entryId,presetPainting){
   const selVal=e?e.paintingId:(presetPainting||'');
   const layer=openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="composer">'
     +'<div class="panel-head"><h2>'+(e?'Edit entry':'New entry')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
-    +'<label>Painting</label><div class="rowflex"><select name="paintingId">'
-    +'<option value="" disabled '+(selVal?'':'selected')+'>Choose a painting…</option>'
+    +'<label>Work</label><div class="rowflex"><select name="paintingId">'
+    +'<option value="" disabled '+(selVal?'':'selected')+'>Choose a work…</option>'
     +ps.map(p=>'<option value="'+p.id+'" '+(p.id===selVal?'selected':'')+'>'+esc(pLabel(p))+'</option>').join('')
     +'</select><button type="button" class="btn ghost" data-action="new-painting-from-composer">+ New</button></div>'
     +'<div class="grid2"><div><label>Date &amp; time</label><input type="datetime-local" name="date" value="'+toLocalInput(e?new Date(e.date):new Date())+'"></div>'
@@ -460,9 +458,6 @@ function openComposer(entryId,presetPainting){
     +'<label>Notes</label><textarea name="text" placeholder="What changed in this session? Mixes, decisions, what to try next…">'+(e?esc(e.text||''):'')+'</textarea>'
     +'<label>Photos</label><div class="thumbs" id="draft-images"></div>'
     +'<label class="file-btn" for="entry-photos">＋ Add photos…</label><input type="file" id="entry-photos" accept="image/*" multiple hidden data-role="entry-photos">'
-    +'<label>Palette colors</label><div class="pigments">'+PIGMENTS.map(x=>'<button type="button" class="pig" data-action="preset-add" data-hex="'+x[1]+'" data-name="'+x[0]+'"><span class="dab" style="--c:'+x[1]+'"></span>'+x[0]+'</button>').join('')+'</div>'
-    +'<div id="draft-colors" style="margin-top:10px"></div>'
-    +'<button type="button" class="btn ghost sm" data-action="add-color">+ Custom color</button>'
     +'<div class="panel-foot">'+(e?'<button type="button" class="btn ghost danger-btn" data-action="delete-entry" data-id="'+e.id+'">Delete</button>':'')
     +'<span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
     +'<button class="btn primary">'+(e?'Save changes':'Save entry')+'</button></div></form></div>');
@@ -472,7 +467,7 @@ function openComposer(entryId,presetPainting){
 async function onComposerSubmit(ev){
   ev.preventDefault();
   const f=new FormData(ev.target),pid=f.get('paintingId');
-  if(!pid){toast('Choose a painting first (or create one with “+ New”).');return;}
+  if(!pid){toast('Choose a work of art first (or create one with “+ New”).');return;}
   const wasEdit=!!draft.id,prev=wasEdit?state.entries.find(x=>x.id===draft.id):null;
   const rec={id:draft.id||uid(),paintingId:pid,
     date:f.get('date')?new Date(f.get('date')).toISOString():new Date().toISOString(),
@@ -496,7 +491,7 @@ function openPaintingForm(pid,onSaved){
   const p=pid?getP(pid):null;
   const nextNum=p?p.number:state.paintings.reduce((m,x)=>Math.max(m,x.number||0),0)+1;
   const layer=openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="pform">'
-    +'<div class="panel-head"><h2>'+(p?'Edit painting':'New painting')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
+    +'<div class="panel-head"><h2>'+(p?'Edit work':'New work')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
     +'<div class="grid2"><div><label>Number (optional)</label><input type="number" name="number" min="1" placeholder="leave blank for none" value="'+(p?(p.number||''):'')+'"></div>'
     +'<div><label>Status</label><select name="status"><option value="in-progress" '+((!p||p.status==='in-progress')?'selected':'')+'>In progress</option>'
     +'<option value="finished" '+(p&&p.status==='finished'?'selected':'')+'>Finished</option></select></div></div>'
@@ -504,15 +499,15 @@ function openPaintingForm(pid,onSaved){
     +'<div class="grid2"><div><label>Medium</label><select name="medium"><option value="">—</option>'+MEDIUMS.map(m=>'<option value="'+m+'" '+(p&&p.medium===m?'selected':'')+'>'+m+'</option>').join('')+'</select></div>'
     +'<div><label>Size / support</label><input type="text" name="size" placeholder="50 × 70 cm, canvas" value="'+(p?esc(p.size||''):'')+'"></div></div>'
     +'<div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
-    +'<button class="btn primary">'+(p?'Save changes':'Create painting')+'</button></div></form></div>');
+    +'<button class="btn primary">'+(p?'Save changes':'Create work')+'</button></div></form></div>');
   layer.querySelector('#pform').addEventListener('submit',async ev=>{
     ev.preventDefault();
     const f=new FormData(ev.target);
     const title=(f.get('title')||'').trim();
-    if(!title){toast('Give the painting a title.');return;}
+    if(!title){toast('Give the piece a title.');return;}
     const rec={id:p?p.id:uid(),number:parseInt(f.get('number'))||0,title,medium:f.get('medium')||'',size:(f.get('size')||'').trim(),status:f.get('status'),createdAt:p?p.createdAt:Date.now()};
     if(p)Object.assign(p,rec);else state.paintings.push(rec);
-    if(await save()){toast(p?'Painting updated':'Painting '+numTag(rec.number)+' created');closeModal();render();if(onSaved)onSaved(rec.id);}
+    if(await save()){toast(p?'Work updated':'Work '+numTag(rec.number)+' created');closeModal();render();if(onSaved)onSaved(rec.id);}
   });
   setTimeout(()=>{const t=layer.querySelector('input[name=title]');if(t)t.focus();},60);
 }
@@ -630,7 +625,7 @@ document.addEventListener('click',async e=>{
     case 'delete-painting':{const p=getP(t.dataset.id);
       if(p&&confirm('Delete “'+pLabel(p)+'” and all of its entries?')){
         state.paintings=state.paintings.filter(x=>x.id!==p.id);state.entries=state.entries.filter(x=>x.paintingId!==p.id);
-        if(await save()){view={name:'paintings',q:''};render();toast('Painting deleted');}}break;}
+        if(await save()){view={name:'paintings',q:''};render();toast('Work deleted');}}break;}
     case 'toggle-status':{const p=getP(t.dataset.id);if(p){p.status=p.status==='finished'?'in-progress':'finished';if(await save())render();}break;}
     case 'close-modal':closeModal();break;
     case 'overlay-close':if(e.target===t)closeModal();break;
@@ -808,9 +803,9 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
       <p class="sub" style="margin-bottom:20px">Choose what to include:</p>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="btn ghost" data-action="export-choose" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
-        <button class="btn ghost" data-action="export-choose" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
+        <button class="btn ghost" data-action="export-choose" data-mode="paintings" style="justify-content:flex-start">🎨 Works catalog</button>
         <button class="btn ghost" data-action="export-choose" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="export-choose" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        ${currentP ? `<button class="btn ghost" data-action="export-choose" data-mode="current" style="justify-content:flex-start">🖼 This work — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
       </div>
     </div></div>`);
   }
@@ -834,9 +829,9 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
 Opens your journal in a new tab with a “Copy everything” button — then paste straight into Google Docs with images and formatting.
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="btn ghost" data-action="download-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
-        <button class="btn ghost" data-action="download-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Paintings catalog</button>
+        <button class="btn ghost" data-action="download-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Works catalog</button>
         <button class="btn ghost" data-action="download-docs" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="download-docs" data-mode="current" style="justify-content:flex-start">🖼 This painting — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        ${currentP ? `<button class="btn ghost" data-action="download-docs" data-mode="current" style="justify-content:flex-start">🖼 This work — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
       </div>
     </div></div>`);
   }
@@ -883,9 +878,9 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
       const p = getP(currentPaintingId);
       rP = p ? [p] : [];
       rE = entriesOf(currentPaintingId).sort((a,b) => a.date < b.date ? -1 : 1);
-      modeTitle = p ? pLabel(p) : 'Single Painting';
+      modeTitle = p ? pLabel(p) : 'Single Work';
     } else if (mode === 'timeline') { rP = []; modeTitle = 'Studio Timeline'; }
-    else if (mode === 'paintings') { rE = []; modeTitle = 'Paintings Catalog'; }
+    else if (mode === 'paintings') { rE = []; modeTitle = 'Works Catalog'; }
     
     let html = `<section class="book-cover">
       <div class="book-cover-title">Provenance</div>
@@ -934,9 +929,9 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
       const p = getP(currentPaintingId);
       rP = p ? [p] : [];
       rE = entriesOf(currentPaintingId).sort((a,b) => a.date < b.date ? -1 : 1);
-      modeTitle = p ? pLabel(p) : 'Single Painting';
+      modeTitle = p ? pLabel(p) : 'Single Work';
     } else if (mode === 'timeline') { rP = []; modeTitle = 'Studio Timeline'; }
-    else if (mode === 'paintings') { rE = []; modeTitle = 'Paintings Catalog'; }
+    else if (mode === 'paintings') { rE = []; modeTitle = 'Works Catalog'; }
     
     let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Provenance - ${esc(modeTitle)}</title>
 <style>
@@ -1105,7 +1100,7 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
       pv.style.background = 'white';
       pv.style.zIndex = '9999';
       closeModal();
-      const modeNames = {all:'Complete Studio', paintings:'Paintings Catalog', timeline:'Studio Timeline', current:'Single Painting'};
+      const modeNames = {all:'Complete Studio', paintings:'Works Catalog', timeline:'Studio Timeline', current:'Single Work'};
       document.title = 'Provenance - ' + (modeNames[mode] || 'Studio') + ' - ' + new Date().toISOString().slice(0,10);
       await waitForImages(pv);
       setTimeout(() => {
