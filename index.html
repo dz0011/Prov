@@ -686,9 +686,7 @@ case 'goto':view={name:t.dataset.view,q:'',wq:'',tlDir:view.tlDir,wkDir:view.wkD
         shareText+=' · Provenance, an art journal';
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
 else{navigator.clipboard.writeText(shareText+'\n'+location.href).then(()=>toast('🔗 Copied — paste it anywhere'));}}
-                              +location.href).
-          then(()=>toast('🔗 Copied — paste it anywhere'));}}
-      break;}
+break;}
     case 'edit-entry':openComposer(t.dataset.id);break;
     case 'delete-entry':
       if(confirm('Delete this entry?')){state.entries=state.entries.filter(x=>x.id!==t.dataset.id);if(await save()){closeModal();render();toast('Entry deleted');}}
