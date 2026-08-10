@@ -397,7 +397,7 @@ function entryCardHTML(e,i){
   const imgs=e.images||[];
   return '<button class="backlink" data-action="goto" data-view="timeline">← Timeline</button>'
     +'<div class="pd-head card"><div class="pd-main">'
-    +'<h1 class="display" style="font-size:clamp(24px,4vw,34px)">'+esc(p?p.title:'(deleted work)')+'</h1>'
+    +'<button class="display" data-action="open-painting" data-id="'+(p?p.id:'')+'" style="font-size:clamp(24px,4vw,34px);background:none;border:0;color:inherit;cursor:pointer;padding:0;text-align:left;font-weight:640;line-height:1.05;letter-spacing:-.5px">'+(p?numTag(p.number)+'<span> '+esc(p.title)+'</span>':'<span>(deleted work)</span>')+'</button>'
     +'<p class="sub">'+fmtDateTime(e.date)+'</p>'
     +'<div class="pd-actions" style="margin-top:14px">'
     +'<button class="btn ghost" data-action="share-entry" data-id="'+e.id+'">📤 Share</button>'
