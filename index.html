@@ -3663,5 +3663,71 @@ body.dark .tabs::before{box-shadow:0 2px 6px rgba(0,0,0,.4)}
 /* ---- Share/edit pair: midpoint centered in each card ---- */
 .entry .etools{top:0;bottom:0;justify-content:center}
 </style>
+<style>
+/* ---- Tab gradients belong to the TEXT only; track becomes frosted glass ---- */
+.tab[data-view="timeline"],.tab[data-view="paintings"]{
+  background-color:transparent!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+}
+.tabs{
+  background:rgba(252,251,247,.25);
+  -webkit-backdrop-filter:blur(8px) saturate(1.1);
+  backdrop-filter:blur(8px) saturate(1.1);
+  box-shadow:inset 0 1px 3px rgba(20,20,25,.12);
+}
+body.dark .tabs{background:rgba(25,26,32,.30)}
+/* ---- A curvy, slowly-morphing presence around the Viewer heading ---- */
+body.on-viewer .page-head{position:relative}
+body.on-viewer .page-head::before{
+  content:'';position:absolute;left:-28px;top:-42px;right:38%;bottom:-26px;z-index:-1;
+  background:
+    radial-gradient(60% 60% at 30% 40%, hsla(calc(205 + var(--hue-shift,0)),60%,60%,.13), transparent 70%),
+    radial-gradient(50% 50% at 70% 60%, hsla(calc(20 + var(--hue-shift,0)),60%,55%,.11), transparent 70%),
+    radial-gradient(45% 45% at 55% 25%, hsla(calc(152 + var(--hue-shift,0)),50%,45%,.10), transparent 70%);
+  border-radius:47% 53% 44% 56%/55% 46% 54% 45%;
+  filter:blur(2px);
+  animation:blobmorph 16s ease-in-out infinite alternate;
+}
+@keyframes blobmorph{
+  0%{border-radius:47% 53% 44% 56%/55% 46% 54% 45%;transform:rotate(-2deg) scale(1)}
+  50%{border-radius:56% 44% 55% 45%/46% 57% 43% 54%;transform:rotate(2deg) scale(1.07)}
+  100%{border-radius:44% 56% 47% 53%/52% 44% 56% 48%;transform:rotate(-1deg) scale(.97)}
+}
+</style>
+<script>
+/* ---- Viewer: fuller canvas, space melted into the images ---- */
+(function(){
+  var _bs2=buildScene;
+  buildScene=function(){
+    var s=_bs2();
+    s.works.forEach(function(w){
+      w.cx=Math.min(.86,Math.max(.14,.5+(w.cx-.5)*1.5));
+      w.cy=Math.min(.88,Math.max(.12,.5+(w.cy-.5)*1.5));
+      w.nodes.forEach(function(nd){
+        nd.fx=.5+(nd.fx-.5)*1.25;nd.fy=.5+(nd.fy-.5)*1.25;nd.r*=1.25;
+      });
+      w.patches.forEach(function(pa){
+        pa.frags.forEach(function(fr){
+          fr.dw*=1.45;fr.al=Math.min(.75,fr.al*1.3);
+        });
+      });
+    });
+    s.washes.forEach(function(wsh){wsh.fr*=1.3;wsh.al*=1.35;});
+    s.marks.forEach(function(m){m.len*=1.2;m.w*=1.15;m.al=Math.min(.5,m.al*1.2);});
+    return s;
+  };
+  var _pv2=paintViewer;
+  paintViewer=function(x,W,H,s,t){
+    _pv2(x,W,H,s,t);
+    var sc=W/1080;
+    x.save();
+    x.filter='blur('+(7*sc)+'px)';
+    x.globalAlpha=.16;
+    x.drawImage(x.canvas,0,0,W,H,-2*sc,-2*sc,W,H);
+    x.restore();
+  };
+})();
+</script>
 </body>
 </html>
