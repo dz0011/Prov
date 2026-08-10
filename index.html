@@ -455,8 +455,8 @@ function paintingDetailHTML(id){
     +(last&&first?'<span><b>'+(Math.max(1,Math.round((new Date(last)-new Date(first))/864e5))+1)+'</b> days active</span>':'')
     +'</div></div><div class="pd-actions">'
     +'<button class="btn primary" data-action="new-entry" data-painting="'+p.id+'">+ Add entry</button>'
-    +'<button class="btn ghost" data-action="share-work" data-id="'+p.id+'">📤 Share</button>'
     +'<button class="btn ghost" data-action="edit-painting" data-id="'+p.id+'">Edit</button>'
+    +'<button class="btn ghost" data-action="share-work" data-id="'+p.id+'">📤 Share</button>'
     +'</div></div>'
     +(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div></section>':'')
     +'<section><h3 class="h3">Work log · newest first</h3>'
@@ -1313,12 +1313,9 @@ body.locked #install-btn{display:none!important}
 </style>
   <script>
 (function(){
-  // Generates a random shift between -30 and +30 degrees on every refresh
+   // Generates a random tint shift between -30 and +30 on every refresh
   const shift = Math.floor(Math.random() * 60) - 30;
-  document.documentElement.style.setProperty('--hue-shift', shift + 'deg');
-  // Randomize the header gradient base slightly
-  const headerHue = 235 + Math.floor(Math.random() * 40) - 20;
-  document.documentElement.style.setProperty('--brand-hue', headerHue);
+  document.documentElement.style.setProperty('--hue-shift', shift);
 })();
 </script>
 <style>
@@ -1388,7 +1385,7 @@ body.auth-screen-active .float-btn { display: none !important; }
 .cover-opt.sel{opacity:1;box-shadow:0 0 0 3px var(--ultra)}
 </style>
   <style>
-@media(max-width:640px){
+    @media(max-width:640px){
   .pgrid{grid-template-columns:repeat(2,1fr);gap:12px}
   .pinfo{padding:10px 12px 12px}
   .ptitle{font-size:16px}
@@ -1396,6 +1393,43 @@ body.auth-screen-active .float-btn { display: none !important; }
   .pmeta{font-size:11px}
   .pnum-ghost{font-size:44px}
 }
+</style>
+<style>
+/* ---- Unified washes for page + header (photos stay true to life) ---- */
+body{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(900px 500px at 92% -80px, hsla(calc(205 + var(--hue-shift,0)),45%,60%,.16), transparent 60%),
+    radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),50%,45%,.13), transparent 60%),
+    radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),35%,28%,.13), transparent 60%),
+    radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.6), transparent 60%);
+  background-attachment:fixed;
+}
+.top{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(520px 240px at 88% -70px, hsla(calc(205 + var(--hue-shift,0)),45%,60%,.20), transparent 60%),
+    radial-gradient(460px 240px at 6% 130%, hsla(calc(18 + var(--hue-shift,0)),50%,45%,.16), transparent 60%),
+    radial-gradient(460px 240px at 55% 140%, hsla(calc(152 + var(--hue-shift,0)),35%,28%,.16), transparent 60%),
+    radial-gradient(400px 200px at 40% -60px, hsla(0,0%,100%,.65), transparent 60%);
+  color:var(--ink);
+  box-shadow:0 1px 0 var(--line);
+}
+/* Dark text so the wordmark reads on the light header */
+.brand-name .s1{color:#23242B;-webkit-text-fill-color:#23242B}
+.brand-name .s2{color:#3A4A50;-webkit-text-fill-color:#3A4A50}
+.brand-name .s3{color:#4E6A70;-webkit-text-fill-color:#4E6A70}
+.brand-name .s4{color:#63888D;-webkit-text-fill-color:#63888D}
+.brand-name .s5{color:#7FA8B0;-webkit-text-fill-color:#7FA8B0}
+.tabs{background:rgba(25,26,32,.08)}
+.tab{color:#5A5B64}
+.tab:hover{color:var(--ink)}
+.tab.active{background:var(--ink);color:var(--paper)}
+.icon-btn.light{color:#5A5B64}
+.icon-btn.light:hover{background:rgba(25,26,32,.08);color:var(--ink)}
+/* Kill every hue-rotate filter so photos are ALWAYS true color */
+body,#app-shell,#auth-screen,#setup-screen{filter:none!important}
+img,.pcover,.film img,.thumb img,.book-img,.entry-img,.book-film img,.lightbox img{filter:none!important}
 </style>
 </body>
 </html>
