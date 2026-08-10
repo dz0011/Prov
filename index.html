@@ -341,10 +341,11 @@ let view={name:'timeline',q:''};
 let draft=null,lbSet=[],lbIdx=0;
 
 function render(){
-  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===(view.name==='painting'?'paintings':view.name)));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===(view.name==='painting'?'paintings':view.name==='entry'?'timeline':view.name)));
   const el=$('#view');
   if(view.name==='timeline')el.innerHTML=timelineHTML();
   else if(view.name==='paintings')el.innerHTML=paintingsHTML();
+  else if(view.name==='entry')el.innerHTML=entryDetailHTML(view.entryId);
   else el.innerHTML=paintingDetailHTML(view.paintingId);
 }
 function filteredEntries(){
@@ -378,7 +379,7 @@ function entryCardHTML(e,i){
     cols='<div class="pal"><span class="dabs">'+e.colors.map(c=>'<span class="dab" style="--c:'+esc(c.hex)+'" title="'+esc(c.name||c.hex)+'"></span>').join('')+'</span>'
       +(e.colors.some(c=>c.name)?'<span class="pal-names">'+esc(e.colors.filter(c=>c.name).map(c=>c.name).join(' · '))+'</span>':'')+'</div>';
   }
-  return '<article class="entry card" style="--i:'+Math.min(i,10)+'">'
+  return '<article class="entry card" style="--i:'+Math.min(i,10)+'" data-action="open-entry" data-id="'+e.id+'" role="button" tabindex="0">'
     +'<div class="entry-top">'
     +'<button class="chip pchip" data-action="open-painting" data-id="'+p.id+'"><b>'+numTag(p.number)+'</b><span>'+esc(p.title)+'</span></button>'
     +'<span class="etime">'+fmtDateTime(e.date)+'</span>'
@@ -388,6 +389,23 @@ function entryCardHTML(e,i){
     +(e.text?'<p class="etext">'+esc(e.text)+'</p>':'')
     +(imgs?'<div class="thumbs">'+imgs+'</div>':'')
     +'</article>';
+}
+  function entryDetailHTML(id){
+  const e=state.entries.find(x=>x.id===id);
+  if(!e){view.name='timeline';return timelineHTML();}
+  const p=getP(e.paintingId);
+  const imgs=e.images||[];
+  return '<button class="backlink" data-action="goto" data-view="timeline">← Timeline</button>'
+    +'<div class="pd-head card"><div class="pd-main">'
+    +'<h1 class="display" style="font-size:clamp(24px,4vw,34px)">'+esc(p?p.title:'(deleted work)')+'</h1>'
+    +'<p class="sub">'+fmtDateTime(e.date)+'</p>'
+    +'<div class="pd-actions" style="margin-top:14px">'
+    +'<button class="btn ghost" data-action="share-entry" data-id="'+e.id+'">📤 Share</button>'
+    +'<button class="btn ghost" data-action="edit-entry" data-id="'+e.id+'">✎ Edit</button>'
+    +(p?'<button class="btn ghost" data-action="open-painting" data-id="'+p.id+'">View work</button>':'')
+    +'</div></div></div>'
+    +(e.text?'<section class="card" style="padding:18px 20px;margin-bottom:14px"><p class="etext" style="margin:0">'+esc(e.text)+'</p></section>':'')
+    +(imgs.length?'<section><h3 class="h3">Photos</h3><div class="thumbs">'+imgs.map((src,j)=>'<button class="thumb" style="width:150px;height:112px" data-action="lightbox" data-entry="'+e.id+'" data-idx="'+j+'"><img src="'+src+'" alt="" loading="lazy"></button>').join('')+'</div></section>':'');
 }
 function paintingsHTML(){
   const ps=[...state.paintings].sort((a,b)=>a.number-b.number);
@@ -607,6 +625,7 @@ document.addEventListener('click',async e=>{
   const a=t.dataset.action;
   switch(a){
     case 'goto':view={name:t.dataset.view,q:''};render();window.scrollTo(0,0);break;
+    case 'open-entry':view={name:'entry',entryId:t.dataset.id,q:''};render();window.scrollTo(0,0);break;
     case 'open-painting':view={name:'painting',paintingId:t.dataset.id,q:''};render();window.scrollTo(0,0);break;
     case 'new-entry':
       if(!state.paintings.length){toast('Create a painting first');openPaintingForm();}
@@ -1249,5 +1268,6 @@ body.locked #install-btn{display:none!important}
   .etools .icon-btn{font-size:17px;padding:9px 10px}
 }
 </style>
+  <style>.entry[data-action]{cursor:pointer}</style>
 </body>
 </html>
