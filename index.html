@@ -687,10 +687,6 @@ case 'goto':view={name:t.dataset.view,q:'',wq:'',tlDir:view.tlDir,wkDir:view.wkD
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
 else{navigator.clipboard.writeText(shareText+'\n'+location.href).then(()=>toast('🔗 Copied — paste it anywhere'));}}
 break;}
-    case 'edit-entry':openComposer(t.dataset.id);break;
-    case 'delete-entry':
-      if(confirm('Delete this entry?')){state.entries=state.entries.filter(x=>x.id!==t.dataset.id);if(await save()){closeModal();render();toast('Entry deleted');}}
-      break;
     case 'new-painting':openPaintingForm();break;
           case 'share-work':{const sp=getP(t.dataset.id);
       if(sp){const shareText=(sp.number?''+pad2(sp.number)+' — ':'')+sp.title+' · Provenance, an art journal';
@@ -3774,6 +3770,20 @@ function syncSpeedIco(){
     el.title=label;el.setAttribute('aria-label',label);
   }
 }
+</script>
+<script>
+/* ---- Speed creature wiring: inject icon, sync on tap & remix ---- */
+(function(){
+var _vh9=viewerHTML;
+viewerHTML=function(){
+return _vh9().replace('>↻</button>','>↻</button><span id="vspeed-ico" style="margin-left:12px;font-size:15px;line-height:1;opacity:.85" aria-label="Current movement speed"></span>');
+};
+var _dv3=drawViewer;
+drawViewer=function(){_dv3.apply(this,arguments);syncSpeedIco();};
+document.addEventListener('click',function(e){
+if(e.target.closest('#viewer-canvas'))syncSpeedIco();
+});
+})();
 </script>
 </body>
 </html>
