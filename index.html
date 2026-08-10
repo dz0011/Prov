@@ -1624,5 +1624,61 @@ document.addEventListener('click',function(e){
   else if(a==='viewer-remix'){drawViewer();toast('↻ Remixed');if(m)m.classList.remove('open');}
 });
 </script>
+<style>
+/* ---- Entry tools: identical placement on Timeline AND Work pages ---- */
+.entry{position:relative}
+.entry-top{position:static}
+.entry .etools{position:absolute;top:26px;right:0;bottom:auto;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;gap:10px;padding-right:6px}
+/* ---- Seamless header → body blend (light) ---- */
+body,.top{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(900px 500px at 92% -80px, hsla(calc(205 + var(--hue-shift,0)),45%,60%,.16), transparent 60%),
+    radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),50%,45%,.13), transparent 60%),
+    radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),35%,28%,.13), transparent 60%),
+    radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.6), transparent 60%);
+  background-attachment:fixed;
+}
+.top{box-shadow:none}
+/* ---- Seamless header → body blend (dark) ---- */
+body.dark,body.dark .top{
+  background-color:#191A20;
+  background-image:
+    radial-gradient(900px 500px at 92% -80px, hsla(calc(205 + var(--hue-shift,0)),50%,55%,.18), transparent 60%),
+    radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),55%,52%,.13), transparent 60%),
+    radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),40%,42%,.14), transparent 60%),
+    radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.05), transparent 60%);
+  background-attachment:fixed;
+  box-shadow:none;
+}
+</style>
+<script>
+/* ---- Light/Dark option inside the ⚙ settings menu ---- */
+(function(){
+  function themeBtnLabel(){return document.body.classList.contains('dark')?'☀️ Switch to light mode':'🌙 Switch to dark mode';}
+  function syncThemeUI(){
+    var b=document.querySelector('[data-action="theme-toggle-menu"]');
+    if(b)b.innerHTML=themeBtnLabel();
+  }
+  var menu=document.getElementById('menu');
+  if(menu&&!menu.querySelector('[data-action="theme-toggle-menu"]')){
+    var anchor=menu.querySelector('[data-action="studio-book"]')||menu.querySelector('[data-action="sign-out"]');
+    var b=document.createElement('button');
+    b.dataset.action='theme-toggle-menu';
+    b.innerHTML=themeBtnLabel();
+    menu.insertBefore(b,anchor);
+  }
+  new MutationObserver(syncThemeUI).observe(document.body,{attributes:true,attributeFilter:['class']});
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('[data-action="theme-toggle-menu"]');if(!t)return;
+    var dark=!document.body.classList.contains('dark');
+    document.body.classList.toggle('dark',dark);
+    try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+    var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+    if(typeof view!=='undefined'&&view.name==='viewer'&&typeof drawViewer==='function')drawViewer();
+    var mm=document.getElementById('menu');if(mm)mm.classList.remove('open');
+  });
+})();
+</script>
 </body>
 </html>
