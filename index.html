@@ -2753,14 +2753,38 @@ function drawViewer(){
           var hex='#'+[rr,gg,bb].map(function(vv){return Math.round(vv/nn).toString(16).padStart(2,'0');}).join('');
           w.pal.push(hex);
         }catch(e3){}
-        if(!vPlaying)paintCurrent();
-      };
-      im.src=pa.src;
-    });
-  });
-  vT=0;vT0=performance.now();vLast=0;
   if(vPlaying){vRaf=requestAnimationFrame(vLoop);}else{paintCurrent();}
   syncSaveBtn();
+}
+</script>
+<style>
+/* ---- Wordmark gradient spread evenly from the very first letters ---- */
+.brand-name .s1{color:#23242B;-webkit-text-fill-color:#23242B}
+.brand-name .s2{color:#3A454C;-webkit-text-fill-color:#3A454C}
+.brand-name .s3{color:#51666E;-webkit-text-fill-color:#51666E}
+.brand-name .s4{color:#68878F;-webkit-text-fill-color:#68878F}
+.brand-name .s5{color:#7FA8B0;-webkit-text-fill-color:#7FA8B0}
+body.dark .brand-name .s1{color:#F4F1E8;-webkit-text-fill-color:#F4F1E8}
+body.dark .brand-name .s2{color:#DBE2DE;-webkit-text-fill-color:#DBE2DE}
+body.dark .brand-name .s3{color:#C2D4D4;-webkit-text-fill-color:#C2D4D4}
+body.dark .brand-name .s4{color:#A8C5C9;-webkit-text-fill-color:#A8C5C9}
+body.dark .brand-name .s5{color:#8FB6BF;-webkit-text-fill-color:#8FB6BF}
+</style>
+<script>
+/* ---- Viewer chrome: silent pause, no save button, no hint, symbol-only refresh ---- */
+function viewerHTML(){
+  return '<div class="page-head"><div><h1 class="display">Viewer</h1>'
+    +'<p class="sub">An original view of your oeuvre — arranged anew every refresh.</p></div>'
+    +'<div class="menu-wrap"><button class="icon-btn" data-action="viewer-menu" title="Viewer options" style="font-size:20px;padding:8px">⋮</button>'
+    +'<div class="menu" id="viewer-menu" style="background:var(--card);border-color:var(--line)">'
+    +'<button data-action="viewer-download" style="color:var(--ink)">⬇ Download image</button>'
+    +'</div></div></div>'
+    +(state.paintings.length
+      ?'<div class="card" style="padding:10px"><canvas id="viewer-canvas" style="width:100%;display:block;border-radius:8px;cursor:pointer" aria-label="Living artwork made from your journal — tap to pause or play"></canvas></div>'
+       +'<div style="display:flex;justify-content:center;align-items:center;margin-top:14px">'
+       +'<button class="btn ghost" data-action="viewer-remix" aria-label="Refresh this view" title="Refresh this view" style="border-radius:999px;padding:10px 26px;font-size:15px;line-height:1">↻</button>'
+       +'</div>'
+      :'<div class="empty small">Add works and entries and your oeuvre will be remixed here.</div>');
 }
 </script>
 </body>
