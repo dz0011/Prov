@@ -502,8 +502,8 @@ function openComposer(entryId,presetPainting){
     +'<label>Work</label><div class="rowflex"><select name="paintingId">'
     +'<option value="" disabled '+(selVal?'':'selected')+'>Choose a work…</option>'
     +ps.map(p=>'<option value="'+p.id+'" '+(p.id===selVal?'selected':'')+'>'+esc(pLabel(p))+'</option>').join('')
-    +'</select><button type="button" class="btn ghost" data-action="new-painting-from-composer">+ New</button></div>'
-        +'<label>Date &amp; time</label><input type="datetime-local" name="date" value="'+toLocalInput(e?new Date(e.date):new Date())+'">'
++(ps.length?'':'<p class="hint" style="margin:6px 0 0">No works yet — tap “+ New” to create one, then save this entry to it.</p>')        
+  +'<label>Date &amp; time</label><input type="datetime-local" name="date" value="'+toLocalInput(e?new Date(e.date):new Date())+'">'
     +'<label>Notes</label><textarea name="text" placeholder="What changed in this session? Mixes, decisions, what to try next…">'+(e?esc(e.text||''):'')+'</textarea>'
     +'<label>Photos</label><div class="thumbs" id="draft-images"></div>'
     +'<label class="file-btn" for="entry-photos">＋ Add photos…</label><input type="file" id="entry-photos" accept="image/*" multiple hidden data-role="entry-photos">'
@@ -675,10 +675,9 @@ document.addEventListener('click',async e=>{
 case 'goto':view={name:t.dataset.view,q:'',wq:'',tlDir:view.tlDir,wkDir:view.wkDir};render();window.scrollTo(0,0);break;
     case 'open-entry':view={name:'entry',entryId:t.dataset.id,q:''};render();window.scrollTo(0,0);break;
     case 'open-painting':view={name:'painting',paintingId:t.dataset.id,q:''};render();window.scrollTo(0,0);break;
-    case 'new-entry':
-      if(!state.paintings.length){toast('Create a painting first');openPaintingForm();}
-      else openComposer(null,t.dataset.painting||null);
-      break;
+   case 'new-entry':
+openComposer(null,t.dataset.painting||null);
+break;
           case 'share-entry':{const se=state.entries.find(x=>x.id===t.dataset.id);
       if(se){const sp=getP(se.paintingId);
         let shareText=(sp?(sp.number?''+pad2(sp.number)+' — ':'')+sp.title:'Studio session')+' · '+fmtShort(se.date);
@@ -4303,7 +4302,16 @@ ov.style.opacity='0';
 setTimeout(function(){busy=false;},1500);
 },1000);
 });
-})();
+}
 </script>
+<style>
+/* ---- Viewer pill: a little more breathing room from Works ---- */
+.tab.tab-viewer{margin-left:28px}
+/* ---- Timeline/Works labels: bright but calm — no shimmer ---- */
+.tab[data-view="timeline"],.tab[data-view="paintings"]{animation:none!important}
+/* ---- Dark mode: far more translucent track & knob behind the labels ---- */
+body.dark .tabs{background:rgba(255,255,255,.07)}
+body.dark .tabs::before{background:rgba(242,241,236,.14);box-shadow:none}
+</style>
 </body>
 </html>
