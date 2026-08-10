@@ -2547,5 +2547,14 @@ body.locked #install-btn{display:none!important}
   <style>.entry[data-action]{cursor:pointer}</style>
 </body>
 </html>
+  <style>
+.bar{position:relative}
+.bar .btn.primary{position:absolute;right:16px;top:calc(100% - 4px);z-index:45;background:#E8547E;box-shadow:0 6px 16px -4px rgba(176,58,96,.6),0 2px 0 #B03A60;border-radius:16px;padding:12px 18px}
+.bar .btn.primary:hover{background:#F0699A;transform:none}
+.bar .btn.primary span:first-child{font-size:26px;line-height:1}
+@media(max-width:640px){
+  .bar .btn.primary{width:56px;height:56px;padding:0;justify-content:center;border-radius:50%}
+}
+</style>
 </body>
 </html>
