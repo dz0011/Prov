@@ -358,14 +358,18 @@ function render(){
 }
 function filteredEntries(){
   let es=[...state.entries].sort((a,b)=>a.date<b.date?1:-1);
+  if(view.tlDir==='asc')es.reverse();
   const q=(view.q||'').trim().toLowerCase();
   if(!q)return es;
   return es.filter(e=>{const p=getP(e.paintingId);const hay=[e.text,e.stage,p?(p.title+' '+p.number):''].join(' ').toLowerCase();return hay.includes(q);});
 }
 function timelineHTML(){
+  const asc=view.tlDir==='asc';
   return '<div class="page-head"><div><h1 class="display">Studio timeline</h1>'
-    +'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('work','works',state.paintings.length)+' · newest first</p></div>'
-    +(state.paintings.length?'<input id="tl-search" class="search" type="search" autocomplete="off" placeholder="Search notes, entries…" value="'+esc(view.q)+'">':'')
+    +'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('work','works',state.paintings.length)+' · '+(asc?'oldest first':'newest first')+'</p></div>'
+    +(state.paintings.length?'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      +'<button class="btn ghost sort-btn" data-action="tl-sort">'+(asc?'↓ Newest first':'↑ Oldest first')+'</button>'
+      +'<input id="tl-search" class="search" type="search" autocomplete="off" placeholder="Search notes, entries…" value="'+esc(view.q)+'"></div>':'')
     +'</div><div id="tl-list">'+timelineListHTML(filteredEntries())+'</div>';
 }
 function timelineListHTML(entries){
@@ -414,11 +418,25 @@ function entryCardHTML(e,i){
     +(e.text?'<section class="card" style="padding:18px 20px;margin-bottom:14px"><p class="etext" style="margin:0">'+esc(e.text)+'</p></section>':'')
     +(imgs.length?'<section><h3 class="h3">Photos</h3><div class="thumbs">'+imgs.map((src,j)=>'<button class="thumb" style="width:150px;height:112px" data-action="lightbox" data-entry="'+e.id+'" data-idx="'+j+'"><img src="'+src+'" alt="" loading="lazy"></button>').join('')+'</div></section>':'');
 }
+function filteredPaintings(){
+  let ps=[...state.paintings];
+  if(view.wkDir==='new')ps.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+  const q=(view.wq||'').trim().toLowerCase();
+  if(!q)return ps;
+  return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));
+}
+function wkGridHTML(ps){
+  return ps.length?'<div class="pgrid">'+ps.map((p,i)=>pcardHTML(p,i)).join('')+'</div>':'<div class="empty small">Nothing matches that search.</div>';
+}
 function paintingsHTML(){
-  const ps=[...state.paintings].sort((a,b)=>a.number-b.number);
-  return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+ps.length+' in the catalog</p></div>'
-    +'</div>'
-    +(ps.length?'<div class="pgrid">'+ps.map((p,i)=>pcardHTML(p,i)).join('')+'</div>':emptyStudioHTML());
+  if(!state.paintings.length)return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">0 in the catalog</p></div></div>'+emptyStudioHTML();
+  const rev=view.wkDir==='new';
+  return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+state.paintings.length+' in the catalog · '+(rev?'newest first':'by number')+'</p></div>'
+    +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    +'<button class="btn ghost sort-btn" data-action="wk-sort">'+(rev?'↑ By number':'↓ Newest first')+'</button>'
+    +'<input id="wk-search" class="search search-sm" type="search" autocomplete="off" placeholder="Search works…" value="'+esc(view.wq||'')+'"></div>'
+    +'</div><div id="wk-grid">'+wkGridHTML(filteredPaintings())+'</div>';
 }
 function pcardHTML(p,i){
   const es=entriesOf(p.id);
@@ -654,7 +672,7 @@ document.addEventListener('click',async e=>{
   if(!t)return;
   const a=t.dataset.action;
   switch(a){
-    case 'goto':view={name:t.dataset.view,q:''};render();window.scrollTo(0,0);break;
+case 'goto':view={name:t.dataset.view,q:'',wq:'',tlDir:view.tlDir,wkDir:view.wkDir};render();window.scrollTo(0,0);break;
     case 'open-entry':view={name:'entry',entryId:t.dataset.id,q:''};render();window.scrollTo(0,0);break;
     case 'open-painting':view={name:'painting',paintingId:t.dataset.id,q:''};render();window.scrollTo(0,0);break;
     case 'new-entry':
@@ -1515,14 +1533,6 @@ body.dark .auth-wrap{background:
   if(saved) apply(saved);
   document.addEventListener('click', function(e){
     // Never toggle when tapping anything interactive or any card/image
-    if(e.target.closest('button, a, input, select, textarea, label, .menu, .tabs, .modal-layer, #lightbox, .auth-wrap, .card, .entry, .pcard, .thumb, .chip, .film, img, .search, .empty, .panel, #install-btn')) return;
-    var inHeader = !!e.target.closest('.top');
-    var onBackground = (e.target===document.body || !!e.target.closest('main') || !!e.target.closest('.foot'));
-    if(!inHeader && !onBackground) return;
-    var t = document.body.classList.contains('dark') ? 'light' : 'dark';
-    try{localStorage.setItem(KEY,t);}catch(e2){}
-    apply(t);
-  });
 })();
 </script>
 <style>
@@ -1873,39 +1883,6 @@ body.dark .top::after{
 /* ---- Slow crossfade layer for the wordmark theme toggle ---- */
 #theme-fade{position:fixed;inset:0;z-index:200;pointer-events:none;opacity:0}
 </style>
-<script>
-/* ---- Provenance wordmark: slow-paced light/dark toggle when already on Timeline ---- */
-(function(){
-  var busy=false;
-  function slowThemeToggle(){
-    if(busy)return;busy=true;
-    var dark=!document.body.classList.contains('dark');
-    var ov=document.getElementById('theme-fade');
-    if(!ov){ov=document.createElement('div');ov.id='theme-fade';document.body.appendChild(ov);}
-    ov.style.background=dark
-      ?'radial-gradient(90% 70% at 50% 42%, #23242B 0%, #191A20 70%)'
-      :'radial-gradient(90% 70% at 50% 42%, #FCFBF7 0%, #F2F1EC 70%)';
-    ov.style.transition='none';ov.style.opacity='0';
-    void ov.offsetWidth;
-    ov.style.transition='opacity .75s ease-in';
-    ov.style.opacity='1';
-    setTimeout(function(){
-      document.body.classList.toggle('dark',dark);
-      try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e){}
-      var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
-      if(typeof view!=='undefined'&&view.name==='viewer'&&typeof drawViewer==='function')drawViewer();
-      ov.style.transition='opacity 1.15s ease-out';
-      ov.style.opacity='0';
-      setTimeout(function(){busy=false;},1200);
-    },780);
-  }
-  document.addEventListener('click',function(e){
-    if(!e.target.closest('.brand'))return;
-    if(typeof view==='undefined'||view.name!=='timeline')return;
-    slowThemeToggle();
-  });
-})();
-</script>
 <style>
 /* ---- Viewer pill: special, but quieter than the essential pair ---- */
 .tab.tab-viewer{
@@ -2128,9 +2105,89 @@ document.addEventListener('click',function(e){
       a.download='provenance-viewer-'+new Date().toISOString().slice(0,10)+'.jpg';
       a.click();toast('💾 Viewer image saved');
     }
-    var m=document.getElementById('viewer-menu');if(m)m.classList.remove('open');
+       var m=document.getElementById('viewer-menu');if(m)m.classList.remove('open');
   }
 });
+</script>
+<style>
+/* ---- Small, quiet sort + works-search controls ---- */
+.sort-btn{padding:7px 12px;font-size:12.5px;border-radius:999px;opacity:.85}
+.search-sm{min-width:0;width:170px;font-size:13px;padding:8px 14px;opacity:.85}
+.search-sm:focus{opacity:1}
+/* ---- Viewer: no circle, no fill — just curvy, blurred, colorful text ---- */
+.tab.tab-viewer{
+  border:0;box-shadow:none;text-shadow:none;
+  background-color:transparent;
+  background-image:linear-gradient(120deg,
+    hsla(calc(205 + var(--hue-shift,0)),55%,42%,.8),
+    hsla(calc(18 + var(--hue-shift,0)),55%,45%,.8) 35%,
+    hsla(calc(152 + var(--hue-shift,0)),45%,34%,.8) 70%,
+    hsla(calc(205 + var(--hue-shift,0)),55%,42%,.8));
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  border-radius:47% 53% 50% 50%/52% 48% 55% 45%;
+  padding:8px 16px;
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  opacity:.85;
+  animation:viewshimmer 9s ease-in-out infinite;
+}
+.tab.tab-viewer:hover{opacity:1;color:transparent}
+.tab.tab-viewer.active{opacity:1;color:transparent;box-shadow:0 0 0 1.5px hsla(calc(205 + var(--hue-shift,0)),50%,45%,.30)}
+body.dark .tab.tab-viewer{color:transparent;-webkit-text-fill-color:transparent;border:0;
+  background-image:linear-gradient(120deg,
+    hsla(calc(205 + var(--hue-shift,0)),60%,68%,.85),
+    hsla(calc(18 + var(--hue-shift,0)),60%,62%,.85) 35%,
+    hsla(calc(152 + var(--hue-shift,0)),50%,55%,.85) 70%,
+    hsla(calc(205 + var(--hue-shift,0)),60%,68%,.85));}
+body.dark .tab.tab-viewer.active{color:transparent;-webkit-text-fill-color:transparent;box-shadow:0 0 0 1.5px hsla(calc(205 + var(--hue-shift,0)),60%,70%,.35)}
+</style>
+<script>
+/* ---- Sort toggles + works search ---- */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-action]');if(!t)return;
+  if(t.dataset.action==='tl-sort'){view.tlDir=view.tlDir==='asc'?'desc':'asc';render();}
+  else if(t.dataset.action==='wk-sort'){view.wkDir=view.wkDir==='new'?'num':'new';render();}
+});
+document.addEventListener('input',function(e){
+  if(e.target.id==='wk-search'){view.wq=e.target.value;var g=document.getElementById('wk-grid');if(g)g.innerHTML=wkGridHTML(filteredPaintings());}
+});
+/* ---- Header theme controls: around the wordmark = instant, on the wordmark = slow easter egg ---- */
+(function(){
+  var busy=false;
+  function setTheme(dark){
+    document.body.classList.toggle('dark',dark);
+    try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e){}
+    var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+    if(typeof view!=='undefined'&&view.name==='viewer'&&typeof paintCurrent==='function'&&!vPlaying)paintCurrent();
+  }
+  function slowToggle(){
+    if(busy)return;busy=true;
+    var dark=!document.body.classList.contains('dark');
+    var ov=document.getElementById('theme-fade');
+    if(!ov){ov=document.createElement('div');ov.id='theme-fade';document.body.appendChild(ov);}
+    ov.style.background=dark
+      ?'radial-gradient(90% 70% at 50% 42%, #23242B 0%, #191A20 70%)'
+      :'radial-gradient(90% 70% at 50% 42%, #FCFBF7 0%, #F2F1EC 70%)';
+    ov.style.transition='none';ov.style.opacity='0';
+    void ov.offsetWidth;
+    ov.style.transition='opacity .75s ease-in';
+    ov.style.opacity='1';
+    setTimeout(function(){
+      setTheme(dark);
+      ov.style.transition='opacity 1.15s ease-out';
+      ov.style.opacity='0';
+      setTimeout(function(){busy=false;},1200);
+    },780);
+  }
+  document.addEventListener('click',function(e){
+    if(typeof view==='undefined'||view.name!=='timeline')return;
+    if(e.target.closest('.brand')){slowToggle();return;}
+    if(e.target.closest('.top')&&!e.target.closest('button, a, input, .menu, .tabs')){
+      setTheme(!document.body.classList.contains('dark'));
+    }
+  });
+})();
 </script>
 </body>
 </html>
