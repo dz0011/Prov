@@ -4075,6 +4075,92 @@ pushSentinel();
 }
 });
 pushSentinel();
+}
+</script>
+<style>
+/* ---- Dark mode: keep the sign-in title & logo bright and colorful ---- */
+body.dark .auth-card .display .s1{color:#F6F4EE;-webkit-text-fill-color:#F6F4EE}
+body.dark .auth-card .display .s2{color:#9BE0DA;-webkit-text-fill-color:#9BE0DA}
+body.dark .auth-card .display .s3{color:#FFC65C;-webkit-text-fill-color:#FFC65C}
+body.dark .auth-card .display .s4{color:#FF8A66;-webkit-text-fill-color:#FF8A66}
+body.dark .auth-card .display .s5{color:#8FA2FF;-webkit-text-fill-color:#8FA2FF}
+body.dark .auth-card .dabs{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 64'%3E%3Cpath d='M10 52 Q44 45 88 50' stroke='%23E0D5C0' stroke-width='2.5' fill='none' opacity='.7'/%3E%3Cg filter='url(%23b)' transform='skewX(-6)'%3E%3Crect x='14' y='20' width='66' height='11' fill='%237C8CFF'/%3E%3Crect x='22' y='33' width='66' height='11' fill='%23FF8A66'/%3E%3Crect x='12' y='45' width='52' height='8' fill='%23FFC65C'/%3E%3C/g%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='2.2'/%3E%3C/filter%3E%3Cpath d='M12 12 C36 3 62 9 86 6 C62 15 36 13 12 12 Z' fill='%23F6F4EE'/%3E%3Cpath d='M62 38 c7 -7 16 -5 18 2 c2 7 -7 11 -13 9 c-7 -2 -9 -7 -5 -11 z' fill='%23FFC65C' stroke='%23F6F4EE' stroke-width='2'/%3E%3C/svg%3E") center/contain no-repeat}
+/* ---- Pause the heavy painted backdrop while typing (prevents keyboard freezes) ---- */
+body.auth-typing .auth-wrap::before{animation-play-state:paused}
+</style>
+<script>
+/* ============ Guest mode: try everything without an account ============ */
+function isGuest(){try{return localStorage.getItem('provenance.guest')==='1';}catch(e){return false;}}
+async function loadJournal(){
+if(isGuest()){try{var raw=localStorage.getItem('provenance.local');state=raw?JSON.parse(raw):{paintings:[],entries:[]};}catch(e){state={paintings:[],entries:[]};}return;}
+if(!db)return;
+const{data:{user}}=await db.auth.getUser();
+if(!user)return;
+const{data,error}=await db.from('journals').select('data').eq('user_id',user.id).maybeSingle();
+if(error){toast('Could not load your journal');return;}
+state=(data&&data.data)?data.data:{paintings:[],entries:[]};
+}
+async function save(){
+if(isGuest()){try{localStorage.setItem('provenance.local',JSON.stringify(state));}catch(e){toast('⚠ Could not save on this device');return false;}return true;}
+if(!db)return false;
+const{data:{user}}=await db.auth.getUser();
+if(!user)return false;
+const{error}=await db.from('journals').upsert({user_id:user.id,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+if(error){toast('⚠ Could not save — check your connection');return false;}
+return true;
+}
+async function updateUserEmail(){
+var el=document.getElementById('user-email');
+if(isGuest()){if(el)el.textContent='Guest mode — saved on this device only';return;}
+if(!db)return;
+const{data:{user}}=await db.auth.getUser();
+if(el)el.textContent=user?(user.email||''):'';
+}
+function showAuth(){
+if(isGuest())return;
+$('#app-shell').style.display='none';$('#auth-screen').style.display='flex';document.body.classList.add('auth-screen-active');setAuthMsg('');
+}
+function startGuest(){
+try{localStorage.setItem('provenance.guest','1');}catch(e){}
+$('#auth-screen').style.display='none';
+document.body.classList.remove('auth-screen-active');
+$('#app-shell').style.display='block';
+document.body.classList.add('app-ready');
+updateUserEmail();
+loadJournal().then(function(){
+try{var v=JSON.parse(sessionStorage.getItem('provenance.view')||'null');if(v&&v.name)view=v;}catch(e){}
+render();
+toast('Guest mode — every feature works; saved on this device only');
+});
+}
+(function(){
+var card=document.querySelector('#auth-screen .auth-card');
+if(card&&!document.getElementById('guest-btn')){
+var b=document.createElement('button');
+b.id='guest-btn';b.type='button';b.className='btn ghost';
+b.style.cssText='width:100%;justify-content:center;margin-top:8px';
+b.textContent='▶ Try without an account';
+card.appendChild(b);
+var n=document.createElement('p');
+n.style.cssText='font-size:12px;line-height:1.5;color:var(--ink-soft);margin:10px 0 0;text-align:center';
+n.textContent='Guest mode lets you test every feature. Your journal is kept on this device only and will be lost unless you create an account.';
+card.appendChild(n);
+b.addEventListener('click',startGuest);
+}
+if(isGuest())startGuest();
+/* Pause the animated backdrop while typing on the sign-in screen */
+document.addEventListener('focusin',function(e){if(e.target.closest&&e.target.closest('.auth-card'))document.body.classList.add('auth-typing');});
+document.addEventListener('focusout',function(e){setTimeout(function(){var a=document.activeElement;if(!a||!a.closest||!a.closest('.auth-card'))document.body.classList.remove('auth-typing');},120);});
+/* Guest sign-out returns to the sign-in screen */
+document.addEventListener('click',function(e){
+if(!e.target.closest('[data-action="sign-out"]'))return;
+if(!isGuest())return;
+try{localStorage.removeItem('provenance.guest');}catch(e2){}
+state={paintings:[],entries:[]};
+$('#app-shell').style.display='none';
+$('#auth-screen').style.display='flex';
+document.body.classList.add('auth-screen-active');
+},true);
 })();
 </script>
 </body>
