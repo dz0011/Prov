@@ -685,7 +685,9 @@ case 'goto':view={name:t.dataset.view,q:'',wq:'',tlDir:view.tlDir,wkDir:view.wkD
         if(se.text)shareText+=' — "'+(se.text.length>140?se.text.slice(0,140)+'…':se.text)+'"';
         shareText+=' · Provenance, an art journal';
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
-        else{navigator.clipboard.writeText(shareText+'\n'+location.href).then(()=>toast('🔗 Copied — paste it anywhere'));}}
+else{navigator.clipboard.writeText(shareText+'\n'+location.href).then(()=>toast('🔗 Copied — paste it anywhere'));}}
+                              +location.href).
+          then(()=>toast('🔗 Copied — paste it anywhere'));}}
       break;}
     case 'edit-entry':openComposer(t.dataset.id);break;
     case 'delete-entry':
@@ -2732,9 +2734,13 @@ function drawViewer(){
           var nn=d.length/4;
           var hex='#'+[rr,gg,bb].map(function(vv){return Math.round(vv/nn).toString(16).padStart(2,'0');}).join('');
           w.pal.push(hex);
-        }catch(e3){}
-  if(vPlaying){vRaf=requestAnimationFrame(vLoop);}else{paintCurrent();}
-  syncSaveBtn();
+      }catch(e3){}
+if(vPlaying){vRaf=requestAnimationFrame(vLoop);}else{paintCurrent();}
+syncSaveBtn();
+};
+im.src=pa.src;
+});
+});
 }
 </script>
 <style>
@@ -3748,6 +3754,28 @@ document.addEventListener('click',function(e){
   var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
   if(typeof paintCurrent==='function'&&typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]===0)paintCurrent();
 });
+</script>
+<script>
+/* ---- Speed creature: blur-morphs between rock, turtle, rabbit, rocket ---- */
+function syncSpeedIco(){
+  var el=document.getElementById('vspeed-ico');if(!el)return;
+  var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));
+  var label=vSpeedIdx===0?'Stopped (tap to start)':'Speed '+vSpeedIdx+' of 10';
+  if(el.textContent!==ic){
+    if(el.animate){
+      el.animate([{filter:'blur(0px)',transform:'scale(1)',opacity:.85},
+                  {filter:'blur(6px)',transform:'scale(.6)',opacity:0}],
+                 {duration:150,easing:'ease-in'}).onfinish=function(){
+        el.textContent=ic;el.title=label;el.setAttribute('aria-label',label);
+        el.animate([{filter:'blur(6px)',transform:'scale(1.3)',opacity:0},
+                    {filter:'blur(0px)',transform:'scale(1)',opacity:.85}],
+                   {duration:230,easing:'ease-out'});
+      };
+    }else{el.textContent=ic;el.title=label;el.setAttribute('aria-label',label);}
+  }else{
+    el.title=label;el.setAttribute('aria-label',label);
+  }
+}
 </script>
 </body>
 </html>
