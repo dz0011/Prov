@@ -1515,7 +1515,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
   </header>
   <main id="view"></main>
   <footer class="foot">Provenance — your art journal.</footer>
-  <button class="fab" data-action="new-entry" aria-label="New entry">+</button>
+  <button class="fab" data-action="new-painting" aria-label="New work">+</button>
 </div>
 
 <div id="auth-screen" class="auth-wrap" style="display:none">
@@ -2569,6 +2569,15 @@ body { filter: hue-rotate(var(--hue-shift, 0deg)); }
 img, .pcover, .film img, .thumb img, .book-img, .entry-img, .book-film img, .lightbox img {
   filter: hue-rotate(calc(var(--hue-shift, 0deg) * -1)) !important;
 }
+</style>
+  <style>
+.bar .btn.primary{position:fixed;top:auto;right:18px;bottom:90px;z-index:50;width:58px;height:58px;padding:0;justify-content:center;border-radius:50%;background:#C4708C;box-shadow:0 8px 20px -6px rgba(150,80,105,.5)}
+.bar .btn.primary:hover{background:#CF7E99;transform:none}
+.bar .btn.primary .btn-label{display:none}
+.fab{width:58px;height:58px;font-size:26px;background:#C05B3C;box-shadow:0 10px 26px -6px rgba(150,70,45,.5)}
+.bar .btn.primary::before,.fab::before{position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8B877C;opacity:.7;white-space:nowrap;pointer-events:none}
+.bar .btn.primary::before{content:'New entry'}
+.fab::before{content:'New work'}
 </style>
 </body>
 </html>
