@@ -3803,6 +3803,38 @@ h=h.replace('</canvas></div>','</canvas><span id="vspeed-ico" style="position:ab
 return h;
 };
 })();
+}
 </script>
-</body>
-</html>
+<style>
+/* ---- Speed creature: frosted halo + soft shadow ---- */
+#vspeed-ico{
+border:0;cursor:pointer;font-size:15px;line-height:1;opacity:.92;
+padding:5px 9px;border-radius:999px;margin-left:2px;
+background:rgba(252,251,247,.35);
+-webkit-backdrop-filter:blur(5px) saturate(1.1);backdrop-filter:blur(5px) saturate(1.1);
+box-shadow:0 2px 10px rgba(20,18,12,.28), inset 0 0 0 1px rgba(20,18,12,.08);
+transition:transform .15s ease;
+}
+#vspeed-ico:active{transform:scale(.88)}
+body.dark #vspeed-ico{background:rgba(25,26,32,.4);box-shadow:0 2px 10px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.12)}
+</style>
+<script>
+/* ---- Speed creature v2: tappable, exponential speed curve ---- */
+(function(){
+var VS2=[0];
+for(var i=1;i<=10;i++){VS2.push(+(0.3*Math.pow(40,(i-1)/9)).toFixed(2));}
+VSPEEDS=VS2;
+var _vh11=viewerHTML;
+viewerHTML=function(){
+var h=_vh11();
+if(h.indexOf('vspeed-ico')===-1){
+h=h.replace('>↻</button>','>↻</button><button id="vspeed-ico" type="button" title="Speed" aria-label="Current movement speed">🪨</button>');
+}
+return h;
+};
+var _dv5=drawViewer;
+drawViewer=function(){_dv5.apply(this,arguments);syncSpeedIco();};
+document.addEventListener('click',function(e){
+if(e.target.closest('#vspeed-ico')){
+vSpeedIdx=(vSpeedIdx+1)%VSPEEDS.length;
+cancel
