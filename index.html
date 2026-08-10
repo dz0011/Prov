@@ -296,13 +296,13 @@ const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const pad2=n=>String(n).padStart(2,'0');
-const numTag=n=>n?'№ '+pad2(n):'';
+const numTag=n=>n?''+pad2(n):'';
 const pLabel=p=>{
   const name=(p.title&&p.title!=='Untitled')?p.title:(p.number?'Untitled':'Untitled work');
-  return p.number?('№ '+pad2(p.number)+' — '+name):name;
+  return p.number?(''+pad2(p.number)+' — '+name):name;
 };
-const bookNum=p=>p.number?('<div class="book-pnum">№ '+pad2(p.number)+'</div>'):'';
-const docsNum=p=>p.number?('<div class="pnum">№ '+pad2(p.number)+'</div>'):'';
+const bookNum=p=>p.number?('<div class="book-pnum">'+pad2(p.number)+'</div>'):'';
+const docsNum=p=>p.number?('<div class="pnum">'+pad2(p.number)+'</div>'):'';
 const plural=(s,p,n)=>n===1?s:p;
 const STAGES=['Sketch','Underpainting','Block-in','Working pass','Details','Adjustments','Varnished','Finished'];
 const MEDIUMS=['Oil','Acrylic','Watercolor','Gouache','Tempera','Ink','Pencil','Charcoal','Fiber arts','Quilting','Mixed media','Other'];
@@ -365,7 +365,7 @@ function timelineHTML(){
 }
 function timelineListHTML(entries){
   if(!state.paintings.length)return emptyStudioHTML();
-  if(!entries.length)return '<div class="empty small">'+(state.entries.length?'Nothing matches that search.':'No entries yet — hit <b>+ New entry</b> to log your first session.')+'</div>';
+  if(!entries.length)return '<div class="empty small">'+(state.entries.length?'Nothing matches that search.':'entries yet — hit <b>+ New entry</b> to log your first session.')+'</div>';
   let html='',lastDay='',i=0;
   for(const e of entries){
     const k=dayKey(e.date);
@@ -451,7 +451,7 @@ function paintingDetailHTML(id){
     +'</div></div>'
     +(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div></section>':'')
     +'<section><h3 class="h3">Work log · newest first</h3>'
-    +(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">No sessions logged yet.</div>')+'</section>';
+    +(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">sessions logged yet.</div>')+'</section>';
 }
 function emptyStudioHTML(){
   return '<div class="empty"><div class="dabs"><span class="dab" style="--c:var(--ultra)"></span><span class="dab" style="--c:var(--verm)"></span><span class="dab" style="--c:var(--ochre)"></span></div>'
@@ -500,7 +500,7 @@ async function onComposerSubmit(ev){
 }
 function renderDraftImages(){
   const box=document.getElementById('draft-images');if(!box||!draft)return;
-  box.innerHTML=draft.images.map((src,i)=>'<span class="thumb"><img src="'+src+'"><button type="button" class="thumb-x" data-action="remove-image" data-i="'+i+'">✕</button></span>').join('')||'<span class="hint">No photos yet</span>';
+  box.innerHTML=draft.images.map((src,i)=>'<span class="thumb"><img src="'+src+'"><button type="button" class="thumb-x" data-action="remove-image" data-i="'+i+'">✕</button></span>').join('')||'<span class="hint">photos yet</span>';
 }
 function renderDraftColors(){
   const box=document.getElementById('draft-colors');if(!box||!draft)return;
@@ -636,7 +636,7 @@ document.addEventListener('click',async e=>{
       break;
           case 'share-entry':{const se=state.entries.find(x=>x.id===t.dataset.id);
       if(se){const sp=getP(se.paintingId);
-        let shareText=(sp?(sp.number?'№ '+pad2(sp.number)+' — ':'')+sp.title:'Studio session')+' · '+fmtShort(se.date);
+        let shareText=(sp?(sp.number?''+pad2(sp.number)+' — ':'')+sp.title:'Studio session')+' · '+fmtShort(se.date);
         if(se.text)shareText+=' — "'+(se.text.length>140?se.text.slice(0,140)+'…':se.text)+'"';
         shareText+=' · Provenance, an art journal';
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
@@ -648,7 +648,7 @@ document.addEventListener('click',async e=>{
       break;
     case 'new-painting':openPaintingForm();break;
           case 'share-work':{const sp=getP(t.dataset.id);
-      if(sp){const shareText=(sp.number?'№ '+pad2(sp.number)+' — ':'')+sp.title+' · Provenance, an art journal';
+      if(sp){const shareText=(sp.number?''+pad2(sp.number)+' — ':'')+sp.title+' · Provenance, an art journal';
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
         else{navigator.clipboard.writeText(location.href).then(()=>toast('🔗 Link copied — paste it anywhere'));}}
       break;}
@@ -840,7 +840,7 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
         <button class="btn ghost" data-action="export-choose" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
         <button class="btn ghost" data-action="export-choose" data-mode="paintings" style="justify-content:flex-start">🎨 Works catalog</button>
         <button class="btn ghost" data-action="export-choose" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="export-choose" data-mode="current" style="justify-content:flex-start">🖼 This work — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        ${currentP ? `<button class="btn ghost" data-action="export-choose" data-mode="current" style="justify-content:flex-start">🖼 This work — ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
       </div>
     </div></div>`);
   }
@@ -866,7 +866,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
         <button class="btn ghost" data-action="download-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
         <button class="btn ghost" data-action="download-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Works catalog</button>
         <button class="btn ghost" data-action="download-docs" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="download-docs" data-mode="current" style="justify-content:flex-start">🖼 This work — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        ${currentP ? `<button class="btn ghost" data-action="download-docs" data-mode="current" style="justify-content:flex-start">🖼 This work — ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
       </div>
     </div></div>`);
   }
@@ -942,7 +942,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
           <div class="book-pmeta">Started ${fmtShort(first)} · ${es.length} ${plural('entry','entries',es.length)} · ${imgs.length} ${plural('photo','photos',imgs.length)}${last && first ? ' · ' + (Math.max(1, Math.round((new Date(last) - new Date(first)) / 864e5)) + 1) + ' days active' : ''}</div>
           ${cols.length ? `<div class="book-palette"><div class="book-section-label">Palette</div><div>${cols.map(c => `<span class="book-chip"><span class="book-dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div></div>` : ''}
           ${imgs.length ? `<div class="book-filmstrip"><div class="book-section-label">Progress</div><div class="book-filmgrid">${imgs.map(im => `<figure class="book-film"><img src="${im.src}" alt=""><figcaption>${fmtShort(im.date)}</figcaption></figure>`).join('')}</div></div>` : ''}
-          ${es.length ? `<div class="book-entries"><div class="book-section-label">Work log</div>${es.map(e => bookEntryHTML(e)).join('')}</div>` : '<p style="color:#9B988C;font-size:13px">No sessions logged yet.</p>'}
+          ${es.length ? `<div class="book-entries"><div class="book-section-label">Work log</div>${es.map(e => bookEntryHTML(e)).join('')}</div>` : '<p style="color:#9B988C;font-size:13px">sessions logged yet.</p>'}
         </section>`;
       }
     }
@@ -1038,7 +1038,7 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
               ${e.images && e.images.length ? `<div class="images">${e.images.map(src => `<img src="${src}" class="entry-img" alt="">`).join('')}</div>` : ''}
               ${entryCols.length ? `<div class="colors">${entryCols.map(c => `<span class="chip small"><span class="dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div>` : ''}
             </div>`;
-          }).join('')}` : '<p style="color:#9B988C">No sessions logged yet.</p>'}
+          }).join('')}` : '<p style="color:#9B988C">sessions logged yet.</p>'}
         </div>`;
       }
     }
@@ -1570,13 +1570,13 @@ const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const pad2=n=>String(n).padStart(2,'0');
-const numTag=n=>n?'№ '+pad2(n):'';
+const numTag=n=>n?''+pad2(n):'';
 const pLabel=p=>{
   const name=(p.title&&p.title!=='Untitled')?p.title:(p.number?'Untitled':'Untitled work');
-  return p.number?('№ '+pad2(p.number)+' — '+name):name;
+  return p.number?(''+pad2(p.number)+' — '+name):name;
 };
-const bookNum=p=>p.number?('<div class="book-pnum">№ '+pad2(p.number)+'</div>'):'';
-const docsNum=p=>p.number?('<div class="pnum">№ '+pad2(p.number)+'</div>'):'';
+const bookNum=p=>p.number?('<div class="book-pnum">'+pad2(p.number)+'</div>'):'';
+const docsNum=p=>p.number?('<div class="pnum">'+pad2(p.number)+'</div>'):'';
 const plural=(s,p,n)=>n===1?s:p;
 const STAGES=['Sketch','Underpainting','Block-in','Working pass','Details','Adjustments','Varnished','Finished'];
 const MEDIUMS=['Oil','Acrylic','Watercolor','Gouache','Tempera','Ink','Pencil','Charcoal','Fiber arts','Quilting','Mixed media','Other'];
@@ -1639,7 +1639,7 @@ function timelineHTML(){
 }
 function timelineListHTML(entries){
   if(!state.paintings.length)return emptyStudioHTML();
-  if(!entries.length)return '<div class="empty small">'+(state.entries.length?'Nothing matches that search.':'No entries yet — hit <b>+ New entry</b> to log your first session.')+'</div>';
+  if(!entries.length)return '<div class="empty small">'+(state.entries.length?'Nothing matches that search.':'entries yet — hit <b>+ New entry</b> to log your first session.')+'</div>';
   let html='',lastDay='',i=0;
   for(const e of entries){
     const k=dayKey(e.date);
@@ -1725,7 +1725,7 @@ function paintingDetailHTML(id){
     +'</div></div>'
     +(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div></section>':'')
     +'<section><h3 class="h3">Work log · newest first</h3>'
-    +(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">No sessions logged yet.</div>')+'</section>';
+    +(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">sessions logged yet.</div>')+'</section>';
 }
 function emptyStudioHTML(){
   return '<div class="empty"><div class="dabs"><span class="dab" style="--c:var(--ultra)"></span><span class="dab" style="--c:var(--verm)"></span><span class="dab" style="--c:var(--ochre)"></span></div>'
@@ -1774,7 +1774,7 @@ async function onComposerSubmit(ev){
 }
 function renderDraftImages(){
   const box=document.getElementById('draft-images');if(!box||!draft)return;
-  box.innerHTML=draft.images.map((src,i)=>'<span class="thumb"><img src="'+src+'"><button type="button" class="thumb-x" data-action="remove-image" data-i="'+i+'">✕</button></span>').join('')||'<span class="hint">No photos yet</span>';
+  box.innerHTML=draft.images.map((src,i)=>'<span class="thumb"><img src="'+src+'"><button type="button" class="thumb-x" data-action="remove-image" data-i="'+i+'">✕</button></span>').join('')||'<span class="hint">photos yet</span>';
 }
 function renderDraftColors(){
   const box=document.getElementById('draft-colors');if(!box||!draft)return;
@@ -1909,7 +1909,7 @@ document.addEventListener('click',async e=>{
       break;
           case 'share-entry':{const se=state.entries.find(x=>x.id===t.dataset.id);
       if(se){const sp=getP(se.paintingId);
-        let shareText=(sp?(sp.number?'№ '+pad2(sp.number)+' — ':'')+sp.title:'Studio session')+' · '+fmtShort(se.date);
+        let shareText=(sp?(sp.number?''+pad2(sp.number)+' — ':'')+sp.title:'Studio session')+' · '+fmtShort(se.date);
         if(se.text)shareText+=' — "'+(se.text.length>140?se.text.slice(0,140)+'…':se.text)+'"';
         shareText+=' · Provenance, an art journal';
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
@@ -1921,7 +1921,7 @@ document.addEventListener('click',async e=>{
       break;
     case 'new-painting':openPaintingForm();break;
           case 'share-work':{const sp=getP(t.dataset.id);
-      if(sp){const shareText=(sp.number?'№ '+pad2(sp.number)+' — ':'')+sp.title+' · Provenance, an art journal';
+      if(sp){const shareText=(sp.number?''+pad2(sp.number)+' — ':'')+sp.title+' · Provenance, an art journal';
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
         else{navigator.clipboard.writeText(location.href).then(()=>toast('🔗 Link copied — paste it anywhere'));}}
       break;}
@@ -2113,7 +2113,7 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
         <button class="btn ghost" data-action="export-choose" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
         <button class="btn ghost" data-action="export-choose" data-mode="paintings" style="justify-content:flex-start">🎨 Works catalog</button>
         <button class="btn ghost" data-action="export-choose" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="export-choose" data-mode="current" style="justify-content:flex-start">🖼 This work — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        ${currentP ? `<button class="btn ghost" data-action="export-choose" data-mode="current" style="justify-content:flex-start">🖼 This work — ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
       </div>
     </div></div>`);
   }
@@ -2139,7 +2139,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
         <button class="btn ghost" data-action="download-docs" data-mode="all" style="justify-content:flex-start">📚 Complete studio</button>
         <button class="btn ghost" data-action="download-docs" data-mode="paintings" style="justify-content:flex-start">🎨 Works catalog</button>
         <button class="btn ghost" data-action="download-docs" data-mode="timeline" style="justify-content:flex-start">🕐 Timeline only</button>
-        ${currentP ? `<button class="btn ghost" data-action="download-docs" data-mode="current" style="justify-content:flex-start">🖼 This work — № ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
+        ${currentP ? `<button class="btn ghost" data-action="download-docs" data-mode="current" style="justify-content:flex-start">🖼 This work — ${String(currentP.number).padStart(2,'0')} ${esc(currentP.title)}</button>` : ''}
       </div>
     </div></div>`);
   }
@@ -2215,7 +2215,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
           <div class="book-pmeta">Started ${fmtShort(first)} · ${es.length} ${plural('entry','entries',es.length)} · ${imgs.length} ${plural('photo','photos',imgs.length)}${last && first ? ' · ' + (Math.max(1, Math.round((new Date(last) - new Date(first)) / 864e5)) + 1) + ' days active' : ''}</div>
           ${cols.length ? `<div class="book-palette"><div class="book-section-label">Palette</div><div>${cols.map(c => `<span class="book-chip"><span class="book-dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div></div>` : ''}
           ${imgs.length ? `<div class="book-filmstrip"><div class="book-section-label">Progress</div><div class="book-filmgrid">${imgs.map(im => `<figure class="book-film"><img src="${im.src}" alt=""><figcaption>${fmtShort(im.date)}</figcaption></figure>`).join('')}</div></div>` : ''}
-          ${es.length ? `<div class="book-entries"><div class="book-section-label">Work log</div>${es.map(e => bookEntryHTML(e)).join('')}</div>` : '<p style="color:#9B988C;font-size:13px">No sessions logged yet.</p>'}
+          ${es.length ? `<div class="book-entries"><div class="book-section-label">Work log</div>${es.map(e => bookEntryHTML(e)).join('')}</div>` : '<p style="color:#9B988C;font-size:13px">sessions logged yet.</p>'}
         </section>`;
       }
     }
@@ -2311,7 +2311,7 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
               ${e.images && e.images.length ? `<div class="images">${e.images.map(src => `<img src="${src}" class="entry-img" alt="">`).join('')}</div>` : ''}
               ${entryCols.length ? `<div class="colors">${entryCols.map(c => `<span class="chip small"><span class="dab" style="--c:${esc(c.hex)}"></span>${esc(c.name || c.hex)}</span>`).join('')}</div>` : ''}
             </div>`;
-          }).join('')}` : '<p style="color:#9B988C">No sessions logged yet.</p>'}
+          }).join('')}` : '<p style="color:#9B988C">sessions logged yet.</p>'}
         </div>`;
       }
     }
