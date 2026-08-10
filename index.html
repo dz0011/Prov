@@ -413,7 +413,7 @@ function entryCardHTML(e,i){
 function paintingsHTML(){
   const ps=[...state.paintings].sort((a,b)=>a.number-b.number);
   return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+ps.length+' in the catalog</p></div>'
-    +'<button class="btn primary" data-action="new-painting">+ New work</button></div>'
+    +'</div>'
     +(ps.length?'<div class="pgrid">'+ps.map((p,i)=>pcardHTML(p,i)).join('')+'</div>':emptyStudioHTML());
 }
 function pcardHTML(p,i){
@@ -1509,15 +1509,14 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
             <button data-action="sign-out" class="danger">Sign out</button>
           </div>
         </div>
-        <button class="btn primary" data-action="new-entry"><span>+</span><span class="btn-label">New entry</span></button>
       </div>
     </div>
   </header>
   <main id="view"></main>
   <footer class="foot">Provenance — your art journal.</footer>
-  <button class="fab" data-action="new-painting" aria-label="New work">+</button>
 </div>
-
+<button class="float-btn entry-fab" data-action="new-entry" aria-label="New entry">+</button>
+<button class="float-btn work-fab" data-action="new-painting" aria-label="New work">+</button>
 <div id="auth-screen" class="auth-wrap" style="display:none">
   <div class="auth-card card">
     <div class="dabs" style="justify-content:center;margin-bottom:14px"><span class="dab" style="--c:var(--ultra)"></span><span class="dab" style="--c:var(--verm)"></span><span class="dab" style="--c:var(--ochre)"></span></div>
@@ -1687,7 +1686,7 @@ function entryCardHTML(e,i){
 function paintingsHTML(){
   const ps=[...state.paintings].sort((a,b)=>a.number-b.number);
   return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+ps.length+' in the catalog</p></div>'
-    +'<button class="btn primary" data-action="new-painting">+ New work</button></div>'
+    +'</div>'
     +(ps.length?'<div class="pgrid">'+ps.map((p,i)=>pcardHTML(p,i)).join('')+'</div>':emptyStudioHTML());
 }
 function pcardHTML(p,i){
@@ -2581,6 +2580,17 @@ img, .pcover, .film img, .thumb img, .book-img, .entry-img, .book-film img, .lig
 </style>
   <style>
 .pgrid .pcard{border-radius:0}
+</style>
+  <style>
+body{filter:none!important}
+#app-shell,#auth-screen,#setup-screen{filter:hue-rotate(var(--hue-shift,0deg))}
+#app-shell[style*="none"] ~ .float-btn{display:none!important}
+.float-btn{position:fixed;right:18px;z-index:50;width:58px;height:58px;border:0;border-radius:50%;color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+.entry-fab{bottom:90px;background:#C4708C;box-shadow:0 8px 20px -6px rgba(150,80,105,.5)}
+.work-fab{bottom:18px;background:#C05B3C;box-shadow:0 10px 26px -6px rgba(150,70,45,.5)}
+.float-btn::before{position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8B877C;opacity:.7;white-space:nowrap;pointer-events:none}
+.entry-fab::before{content:'New entry'}
+.work-fab::before{content:'New work'}
 </style>
 </body>
 </html>
