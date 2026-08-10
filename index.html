@@ -3784,6 +3784,25 @@ document.addEventListener('click',function(e){
 if(e.target.closest('#viewer-canvas'))syncSpeedIco();
 });
 })();
+}
+</script>
+<style>
+/* ---- Viewer fits the page: centered, capped, never gigantic ---- */
+.vframe{width:min(100%,620px);margin:0 auto}
+@media(max-width:640px){.vframe{width:calc(100% - 10px);margin:0 auto}}
+</style>
+<script>
+/* ---- Speed creature: perch it at the bottom-right of the frame ---- */
+(function(){
+var _vh10=viewerHTML;
+viewerHTML=function(){
+var h=_vh10();
+h=h.replace('<span id="vspeed-ico" style="margin-left:12px;font-size:15px;line-height:1;opacity:.85" aria-label="Current movement speed"></span>','');
+h=h.replace('<div class="vframe" style="','<div class="vframe" style="position:relative;');
+h=h.replace('</canvas></div>','</canvas><span id="vspeed-ico" style="position:absolute;right:12px;bottom:12px;font-size:17px;line-height:1;opacity:.92;text-shadow:0 1px 3px rgba(0,0,0,.45);pointer-events:none" aria-label="Current movement speed"></span></div>');
+return h;
+};
+})();
 </script>
 </body>
 </html>
