@@ -390,8 +390,7 @@ function entryCardHTML(e,i){
     +'<button class="chip pchip" data-action="open-painting" data-id="'+p.id+'"><b>'+numTag(p.number)+'</b>'+(p.title&&p.title!=='Untitled'?'<span>'+esc(p.title)+'</span>':(p.number?'':'<span>Untitled work</span>'))+'</button>'
     +'<span class="etime">'+fmtDateTime(e.date)+'</span>'
     +'<span class="etools"><button class="icon-btn" data-action="share-entry" data-id="'+e.id+'" title="Share">📤</button>'
-    +'<button class="icon-btn" data-action="edit-entry" data-id="'+e.id+'" title="Edit">✎</button>'
-    +'<button class="icon-btn" data-action="delete-entry" data-id="'+e.id+'" title="Delete">✕</button></span></div>'
+    +'<button class="icon-btn" data-action="edit-entry" data-id="'+e.id+'" title="Edit">✎</button></span></div>'
     +(e.text?'<p class="etext">'+esc(e.text)+'</p>':'')
     +(imgs?'<div class="thumbs">'+imgs+'</div>':'')
     +'</article>';
@@ -1430,6 +1429,18 @@ body{
 /* Kill every hue-rotate filter so photos are ALWAYS true color */
 body,#app-shell,#auth-screen,#setup-screen{filter:none!important}
 img,.pcover,.film img,.thumb img,.book-img,.entry-img,.book-film img,.lightbox img{filter:none!important}
+</style>
+<style>
+/* ---- FAB labels: darker text with a soft halo the same color as the entry boxes ---- */
+.float-btn::before{
+  color:var(--ink-soft);
+  opacity:1;
+  text-shadow:
+    0 1px 0 var(--card), 0 -1px 0 var(--card), 1px 0 0 var(--card), -1px 0 0 var(--card),
+    0 0 6px var(--card), 0 0 12px var(--card), 0 2px 8px var(--card);
+}
+/* ---- Timeline share/edit icons: start at the top, level with the date & time ---- */
+.etools{top:16px;bottom:auto;justify-content:flex-start}
 </style>
 </body>
 </html>
