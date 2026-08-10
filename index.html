@@ -3649,5 +3649,19 @@ body.dark.on-viewer .page-head .sub{
     hsl(calc(160 + var(--hue-shift,0)),60%,60%));
 }
 </style>
+<style>
+/* ---- Smooth switch: no hairline while the knob slides ---- */
+.tabs::before{
+  box-shadow:0 2px 6px rgba(15,15,20,.28);
+  transition:transform .45s cubic-bezier(.33,.8,.3,1);
+  will-change:transform;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+}
+.tabs:has(.tab[data-view="paintings"].active)::before{transform:translateX(100%) translateZ(0)}
+body.dark .tabs::before{box-shadow:0 2px 6px rgba(0,0,0,.4)}
+/* ---- Share/edit pair: midpoint centered in each card ---- */
+.entry .etools{top:0;bottom:0;justify-content:center}
+</style>
 </body>
 </html>
