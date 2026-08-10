@@ -543,8 +543,8 @@ function fileToDataURL(file){
 function openLightboxFromEntry(eid,idx){const e=state.entries.find(x=>x.id===eid);if(!e)return;
   const p=getP(e.paintingId);lbSet=(e.images||[]).map(src=>({src,cap:numTag(p?p.number:'?')+' · '+fmtDateTime(e.date)}));showLB(idx);}
 function openLightboxFromPainting(pid,idx){const p=getP(pid);if(!p)return;
-  lbSet=entriesOf(pid).flatMap(e=>(e.images||[]).map(src=>({src,cap:numTag(p.number)+' · '+fmtShort(e.date)})));
-  function showLB(i){
+  lbSet=entriesOf(pid).flatMap(e=>(e.images||[]).map(src=>({src,cap:numTag(p.number)+' · '+fmtShort(e.date)})));showLB(idx);}
+function showLB(i){
   lbIdx=(i+lbSet.length)%lbSet.length;const it=lbSet[lbIdx];
   $('#lightbox').innerHTML='<button class="lb-btn lb-close" data-action="lb-close">✕</button>'
     +(lbSet.length>1?'<button class="lb-btn lb-prev" data-action="lb-nav" data-d="-1">←</button><button class="lb-btn lb-next" data-action="lb-nav" data-d="1">→</button>':'')
