@@ -4014,7 +4014,7 @@ menu.insertBefore(b2,menu.querySelector('[data-action="sign-out"]'));
 }
 function meltLabel(){var on=document.body.classList.contains('viewer-melt');
 var b=document.querySelector('[data-action="viewer-melt"]');
-if(b)b.innerHTML=on?'🫠 Extra melty blending ✓':'🫠 Extra melty blending';}
+if(b)b.innerHTML=on?'🫠 Extra melty viewing ✓':'🫠 Extra melty viewing';}
 try{if(localStorage.getItem('provenance.melt')==='1')document.body.classList.add('viewer-melt');}catch(e){}
 meltLabel();
 document.addEventListener('click',function(e){
@@ -4027,7 +4027,7 @@ openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
 +'<p class="etext">• Each visit arranges your works — their photos, palettes and history — into a one-of-a-kind composition. No two are alike.</p>'
 +'<p class="etext">• Tap the painting (or the little creature at the right) to cycle its movement: 🪨 stopped →  slow →  lively → 🚀 wild, then back to rest.</p>'
 +'<p class="etext">• ↻ composes a brand-new arrangement; ⋮ downloads the current painting as an image.</p>'
-+'<p class="etext">• “Extra melty blending” in this menu softens all edges into wet, moldy washes.</p>'
++'<p class="etext">• “Extra melty viewing” in this menu softens all edges into wet, moldy washes.</p>'
 +'<p class="etext">• Before you add works, the wall hangs public-domain homages so it is never empty.</p>'
 +'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div>'
 +'</div></div>');
@@ -4259,6 +4259,51 @@ openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
 +'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div>'
 +'</div></div>');
 },true);
+</script>
+<script>
+/* ---- Guest button: rename, soften, succinct notice ---- */
+(function(){
+var btns=document.querySelectorAll('button');
+for(var i=0;i<btns.length;i++){
+var t=(btns[i].textContent||'').replace(/\s+/g,' ').trim();
+if(t.indexOf('Try on Guest Mode')!==-1||t.indexOf('Try without an account')!==-1){
+btns[i].textContent='Try on Guest Mode';
+btns[i].style.fontSize='12.5px';
+btns[i].style.color='var(--ink-soft)';
+btns[i].style.opacity='.9';
+var n=btns[i].nextElementSibling;
+if(n&&n.tagName==='P')n.textContent='Test everything — saved on this device until you create an account.';
+}
+}
+})();
+/* ---- Sign-in screen: tap the background to toggle light/dark (a touch slower) ---- */
+(function(){
+var busy=false;
+document.addEventListener('click',function(e){
+var auth=document.getElementById('auth-screen');
+if(!auth||getComputedStyle(auth).display==='none')return;
+if(e.target.closest('.auth-card, button, input, a, label'))return;
+if(busy)return;busy=true;
+var dark=!document.body.classList.contains('dark');
+var ov=document.getElementById('theme-fade');
+if(!ov){ov=document.createElement('div');ov.id='theme-fade';ov.style.cssText='position:fixed;inset:0;z-index:200;pointer-events:none;opacity:0';document.body.appendChild(ov);}
+ov.style.background=dark
+?'radial-gradient(90% 70% at 50% 42%, #23242B 0%, #191A20 70%)'
+:'radial-gradient(90% 70% at 50% 42%, #FCFBF7 0%, #F2F1EC 70%)';
+ov.style.transition='none';ov.style.opacity='0';
+void ov.offsetWidth;
+ov.style.transition='opacity 1s ease-in';
+ov.style.opacity='1';
+setTimeout(function(){
+document.body.classList.toggle('dark',dark);
+try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+ov.style.transition='opacity 1.4s ease-out';
+ov.style.opacity='0';
+setTimeout(function(){busy=false;},1500);
+},1000);
+});
+})();
 </script>
 </body>
 </html>
