@@ -3593,5 +3593,61 @@ document.addEventListener('click',function(e){
   }
 });
 </script>
+<style>
+/* ---- Bright, varying color for the tabs, page headings & Viewer sub ---- */
+@keyframes tabshift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.tab[data-view="timeline"],.tab[data-view="paintings"]{
+  background-image:linear-gradient(100deg,
+    hsl(calc(215 + var(--hue-shift,0)),75%,55%),
+    hsl(calc(15 + var(--hue-shift,0)),80%,58%) 45%,
+    hsl(calc(45 + var(--hue-shift,0)),85%,52%) 78%,
+    hsl(calc(160 + var(--hue-shift,0)),65%,48%))!important;
+  background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent!important;-webkit-text-fill-color:transparent!important;
+  animation:tabshift 8s ease-in-out infinite;
+}
+body.dark .tab[data-view="timeline"],body.dark .tab[data-view="paintings"]{
+  background-image:linear-gradient(100deg,
+    hsl(calc(215 + var(--hue-shift,0)),80%,68%),
+    hsl(calc(15 + var(--hue-shift,0)),85%,68%) 45%,
+    hsl(calc(45 + var(--hue-shift,0)),90%,62%) 78%,
+    hsl(calc(160 + var(--hue-shift,0)),70%,60%))!important;
+}
+#view .page-head .display{
+  background-image:linear-gradient(110deg,
+    hsl(calc(210 + var(--hue-shift,0)),65%,45%),
+    hsl(calc(160 + var(--hue-shift,0)),55%,38%) 30%,
+    hsl(calc(20 + var(--hue-shift,0)),72%,48%) 62%,
+    hsl(calc(275 + var(--hue-shift,0)),55%,48%));
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  animation:tabshift 10s ease-in-out infinite;
+}
+body.dark #view .page-head .display{
+  background-image:linear-gradient(110deg,
+    hsl(calc(210 + var(--hue-shift,0)),70%,66%),
+    hsl(calc(160 + var(--hue-shift,0)),60%,60%) 30%,
+    hsl(calc(20 + var(--hue-shift,0)),80%,66%) 62%,
+    hsl(calc(275 + var(--hue-shift,0)),60%,68%));
+}
+body.on-viewer .page-head .sub{
+  background-image:linear-gradient(100deg,
+    hsl(calc(210 + var(--hue-shift,0)),60%,45%),
+    hsl(calc(20 + var(--hue-shift,0)),70%,48%) 50%,
+    hsl(calc(160 + var(--hue-shift,0)),55%,40%));
+  background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  animation:tabshift 9s ease-in-out infinite;
+}
+body.dark.on-viewer .page-head .sub{
+  background-image:linear-gradient(100deg,
+    hsl(calc(210 + var(--hue-shift,0)),65%,66%),
+    hsl(calc(20 + var(--hue-shift,0)),75%,66%) 50%,
+    hsl(calc(160 + var(--hue-shift,0)),60%,60%));
+}
+</style>
 </body>
 </html>
