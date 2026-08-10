@@ -4163,5 +4163,102 @@ document.body.classList.add('auth-screen-active');
 },true);
 })();
 </script>
+<style>
+/* ---- Timeline/Works switch: nearly invisible track & knob ---- */
+.tabs{background:rgba(25,26,32,.05);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+body.dark .tabs{background:rgba(255,255,255,.06)}
+.tabs::before{background:rgba(25,26,32,.10);box-shadow:none}
+body.dark .tabs::before{background:rgba(255,255,255,.12);box-shadow:none}
+.tabs .tab{opacity:.78}
+.tabs .tab.active{opacity:1}
+/* ---- Keep Viewer on the same line on mobile ---- */
+@media(max-width:640px){
+.tabs{width:178px}
+.tab{padding:7px 8px;font-size:12.5px}
+.tab.tab-viewer{padding:6px 9px;font-size:12px;margin-left:0}
+.bar{gap:8px}
+}
+</style>
+<script>
+/* ---- Group tabs + Viewer so they never split lines ---- */
+(function(){
+var nav=document.querySelector('nav.tabs');
+var vb=document.querySelector('.tab-viewer');
+if(nav&&vb&&!document.getElementById('tabs-row')){
+var row=document.createElement('div');row.id='tabs-row';
+row.style.cssText='display:flex;align-items:center;gap:8px;min-width:0';
+nav.parentNode.insertBefore(row,nav);
+row.appendChild(nav);row.appendChild(vb);
+}
+})();
+/* ---- Museum wall: the Viewer plays even with zero works ---- */
+function museumScene(){
+var rnd=mulberry32((Math.random()*1e9)>>>0);
+var s={washes:[],marks:[],works:[],grain:[],blend:rnd()<.5?'multiply':'screen',vig:.06+rnd()*.16};
+var masters=[
+['#6E8FAC','#A7C4C8','#7FA88B','#C9B6D8','#E4CFA9'],
+['#1F3B73','#2C4F9E','#E8C34A','#8E9E5B','#20294F'],
+['#274B8F','#3C7DA6','#7FB2D9','#EDE6D6','#20294F'],
+['#D8402A','#F2B621','#2733C9','#F6F4EE','#23211E']];
+var shapes=['daub','patch','smear'];
+var pos=[[.28,.3],[.72,.28],[.3,.72],[.7,.7]];
+for(var m=0;m<4;m++){
+var pal=masters[m];
+s.washes.push({h:(parseInt(pal[0].slice(1),16))%360,fx:pos[m][0],fy:pos[m][1],fr:.3+rnd()*.2,sp:.03+rnd()*.03,ph:rnd()*6.28,amp:.02+rnd()*.02,al:.10+rnd()*.06});
+var w={pal:pal,shape:shapes[(rnd()*shapes.length)|0],hasColor:true,cx:pos[m][0],cy:pos[m][1],nodes:[],ctrl:[],patches:[]};
+var n=5+((rnd()*3)|0);
+for(var k=0;k<n;k++){
+var node={fx:pos[m][0]+(rnd()-.5)*.34,fy:pos[m][1]+(rnd()-.5)*.3,r:.016+rnd()*.03,col:pal[(rnd()*pal.length)|0],rot0:(rnd()-.5)*1.4,rots:(rnd()-.5)*.05,verts:[]};
+for(var v=0;v<10;v++)node.verts.push(.7+rnd()*.55);
+w.nodes.push(node);
+if(k>0)w.ctrl.push({dx:(rnd()-.5)*.1,dy:(rnd()-.5)*.1});
+}
+s.works.push(w);
+}
+for(var i=0;i<140;i++)s.grain.push({fx:rnd(),fy:rnd(),r:.5+rnd()*2,a:.025+rnd()*.05,light:rnd()<.5});
+return s;
+}
+var _bs3=buildScene;
+buildScene=function(){return state.paintings.length?_bs3():museumScene();};
+/* ---- Viewer markup: always a living canvas; "visualized" wording ---- */
+function viewerHTML(){
+var woodH=22+Math.random()*14,woodS=38+Math.random()*18,woodL=26+Math.random()*14;
+var th=10+Math.round(Math.random()*8);
+var liner=Math.random()<.5?'#F3EFE4':'#E9E4D6';
+var grainA=(6+Math.random()*5).toFixed(1);
+var wood='linear-gradient('+(120+Math.round(Math.random()*60))+'deg,'
++'hsl('+woodH.toFixed(0)+','+woodS.toFixed(0)+'%,'+(woodL+8).toFixed(0)+'%),'
++'hsl('+(woodH+6).toFixed(0)+','+(woodS-6).toFixed(0)+'%,'+woodL.toFixed(0)+'%) 45%,'
++'hsl('+(woodH-4).toFixed(0)+','+woodS.toFixed(0)+'%,'+(woodL+5).toFixed(0)+'%) 75%,'
++'hsl('+(woodH+3).toFixed(0)+','+(woodS-4).toFixed(0)+'%,'+(woodL-3).toFixed(0)+'%))';
+var grain='repeating-linear-gradient('+(88+Math.round(Math.random()*8))+'deg, rgba(20,10,0,.10) 0 1.5px, rgba(255,240,220,.05) 1.5px 2.5px, transparent 2.5px '+grainA+'px)';
+var empty=!state.paintings.length;
+return '<div class="page-head"><div><h1 class="display">Viewer</h1>'
++'<p class="sub" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">An original view of your oeuvre — visualized anew every refresh.</p></div></div>'
++'<div class="vframe" style="border-radius:6px;padding:'+th+'px;background-image:'+grain+','+wood+';box-shadow:0 12px 34px -12px rgba(15,10,5,.5), inset 0 2px 3px rgba(255,235,200,.28), inset 0 -3px 6px rgba(20,10,0,.45), inset 0 0 0 1px rgba(30,15,5,.4)">'
++'<canvas id="viewer-canvas" style="width:100%;display:block;border-radius:2px;border:5px solid '+liner+';box-shadow:0 0 0 1px rgba(20,10,0,.35)" aria-label="Living visualization — tap to change the movement speed"></canvas>'
++'</div>'
++'<div style="display:flex;justify-content:center;align-items:center;margin-top:14px;padding-right:16px">'
++'<button class="btn ghost" data-action="viewer-remix" aria-label="Refresh this view" title="Refresh this view" style="border-radius:999px;padding:10px 26px;font-size:15px;line-height:1">↻</button>'
++'</div>'
++(empty?'<p class="hint" style="margin-top:10px;text-align:center">Nothing logged yet — today\u2019s wall visualizes public-domain masterworks (after Monet, Van Gogh, Hokusai & Mondrian). Add your first work and the Viewer will visualize YOUR studio instead.</p>':'');
+}
+/* ---- Explain card: visualizations, not paintings ---- */
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="viewer-explain"]');
+if(!t)return;
+e.stopPropagation();
+var m=document.getElementById('menu');if(m)m.classList.remove('open');
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
++'<div class="panel-head"><h2>The Viewer</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="sub" style="margin-bottom:12px">A living visualization of your studio log.</p>'
++'<p class="etext">• Every visit composes an ever-shifting visualization from your works — their photos, palettes and history. No two are alike.</p>'
++'<p class="etext">• Before anything is logged, the Viewer shows gentle visualizations after public-domain masterworks so the wall is never empty; your own material takes over with your first work.</p>'
++'<p class="etext">• Tap the visualization to cycle its movement: 🪨 stopped → 🐢 slow →  lively →  wild.</p>'
++'<p class="etext">• ↻ composes a brand-new visualization; ⋮ downloads the current one as an image.</p>'
++'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div>'
++'</div></div>');
+},true);
+</script>
 </body>
 </html>
