@@ -3835,6 +3835,94 @@ return h;
 var _dv5=drawViewer;
 drawViewer=function(){_dv5.apply(this,arguments);syncSpeedIco();};
 document.addEventListener('click',function(e){
-if(e.target.closest('#vspeed-ico')){
-vSpeedIdx=(vSpeedIdx+1)%VSPEEDS.length;
-cancel
+if(e.target.closest('#viewer-canvas'))syncSpeedIco();
+});
+</script>
+<style>
+/* ---- Tabs: translucent frosted track + bold, very readable labels ---- */
+.tabs{background:rgba(252,251,247,.4);-webkit-backdrop-filter:blur(10px) saturate(1.15);backdrop-filter:blur(10px) saturate(1.15)}
+body.dark .tabs{background:rgba(25,26,32,.4)}
+.tabs::before{background:rgba(25,26,32,.12)!important;box-shadow:none!important;border:1px solid rgba(25,26,32,.15)}
+body.dark .tabs::before{background:rgba(242,241,236,.16)!important;border-color:rgba(242,241,236,.25)}
+.tab[data-view="timeline"],.tab[data-view="paintings"]{
+background-image:none!important;background-color:transparent!important;
+-webkit-background-clip:border-box!important;background-clip:border-box!important;
+color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;
+font-weight:700;font-size:15px;letter-spacing:.2px;animation:none!important;opacity:1!important;
+}
+body.dark .tab[data-view="timeline"],body.dark .tab[data-view="paintings"]{color:#F2F1EC!important;-webkit-text-fill-color:#F2F1EC!important}
+/* ---- Works grid numbers: halfway between vermilion and the light title tone ---- */
+.prow .pnum{color:#F0A58F}
+body.dark .prow .pnum{color:#F8BEA9}
+/* ---- Museum caption ---- */
+.museum-note{margin:12px 2px 0;font-size:13px;color:var(--ink-soft);text-align:center}
+.museum-note b{color:var(--ink)}
+</style>
+<script>
+/* ---- Empty-studio Viewer: a living museum wall of public-domain homages ---- */
+var MUSEUM_LABELS=["after Claude Monet's water-lily ponds","after Vincent van Gogh's swirling night skies","after Katsushika Hokusai's rolling waves","after Piet Mondrian's compositions"];
+var museumPick=0;
+function museumScene(){
+var rnd=mulberry32((Math.random()*1e9)>>>0);
+var s={washes:[],marks:[],blocks:[],grain:[],works:[]};
+var p=museumPick;
+function dab(fx,fy,col,len,w,al,a){s.marks.push({t:'dab',fx:fx,fy:fy,col:col,len:len,w:w,al:al,a:(a===undefined?(rnd()-.5)*1.2:a),ph:rnd()*6.28});}
+function stroke(fx,fy,col,len,w,al,ang){s.marks.push({t:'stroke',fx:fx,fy:fy,col:col,len:len,w:w,al:al,a:ang,ph:rnd()*6.28,sp:.05});}
+var i;
+if(p===0){
+s.washes.push({h:150,fx:.3,fy:.4,fr:.5,sp:.02,ph:1,amp:.02,al:.12},{h:275,fx:.7,fy:.6,fr:.45,sp:.02,ph:2,amp:.02,al:.10},{h:205,fx:.5,fy:.8,fr:.5,sp:.02,ph:3,amp:.02,al:.12});
+var c0=['#6E8FAC','#7FA88B','#A8C3A0','#C9B6D8','#E4CFA9','#5B7A9D'];
+for(i=0;i<90;i++){var band=(rnd()*5)|0;dab(.08+rnd()*.84,.15+band*.16+(rnd()-.5)*.08,c0[(rnd()*c0.length)|0],.02+rnd()*.03,6+rnd()*10,.2+rnd()*.25,(rnd()-.5)*.6);}
+for(i=0;i<14;i++)stroke(.1+rnd()*.8,.2+rnd()*.6,'#4A6B8A',.06+rnd()*.1,3+rnd()*4,.15,0);
+}else if(p===1){
+s.washes.push({h:225,fx:.5,fy:.35,fr:.6,sp:.02,ph:1,amp:.02,al:.16},{h:210,fx:.3,fy:.7,fr:.5,sp:.02,ph:2,amp:.02,al:.12});
+var c1=['#1F3B73','#2C4F9E','#4A6FC3','#7FA2E0'];
+for(var sw=0;sw<3;sw++){var cx2=.2+rnd()*.6,cy2=.2+rnd()*.5;
+for(var k=0;k<46;k++){var an=k*.32,rr=.02+k*.004;stroke(cx2+Math.cos(an)*rr*2.2,cy2+Math.sin(an)*rr,c1[(rnd()*c1.length)|0],.02+rnd()*.02,4+rnd()*5,.3,an+Math.PI/2);}}
+for(i=0;i<10;i++)dab(rnd(),rnd()*.5,'#E8C34A',.012+rnd()*.012,8+rnd()*8,.5,0);
+}else if(p===2){
+s.washes.push({h:210,fx:.5,fy:.3,fr:.55,sp:.02,ph:1,amp:.02,al:.10});
+var c2=['#274B8F','#3C7DA6','#7FB2D9'];
+for(i=0;i<7;i++)stroke(.15+rnd()*.7,.3+rnd()*.5,c2[(rnd()*3)|0],.2+rnd()*.25,10+rnd()*10,.25,-.4+(rnd()-.5)*.4);
+for(i=0;i<60;i++)dab(rnd(),rnd(),i%3?'#F6F4EE':'#7FB2D9',.008+rnd()*.012,4+rnd()*5,.35);
+}else{
+s.washes.push({h:45,fx:.5,fy:.5,fr:.7,sp:.01,ph:1,amp:.01,al:.06});
+var c3=['#D8402A','#F2B621','#2733C9','#F6F4EE','#F6F4EE'];
+for(i=0;i<6;i++)s.blocks.push({fx:.08+rnd()*.7,fy:.08+rnd()*.7,fw:.12+rnd()*.25,fh:.12+rnd()*.25,col:c3[(rnd()*c3.length)|0],al:.75});
+for(i=0;i<5;i++)stroke(.5,.1+i*.2,'#23211E',.9,7,.85,0);
+for(i=0;i<5;i++)stroke(.1+i*.2,.5,'#23211E',.9,7,.85,Math.PI/2);
+}
+for(i=0;i<120;i++)s.grain.push({fx:rnd(),fy:rnd(),r:.5+rnd()*2,a:.03+rnd()*.05,light:rnd()<.5});
+return s;
+}
+var _bs3=buildScene;
+buildScene=function(){return state.paintings.length?_bs3():museumScene();};
+var _pv3=paintViewer;
+paintViewer=function(x,W,H,s,t){
+_pv3(x,W,H,s,t);
+if(s&&s.blocks&&s.blocks.length){
+s.blocks.forEach(function(b){
+x.globalAlpha=b.al;x.fillStyle=b.col;
+x.fillRect(b.fx*W,b.fy*H,b.fw*W,b.fh*H);
+x.globalAlpha=1;
+});
+}
+};
+var _vh12=viewerHTML;
+viewerHTML=function(){
+if(!state.paintings.length)museumPick=(Math.random()*4)|0;
+var h=_vh12();
+if(!state.paintings.length){
+h=h.replace('<div class="empty small">Add works and entries and your oeuvre will be remixed here.</div>',
+'<canvas id="viewer-canvas" style="width:100%;display:block;border-radius:8px;cursor:pointer" aria-label="Museum homage artwork"></canvas>'
++'<div class="museum-note"><b>Today\u2019s wall:</b> a living homage '+MUSEUM_LABELS[museumPick]+', painted from public-domain masterworks.</div>'
++'<p class="hint" style="margin-top:8px;text-align:center">Log your first work and this canvas becomes entirely yours.</p>');
+}
+return h;
+};
+document.addEventListener('click',function(e){
+if(e.target.closest('.museum-note'))e.stopImmediatePropagation();
+},true);
+</script>
+</body>
+</html>
