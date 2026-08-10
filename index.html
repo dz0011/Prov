@@ -2556,5 +2556,19 @@ body.locked #install-btn{display:none!important}
   .bar .btn.primary{width:56px;height:56px;padding:0;justify-content:center;border-radius:50%}
 }
 </style>
+  <script>
+(function(){
+  // Generates a random shift between -20 and +20 degrees on every refresh
+  const shift = Math.floor(Math.random() * 40) - 20;
+  document.documentElement.style.setProperty('--hue-shift', shift + 'deg');
+})();
+</script>
+<style>
+body { filter: hue-rotate(var(--hue-shift, 0deg)); }
+/* Cancel out the shift on all photos so your art stays true to life */
+img, .pcover, .film img, .thumb img, .book-img, .entry-img, .book-film img, .lightbox img {
+  filter: hue-rotate(calc(var(--hue-shift, 0deg) * -1)) !important;
+}
+</style>
 </body>
 </html>
