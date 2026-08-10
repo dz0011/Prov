@@ -416,8 +416,9 @@ function paintingsHTML(){
 }
 function pcardHTML(p,i){
   const es=entriesOf(p.id);
-  const imgEntry=[...es].reverse().find(e=>e.images&&e.images.length);
-  const cover=imgEntry?imgEntry.images[0]:null;
+  const allImgs=es.flatMap(e=>e.images||[]);
+  let cover=p.cover&&allImgs.includes(p.cover)?p.cover:null;
+  if(!cover){const imgEntry=[...es].reverse().find(e=>e.images&&e.images.length);cover=imgEntry?imgEntry.images[0]:null;}
   const cols=uniqueColors(es).slice(0,6);
   return '<article class="pcard card" style="--i:'+Math.min(i,8)+'" data-action="open-painting" data-id="'+p.id+'" role="button" tabindex="0">'
     +'<div class="pcover" style="'+(cover?'':'--h:'+((p.number*47)%360))+'">'
@@ -510,7 +511,10 @@ function openPaintingForm(pid,onSaved){
   const p=pid?getP(pid):null;
   const nextNum=p?p.number:state.paintings.reduce((m,x)=>Math.max(m,x.number||0),0)+1;
   const isOther=p&&(p.medium==='Other'||MEDIUMS.indexOf(p.medium)===-1);
-  const otherVal=p&&MEDIUMS.indexOf(p.medium)===-1&&p.medium!=='Other'?p.medium:'';
+    const otherVal=p&&MEDIUMS.indexOf(p.medium)===-1&&p.medium!=='Other'?p.medium:'';
+  const es=p?entriesOf(p.id):[];
+  const allImgs=es.flatMap(e=>e.images||[]);
+  const coverHTML=p&&allImgs.length?('<label>Cover photo</label><input type="hidden" name="cover" value="'+esc(p.cover||'')+'"><div class="thumbs" id="cover-picker">'+allImgs.map(src=>'<button type="button" class="thumb cover-opt'+((p.cover||'')===src?' sel':'')+'" data-action="pick-cover" data-src="'+src+'"><img src="'+src+'" alt=""></button>').join('')+'</div><p class="hint">Tap a photo to choose the Works-tab cover.</p>'):'';
   const layer=openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="pform">'
     +'<div class="panel-head"><h2>'+(p?'Edit work':'New work')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
     +'<div class="grid2"><div><label>Number (optional)</label><input type="number" name="number" min="1" placeholder="leave blank for none" value="'+(p?(p.number||''):'')+'"></div>'
@@ -520,6 +524,7 @@ function openPaintingForm(pid,onSaved){
     +(p?'<div class="grid2"><div><label>Status</label><select name="status"><option value="in-progress" '+(p.status==='in-progress'?'selected':'')+'>In progress</option>'
     +'<option value="finished" '+(p.status==='finished'?'selected':'')+'>Finished</option></select></div>'
     +'<div><label>Size</label><input type="text" name="size" value="'+esc(p.size||'')+'"></div></div>':'')
+    +coverHTML
     +'<div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
     +'<button class="btn primary">'+(p?'Save changes':'Create work')+'</button></div></form></div>');
   layer.querySelector('#pform').addEventListener('submit',async ev=>{
@@ -528,7 +533,8 @@ function openPaintingForm(pid,onSaved){
     const title=(f.get('title')||'').trim();
     let medium=f.get('medium')||'';
     if(medium==='Other'){const om=(f.get('othermedium')||'').trim();if(om)medium=om;}
-    const rec={id:p?p.id:uid(),number:parseInt(f.get('number'))||0,title:title||'Untitled',medium,size:(f.get('size')||'').trim(),status:f.get('status')||(p?p.status:'in-progress'),createdAt:p?p.createdAt:Date.now()};
+        const coverVal=f.get('cover');
+    const rec={id:p?p.id:uid(),number:parseInt(f.get('number'))||0,title:title||'Untitled',medium,size:(f.get('size')||'').trim(),status:f.get('status')||(p?p.status:'in-progress'),cover:(coverVal!==null?coverVal:(p?p.cover||'':'')),createdAt:p?p.createdAt:Date.now()};
     if(p)Object.assign(p,rec);else state.paintings.push(rec);
     if(await save()){toast(p?'Work updated':'Work '+numTag(rec.number)+' created');closeModal();render();if(onSaved)onSaved(rec.id);}
   });
@@ -652,6 +658,11 @@ document.addEventListener('click',async e=>{
       if(sp){const shareText=(sp.number?''+pad2(sp.number)+' — ':'')+sp.title+' · Provenance, an art journal';
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
         else{navigator.clipboard.writeText(location.href).then(()=>toast('🔗 Link copied — paste it anywhere'));}}
+      break;}
+          case 'pick-cover':{const src=t.dataset.src;
+      const hidden=document.querySelector('#pform input[name=cover]');
+      if(hidden)hidden.value=src;
+      document.querySelectorAll('.cover-opt').forEach(b=>b.classList.toggle('sel',b.dataset.src===src));
       break;}
     case 'edit-painting':openPaintingForm(t.dataset.id);break;
     case 'new-painting-from-composer':
@@ -1693,8 +1704,9 @@ function paintingsHTML(){
 }
 function pcardHTML(p,i){
   const es=entriesOf(p.id);
-  const imgEntry=[...es].reverse().find(e=>e.images&&e.images.length);
-  const cover=imgEntry?imgEntry.images[0]:null;
+  const allImgs=es.flatMap(e=>e.images||[]);
+  let cover=p.cover&&allImgs.includes(p.cover)?p.cover:null;
+  if(!cover){const imgEntry=[...es].reverse().find(e=>e.images&&e.images.length);cover=imgEntry?imgEntry.images[0]:null;}
   const cols=uniqueColors(es).slice(0,6);
   return '<article class="pcard card" style="--i:'+Math.min(i,8)+'" data-action="open-painting" data-id="'+p.id+'" role="button" tabindex="0">'
     +'<div class="pcover" style="'+(cover?'':'--h:'+((p.number*47)%360))+'">'
@@ -1794,6 +1806,7 @@ function openPaintingForm(pid,onSaved){
     +(p?'<div class="grid2"><div><label>Status</label><select name="status"><option value="in-progress" '+(p.status==='in-progress'?'selected':'')+'>In progress</option>'
     +'<option value="finished" '+(p.status==='finished'?'selected':'')+'>Finished</option></select></div>'
     +'<div><label>Size</label><input type="text" name="size" value="'+esc(p.size||'')+'"></div></div>':'')
+    +coverHTML
     +'<div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
     +'<button class="btn primary">'+(p?'Save changes':'Create work')+'</button></div></form></div>');
   layer.querySelector('#pform').addEventListener('submit',async ev=>{
@@ -2628,6 +2641,20 @@ body{filter:none!important}
 .entry-fab::before{content:'New entry'}
 .work-fab::before{content:'New work'}
 #app-shell[style*="none"] ~ .float-btn{display:none!important}
+</style>
+  <style>
+.cover-opt{opacity:.75}
+.cover-opt.sel{opacity:1;box-shadow:0 0 0 3px var(--ultra)}
+</style>
+  <style>
+@media(max-width:640px){
+  .pgrid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .pinfo{padding:10px 12px 12px}
+  .ptitle{font-size:16px}
+  .pnum{font-size:15px}
+  .pmeta{font-size:11px}
+  .pnum-ghost{font-size:44px}
+}
 </style>
 </body>
 </html>
