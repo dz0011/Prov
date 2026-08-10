@@ -221,11 +221,11 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
         <span class="brand-dabs"><i></i><i></i><i></i></span>
         <span class="brand-name"><span class="s1">P</span><span class="s2">ro</span><span class="s3">ve</span><span class="s4">na</span><span class="s5">nce</span></span>
       </button>
-          <nav class="tabs">
+             <nav class="tabs">
         <button class="tab" data-action="goto" data-view="timeline">Timeline</button>
         <button class="tab" data-action="goto" data-view="paintings">Works</button>
-        <button class="tab" data-action="goto" data-view="viewer">Viewer</button>
       </nav>
+      <button class="tab tab-viewer" data-action="goto" data-view="viewer">Viewer</button>
       <div class="bar-right">
         <div class="menu-wrap">
           <button class="icon-btn light" data-action="menu-toggle" title="Account &amp; data">⚙</button>
@@ -1679,6 +1679,158 @@ body.dark,body.dark .top{
     var mm=document.getElementById('menu');if(mm)mm.classList.remove('open');
   });
 })();
+</script>
+<style>
+/* ---- Viewer: its own shimmering, semi-transparent pill, apart from the pair ---- */
+.tab.tab-viewer{
+  margin-left:14px;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:600;font-size:15.5px;letter-spacing:.4px;
+  color:var(--ink);
+  opacity:.92;
+  border:1px solid hsla(calc(205 + var(--hue-shift,0)),50%,50%,.4);
+  background-image:linear-gradient(120deg,
+    hsla(calc(205 + var(--hue-shift,0)),60%,60%,.30),
+    hsla(calc(18 + var(--hue-shift,0)),60%,55%,.30) 30%,
+    hsla(calc(152 + var(--hue-shift,0)),50%,45%,.30) 62%,
+    hsla(calc(205 + var(--hue-shift,0)),60%,60%,.30));
+  background-size:220% 100%;
+  animation:viewshimmer 6s ease-in-out infinite;
+  text-shadow:0 1px 0 hsla(0,0%,100%,.35);
+}
+.tab.tab-viewer:hover{opacity:1;color:var(--ink)}
+.tab.tab-viewer.active{
+  color:var(--ink);opacity:1;
+  box-shadow:inset 0 0 0 1.5px hsla(calc(205 + var(--hue-shift,0)),55%,45%,.55),0 2px 10px -2px hsla(calc(18 + var(--hue-shift,0)),60%,50%,.35);
+}
+@keyframes viewshimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+body.dark .tab.tab-viewer{color:#F2F1EC;border-color:hsla(calc(205 + var(--hue-shift,0)),60%,70%,.45);text-shadow:0 1px 0 rgba(0,0,0,.4)}
+body.dark .tab.tab-viewer.active{color:#F2F1EC}
+@media (prefers-reduced-motion:reduce){.tab.tab-viewer{animation:none}}
+</style>
+<script>
+/* ---- Upgraded Viewer: no text, denser & more abstract, plus a refresh button ---- */
+function viewerHTML(){
+  return '<div class="page-head"><div><h1 class="display">Viewer</h1>'
+    +'<p class="sub">A generative remix of your oeuvre — arranged anew every refresh.</p></div>'
+    +'<div class="menu-wrap"><button class="icon-btn" data-action="viewer-menu" title="Viewer options" style="font-size:20px;padding:8px">⋮</button>'
+    +'<div class="menu" id="viewer-menu" style="background:var(--card);border-color:var(--line)">'
+    +'<button data-action="viewer-download" style="color:var(--ink)">⬇ Download image</button>'
+    +'</div></div></div>'
+    +(state.paintings.length
+      ?'<div class="card" style="padding:10px"><img id="viewer-img" alt="Generative artwork made from your journal" style="width:100%;display:block;border-radius:8px"></div>'
+       +'<div style="display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap">'
+       +'<button class="btn ghost" data-action="viewer-remix" style="border-radius:999px;padding:12px 22px">↻ Refresh this view</button>'
+       +'</div>'
+       +'<p class="hint" style="margin-top:10px;text-align:center">Hold the image down to save it · or tap ⋮ → Download.</p>'
+      :'<div class="empty small">Add works and entries and your oeuvre will be remixed here.</div>');
+}
+function drawViewer(){
+  var img=document.getElementById('viewer-img');if(!img)return;
+  var W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;
+  var x=c.getContext('2d');
+  var rnd=mulberry32((Math.random()*1e9)>>>0);
+  var dark=document.body.classList.contains('dark');
+  var hs=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hue-shift'))||0;
+  function hsl(h,s,l,a){return 'hsla('+(((h+hs)%360+360)%360)+','+s+'%,'+l+'%,'+a+')';}
+  function hexA(hex,a){var h=String(hex).replace('#','');if(h.length===3)h=h.split('').map(function(ch){return ch+ch;}).join('');var n=parseInt(h,16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+  var BRAND=[205,18,152,235,38];
+  var i,g;
+  x.fillStyle=dark?'#191A20':'#F2F1EC';x.fillRect(0,0,W,H);
+  for(i=0;i<6;i++){
+    var wh=BRAND[Math.floor(rnd()*BRAND.length)];
+    g=x.createRadialGradient(rnd()*W,rnd()*H,0,rnd()*W,rnd()*H,380+rnd()*560);
+    g.addColorStop(0,hsl(wh,45,dark?50:60,dark?.14:.16));g.addColorStop(1,hsl(wh,45,60,0));
+    x.fillStyle=g;x.fillRect(0,0,W,H);
+  }
+  x.globalCompositeOperation=dark?'screen':'multiply';
+  var total=state.entries.length;
+  var fields=10+Math.max(0,10-total);
+  for(i=0;i<fields;i++){
+    var fh=BRAND[Math.floor(rnd()*BRAND.length)];
+    x.save();x.translate(rnd()*W,rnd()*H);x.rotate((rnd()-.5)*2.4);
+    x.fillStyle=hsl(fh,40,dark?55:50,.05+rnd()*.08);
+    if(rnd()>.5){x.beginPath();x.ellipse(0,0,160+rnd()*340,90+rnd()*220,0,0,7);x.fill();}
+    else{x.fillRect(-180-rnd()*240,-90-rnd()*140,360+rnd()*480,180+rnd()*280);}
+    x.restore();
+  }
+  for(i=0;i<4;i++){
+    var hh=BRAND[Math.floor(rnd()*BRAND.length)];
+    x.save();x.translate(rnd()*W,rnd()*H);x.rotate((rnd()-.5)*3);
+    x.strokeStyle=hsl(hh,45,dark?60:45,.10+rnd()*.08);x.lineWidth=1.5+rnd()*2;x.lineCap='round';
+    var lines=8+Math.floor(rnd()*8),len=120+rnd()*220;
+    for(var L=0;L<lines;L++){x.beginPath();x.moveTo(-len/2,L*9);x.lineTo(len/2,L*9+len*.12);x.stroke();}
+    x.restore();
+  }
+  for(i=0;i<5;i++){
+    var ah=BRAND[Math.floor(rnd()*BRAND.length)];
+    x.strokeStyle=hsl(ah,50,dark?60:45,.10+rnd()*.1);
+    x.lineWidth=2+rnd()*6;
+    x.beginPath();x.arc(rnd()*W,rnd()*H,140+rnd()*420,rnd()*6.28,rnd()*6.28);x.stroke();
+  }
+  var ps=[...state.paintings].sort(function(a,b){return a.number-b.number;});
+  var motifs=['ribbon','orbit','shards','spiral'];
+  ps.forEach(function(p,pi){
+    var es=entriesOf(p.id);
+    var cols=uniqueColors(es).map(function(cc){return cc.hex;});
+    var pal=cols.length?cols:['#2733C9','#DE4A1F','#E39B18','#2E7D5B'];
+    var ang=pi*2.399963+rnd()*.7;
+    var rad=.18+rnd()*.2;
+    var cx=W/2+Math.cos(ang)*rad*W;
+    var cy=H/2+Math.sin(ang)*rad*H;
+    var motif=motifs[Math.floor(rnd()*motifs.length)];
+    var n=Math.max(es.length,3);
+    var pts=[];
+    for(var k2=0;k2<n;k2++){
+      var t2=k2/Math.max(n-1,1);
+      var nx,ny;
+      if(motif==='ribbon'){nx=cx+(t2-.5)*520+(rnd()-.5)*120;ny=cy+Math.sin(t2*Math.PI*(1+rnd()))*160+(rnd()-.5)*120;}
+      else if(motif==='orbit'){var oa=t2*Math.PI*(1.2+rnd()*1.4)+rnd()*.5;var orr=90+rnd()*150;nx=cx+Math.cos(oa)*orr*1.5;ny=cy+Math.sin(oa)*orr;}
+      else if(motif==='spiral'){var sa=t2*6.28*1.5;var sr=40+t2*240+rnd()*30;nx=cx+Math.cos(sa)*sr;ny=cy+Math.sin(sa)*sr;}
+      else{nx=cx+(rnd()-.5)*460;ny=cy+(rnd()-.5)*460;}
+      pts.push([nx,ny]);
+    }
+    x.strokeStyle=hexA(pal[0],.30);x.lineWidth=3+rnd()*6;x.lineCap='round';
+    x.beginPath();
+    pts.forEach(function(pt,idx){if(idx===0)x.moveTo(pt[0],pt[1]);else{var prev=pts[idx-1];x.quadraticCurveTo((prev[0]+pt[0])/2+(rnd()-.5)*140,(prev[1]+pt[1])/2+(rnd()-.5)*140,pt[0],pt[1]);}});
+    x.stroke();
+    pts.forEach(function(pt,idx){
+      var e=es[idx];
+      var col=(e&&e.colors&&e.colors.length)?e.colors[Math.floor(rnd()*e.colors.length)].hex:pal[Math.floor(rnd()*pal.length)];
+      var r=16+rnd()*44;
+      g=x.createRadialGradient(pt[0],pt[1],0,pt[0],pt[1],r*2.6);
+      g.addColorStop(0,hexA(col,.28));g.addColorStop(1,hexA(col,0));
+      x.fillStyle=g;x.beginPath();x.arc(pt[0],pt[1],r*2.6,0,7);x.fill();
+      x.save();x.translate(pt[0],pt[1]);x.rotate((rnd()-.5)*1.6);
+      x.fillStyle=hexA(col,.5+rnd()*.3);
+      x.beginPath();var verts=7+Math.floor(rnd()*5);x.moveTo(r,0);
+      for(var v=1;v<=verts;v++){var va=v/verts*6.283;var vr=r*(.7+rnd()*.55);x.lineTo(Math.cos(va)*vr,Math.sin(va)*vr);}
+      x.closePath();x.fill();
+      x.strokeStyle=hexA(col,.65);x.lineWidth=1.5+rnd()*2;
+      x.beginPath();x.ellipse(0,0,r*1.25,r*.85,0,0,7);x.stroke();
+      x.restore();
+      var sats=3+Math.floor(rnd()*4);
+      for(var s2=0;s2<sats;s2++){
+        var sa2=rnd()*6.283,sd=r*1.6+rnd()*60;
+        x.fillStyle=hexA(col,.35+rnd()*.3);
+        x.beginPath();x.arc(pt[0]+Math.cos(sa2)*sd,pt[1]+Math.sin(sa2)*sd,2+rnd()*5,0,7);x.fill();
+      }
+    });
+    if(pi>0&&rnd()>.45){
+      var ox=W/2+Math.cos((pi-1)*2.399963)*.2*W,oy=H/2+Math.sin((pi-1)*2.399963)*.2*H;
+      x.strokeStyle=hexA(pal[pal.length-1],.12);x.lineWidth=2;
+      x.beginPath();x.moveTo(cx,cy);x.quadraticCurveTo((cx+ox)/2+(rnd()-.5)*300,(cy+oy)/2+(rnd()-.5)*300,ox,oy);x.stroke();
+    }
+  });
+  x.globalCompositeOperation='source-over';
+  for(i=0;i<220;i++){
+    x.fillStyle=dark?'rgba(244,242,236,'+(.04+rnd()*.08)+')':'rgba(25,26,32,'+(.04+rnd()*.08)+')';
+    x.beginPath();x.arc(rnd()*W,rnd()*H,1+rnd()*3,0,7);x.fill();
+  }
+  g=x.createRadialGradient(W/2,H/2,H/3,W/2,H/2,H*.8);
+  g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,dark?'rgba(0,0,0,.34)':'rgba(20,18,12,.10)');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  img.src=c.toDataURL('image/jpeg',.9);
+}
 </script>
 </body>
 </html>
