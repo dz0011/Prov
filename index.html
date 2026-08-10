@@ -4312,6 +4312,23 @@ setTimeout(function(){busy=false;},1500);
 /* ---- Dark mode: far more translucent track & knob behind the labels ---- */
 body.dark .tabs{background:rgba(255,255,255,.07)}
 body.dark .tabs::before{background:rgba(242,241,236,.14);box-shadow:none}
-</style>
+</script>
+<script>
+/* ---- Guest Mode: asterisk on the button, matching asterisk on its footnote ---- */
+(function(){
+var b=document.getElementById('guest-btn');
+if(!b){
+var all=document.querySelectorAll('button');
+for(var i=0;i<all.length;i++){
+var t=(all[i].textContent||'').replace(/\s+/g,' ').trim();
+if(t.indexOf('Try on Guest Mode')!==-1||t.indexOf('Try without an account')!==-1){b=all[i];break;}
+}
+}
+if(!b)return;
+b.textContent='Try on Guest Mode*';
+var n=b.nextElementSibling;
+if(n&&n.tagName==='P')n.textContent='*Test everything — saved on this device until you create an account.';
+})();
+</script>
 </body>
 </html>
