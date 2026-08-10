@@ -1442,5 +1442,86 @@ img,.pcover,.film img,.thumb img,.book-img,.entry-img,.book-film img,.lightbox i
 /* ---- Timeline share/edit icons: start at the top, level with the date & time ---- */
 .etools{top:16px;bottom:auto;justify-content:flex-start}
 </style>
+<style>
+/* ================= DARK MODE — washes of abstract color ================= */
+body.dark{
+  --paper:#191A20; --card:#22232B; --ink:#F2F1EC; --ink-soft:#B9B7AE; --line:#3A3B44;
+  background-color:#191A20;
+  background-image:
+    radial-gradient(900px 500px at 92% -80px, hsla(calc(205 + var(--hue-shift,0)),50%,55%,.18), transparent 60%),
+    radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),55%,52%,.13), transparent 60%),
+    radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),40%,42%,.14), transparent 60%),
+    radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.05), transparent 60%);
+}
+body.dark .top{
+  background-color:#191A20;
+  background-image:
+    radial-gradient(520px 240px at 88% -70px, hsla(calc(205 + var(--hue-shift,0)),50%,55%,.22), transparent 60%),
+    radial-gradient(460px 240px at 6% 130%, hsla(calc(18 + var(--hue-shift,0)),55%,52%,.16), transparent 60%),
+    radial-gradient(460px 240px at 55% 140%, hsla(calc(152 + var(--hue-shift,0)),40%,42%,.16), transparent 60%),
+    radial-gradient(400px 200px at 40% -60px, hsla(0,0%,100%,.06), transparent 60%);
+  color:var(--ink);
+  box-shadow:0 1px 0 var(--line);
+}
+/* Header text back to light tones in dark mode */
+body.dark .brand-name .s1{color:#F4F1E8;-webkit-text-fill-color:#F4F1E8}
+body.dark .brand-name .s2{color:#E0DCCB;-webkit-text-fill-color:#E0DCCB}
+body.dark .brand-name .s3{color:#C9D6CF;-webkit-text-fill-color:#C9D6CF}
+body.dark .brand-name .s4{color:#AECBC9;-webkit-text-fill-color:#AECBC9}
+body.dark .brand-name .s5{color:#8FB6BF;-webkit-text-fill-color:#8FB6BF}
+body.dark .tabs{background:rgba(255,255,255,.09)}
+body.dark .tab{color:#CFCDC4}
+body.dark .tab:hover{color:#fff}
+body.dark .tab.active{background:#F2F1EC;color:#191A20}
+body.dark .icon-btn.light{color:#CFCDC4}
+body.dark .icon-btn.light:hover{background:rgba(255,255,255,.12);color:#fff}
+body.dark .icon-btn:hover{background:rgba(255,255,255,.1)}
+/* Surfaces that were hard-coded white in light mode */
+body.dark .chip{background:#2A2B33}
+body.dark .pchip{color:#93A2FF;border-color:rgba(147,162,255,.4);background:rgba(39,51,201,.25)}
+body.dark .search{background:#2A2B33;color:var(--ink)}
+body.dark .thumb{background:#2A2B33}
+body.dark .pal-chip,body.dark .pig{background:#2A2B33}
+body.dark .panel input[type=text],body.dark .panel input[type=number],body.dark .panel input[type=datetime-local],body.dark .panel select,body.dark .panel textarea{background:#2A2B33;color:var(--ink)}
+body.dark .auth-card input{background:#2A2B33;color:var(--ink)}
+body.dark .color-row input[type=color]{background:#2A2B33}
+body.dark .etext{color:#E4E2DA}
+body.dark .pnum-ghost{color:rgba(244,242,236,.2)}
+body.dark .film img{border-color:#2A2B33}
+body.dark #toast{background:#F2F1EC;color:#191A20}
+body.dark .menu{background:#1C1D24}
+body.dark .backlink,body.dark .pd-num{color:#93A2FF}
+body.dark .pnum{color:#FF8A66}
+body.dark .danger-btn{color:#FF8A80;border-color:#7A4A46}
+body.dark .auth-wrap{background:
+  radial-gradient(1100px 700px at 88% 112%, rgba(227,155,24,.16), transparent 62%),
+  radial-gradient(1000px 700px at -12% -12%, rgba(39,51,201,.2), transparent 60%),
+  radial-gradient(900px 620px at 112% -18%, rgba(46,125,91,.16), transparent 60%),
+  radial-gradient(820px 620px at 18% 104%, rgba(222,74,31,.14), transparent 60%),
+  #1C1D24}
+</style>
+<script>
+(function(){
+  var KEY='provenance.theme';
+  function apply(t){
+    document.body.classList.toggle('dark', t==='dark');
+    var m=document.querySelector('meta[name="theme-color"]');
+    if(m) m.setAttribute('content', t==='dark' ? '#191A20' : '#F2F1EC');
+  }
+  var saved=null;
+  try{saved=localStorage.getItem(KEY);}catch(e){}
+  if(saved) apply(saved);
+  document.addEventListener('click', function(e){
+    // Never toggle when tapping anything interactive or any card/image
+    if(e.target.closest('button, a, input, select, textarea, label, .menu, .tabs, .modal-layer, #lightbox, .auth-wrap, .card, .entry, .pcard, .thumb, .chip, .film, img, .search, .empty, .panel, #install-btn')) return;
+    var inHeader = !!e.target.closest('.top');
+    var onBackground = (e.target===document.body || !!e.target.closest('main') || !!e.target.closest('.foot'));
+    if(!inHeader && !onBackground) return;
+    var t = document.body.classList.contains('dark') ? 'light' : 'dark';
+    try{localStorage.setItem(KEY,t);}catch(e2){}
+    apply(t);
+  });
+})();
+</script>
 </body>
 </html>
