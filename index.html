@@ -447,8 +447,8 @@ function paintingDetailHTML(id){
     +'<button class="icon-btn" data-action="delete-painting" data-id="'+p.id+'" title="Delete work">🗑</button>'
     +'</div></div>'
     +(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div></section>':'')
-    +'<section><h3 class="h3">Work log · oldest first</h3>'
-    +(es.length?es.map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">No sessions logged yet.</div>')+'</section>';
+    +'<section><h3 class="h3">Work log · newest first</h3>'
+    +(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">No sessions logged yet.</div>')+'</section>';
 }
 function emptyStudioHTML(){
   return '<div class="empty"><div class="dabs"><span class="dab" style="--c:var(--ultra)"></span><span class="dab" style="--c:var(--verm)"></span><span class="dab" style="--c:var(--ochre)"></span></div>'
