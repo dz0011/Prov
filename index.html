@@ -75,7 +75,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
 .chip{display:inline-flex;align-items:center;gap:6px;font:600 12.5px 'Space Grotesk';padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fff}
 .pchip{border-color:rgba(39,51,201,.35);background:rgba(39,51,201,.07);color:var(--ultra);cursor:pointer;transition:.15s}
 .pchip:hover{background:rgba(39,51,201,.15)}
-.chip.stage{background:rgba(227,155,24,.14);border-color:rgba(227,155,24,.45);color:#8A5B00}
+    +'</div>'
 .etime{margin-left:auto;font-size:12px;color:#9B988C;font-variant-numeric:tabular-nums}
 .etools{display:flex;gap:2px;opacity:0;transition:.2s}
 .entry:hover .etools{opacity:1}
@@ -220,7 +220,7 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
       </button>
       <nav class="tabs">
         <button class="tab" data-action="goto" data-view="timeline">Timeline</button>
-        <button class="tab" data-action="goto" data-view="paintings">Paintings</button>
+        <button class="tab" data-action="goto" data-view="paintings">Works</button>
       </nav>
       <div class="bar-right">
         <div class="menu-wrap">
@@ -296,10 +296,13 @@ const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const pad2=n=>String(n).padStart(2,'0');
-const numTag=n=>'№ '+pad2(n);
+const numTag=n=>n?'№ '+pad2(n):'';
+const pLabel=p=>p.number?('№ '+pad2(p.number)+' — '+p.title):p.title;
+const bookNum=p=>p.number?('<div class="book-pnum">№ '+pad2(p.number)+'</div>'):'';
+const docsNum=p=>p.number?('<div class="pnum">№ '+pad2(p.number)+'</div>'):'';
 const plural=(s,p,n)=>n===1?s:p;
 const STAGES=['Sketch','Underpainting','Block-in','Working pass','Details','Adjustments','Varnished','Finished'];
-const MEDIUMS=['Oil','Acrylic','Watercolor','Gouache','Tempera','Mixed media','Other'];
+const MEDIUMS=['Oil','Acrylic','Watercolor','Gouache','Tempera','Ink','Pencil','Charcoal','Fiber arts','Quilting','Mixed media','Other'];
 const PIGMENTS=[['Titanium White','#F6F4EE'],['Ivory Black','#23211E'],['Cadmium Yellow','#F2B621'],['Yellow Ochre','#C98A2C'],['Cadmium Red','#D8402A'],['Alizarin Crimson','#8E2434'],['Burnt Sienna','#8A4A2B'],['Burnt Umber','#5F4030'],['Raw Umber','#6E5B3E'],['Cadmium Orange','#E8722C'],['Ultramarine','#2733C9'],['Cobalt Blue','#2B5AC0'],['Cerulean Blue','#3C7DA6'],['Viridian','#2E7D5B'],['Sap Green','#5C7A3A'],['Dioxazine Violet','#5B3A6E']];
 const fmtTime=iso=>new Date(iso).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
 function fmtShort(iso){const d=new Date(iso),o={month:'short',day:'numeric'};if(d.getFullYear()!==new Date().getFullYear())o.year='numeric';return d.toLocaleDateString(undefined,o);}
@@ -353,7 +356,7 @@ function filteredEntries(){
 function timelineHTML(){
   return '<div class="page-head"><div><h1 class="display">Studio timeline</h1>'
     +'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('painting','paintings',state.paintings.length)+' · newest first</p></div>'
-    +(state.paintings.length?'<input id="tl-search" class="search" type="search" placeholder="Search notes, paintings…" value="'+esc(view.q)+'">':'')
+    +(state.paintings.length?'<input id="tl-search" class="search" type="search" placeholder="Search notes, entries…" value="'+esc(view.q)+'">':'')
     +'</div><div id="tl-list">'+timelineListHTML(filteredEntries())+'</div>';
 }
 function timelineListHTML(entries){
@@ -388,8 +391,8 @@ function entryCardHTML(e,i){
 }
 function paintingsHTML(){
   const ps=[...state.paintings].sort((a,b)=>a.number-b.number);
-  return '<div class="page-head"><div><h1 class="display">Paintings</h1><p class="sub">'+ps.length+' in the catalog</p></div>'
-    +'<button class="btn primary" data-action="new-painting">+ New painting</button></div>'
+  return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+ps.length+' in the catalog</p></div>'
+    +'<button class="btn primary" data-action="new-painting">+ New work</button></div>'
     +(ps.length?'<div class="pgrid">'+ps.map((p,i)=>pcardHTML(p,i)).join('')+'</div>':emptyStudioHTML());
 }
 function pcardHTML(p,i){
@@ -399,7 +402,7 @@ function pcardHTML(p,i){
   const cols=uniqueColors(es).slice(0,6);
   return '<article class="pcard card" style="--i:'+Math.min(i,8)+'" data-action="open-painting" data-id="'+p.id+'" role="button" tabindex="0">'
     +'<div class="pcover" style="'+(cover?'':'--h:'+((p.number*47)%360))+'">'
-    +(cover?'<img src="'+cover+'" alt="" loading="lazy">':'<span class="pnum-ghost">'+pad2(p.number)+'</span>')
+    +(cover?'<img src="'+cover+'" alt="" loading="lazy">':'<span class="pnum-ghost">'+(p.number?pad2(p.number):'')+'</span>')
     +'<span class="status '+(p.status==='finished'?'done':'wip')+'">'+(p.status==='finished'?'Finished':'In progress')+'</span></div>'
     +'<div class="pinfo"><div class="prow"><span class="pnum">'+numTag(p.number)+'</span><span class="ptitle">'+esc(p.title)+'</span></div>'
     +'<div class="pmeta">'+(p.medium||'—')+(p.size?' · '+esc(p.size):'')+' · '+es.length+' '+plural('entry','entries',es.length)+(es.length?' · '+timeAgo(lastActivity(p)):'')+'</div>'
@@ -412,8 +415,8 @@ function paintingDetailHTML(id){
   const cols=uniqueColors(es);
   const imgs=es.flatMap(e=>(e.images||[]).map(src=>({src,date:e.date})));
   const first=es.length?es[0].date:null,last=es.length?es[es.length-1].date:null;
-  return '<button class="backlink" data-action="goto" data-view="paintings">← All paintings</button>'
-    +'<div class="pd-head card"><div class="pd-num">'+pad2(p.number)+'</div><div class="pd-main">'
+  return '<button class="backlink" data-action="goto" data-view="paintings">← All works</button>'
+    +'<div class="pd-head card"><div class="pd-num">'+(p.number?pad2(p.number):'')+'</div><div class="pd-main">'
     +'<h1 class="display">'+esc(p.title)+'</h1>'
     +'<p class="sub">'+(p.medium||'Medium —')+(p.size?' · '+esc(p.size):'')+' · started '+fmtShort(first||p.createdAt)+'</p>'
     +'<div class="pd-stats"><span><b>'+es.length+'</b> '+plural('entry','entries',es.length)+'</span>'
@@ -450,7 +453,7 @@ function openComposer(entryId,presetPainting){
     +'<div class="panel-head"><h2>'+(e?'Edit entry':'New entry')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
     +'<label>Painting</label><div class="rowflex"><select name="paintingId">'
     +'<option value="" disabled '+(selVal?'':'selected')+'>Choose a painting…</option>'
-    +ps.map(p=>'<option value="'+p.id+'" '+(p.id===selVal?'selected':'')+'>'+numTag(p.number)+' — '+esc(p.title)+'</option>').join('')
+    +ps.map(p=>'<option value="'+p.id+'" '+(p.id===selVal?'selected':'')+'>'+esc(pLabel(p))+'</option>').join('')
     +'</select><button type="button" class="btn ghost" data-action="new-painting-from-composer">+ New</button></div>'
     +'<div class="grid2"><div><label>Date &amp; time</label><input type="datetime-local" name="date" value="'+toLocalInput(e?new Date(e.date):new Date())+'"></div>'
     +'<div><label>Stage</label><select name="stage"><option value="">—</option>'+STAGES.map(s=>'<option '+(e&&e.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></div></div>'
@@ -494,7 +497,7 @@ function openPaintingForm(pid,onSaved){
   const nextNum=p?p.number:state.paintings.reduce((m,x)=>Math.max(m,x.number||0),0)+1;
   const layer=openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="pform">'
     +'<div class="panel-head"><h2>'+(p?'Edit painting':'New painting')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
-    +'<div class="grid2"><div><label>Number</label><input type="number" name="number" min="1" value="'+nextNum+'"></div>'
+    +'<div class="grid2"><div><label>Number (optional)</label><input type="number" name="number" min="1" placeholder="leave blank for none" value="'+(p?(p.number||''):'')+'"></div>'
     +'<div><label>Status</label><select name="status"><option value="in-progress" '+((!p||p.status==='in-progress')?'selected':'')+'>In progress</option>'
     +'<option value="finished" '+(p&&p.status==='finished'?'selected':'')+'>Finished</option></select></div></div>'
     +'<label>Title</label><input type="text" name="title" placeholder="e.g. Harbor at Dusk" value="'+(p?esc(p.title):'')+'">'
@@ -507,7 +510,7 @@ function openPaintingForm(pid,onSaved){
     const f=new FormData(ev.target);
     const title=(f.get('title')||'').trim();
     if(!title){toast('Give the painting a title.');return;}
-    const rec={id:p?p.id:uid(),number:parseInt(f.get('number'))||nextNum,title,medium:f.get('medium')||'',size:(f.get('size')||'').trim(),status:f.get('status'),createdAt:p?p.createdAt:Date.now()};
+    const rec={id:p?p.id:uid(),number:parseInt(f.get('number'))||0,title,medium:f.get('medium')||'',size:(f.get('size')||'').trim(),status:f.get('status'),createdAt:p?p.createdAt:Date.now()};
     if(p)Object.assign(p,rec);else state.paintings.push(rec);
     if(await save()){toast(p?'Painting updated':'Painting '+numTag(rec.number)+' created');closeModal();render();if(onSaved)onSaved(rec.id);}
   });
@@ -622,10 +625,10 @@ document.addEventListener('click',async e=>{
     case 'edit-painting':openPaintingForm(t.dataset.id);break;
     case 'new-painting-from-composer':
       openPaintingForm(null,id=>{const sel=document.querySelector('#composer select[name=paintingId]');const p=getP(id);
-        if(sel&&p){const o=document.createElement('option');o.value=p.id;o.textContent=numTag(p.number)+' — '+p.title;sel.appendChild(o);sel.value=p.id;}});
+        if(sel&&p){const o=document.createElement('option');o.value=p.id;o.textContent=pLabel(p);sel.appendChild(o);sel.value=p.id;}});
       break;
     case 'delete-painting':{const p=getP(t.dataset.id);
-      if(p&&confirm('Delete painting “'+numTag(p.number)+' — '+p.title+'” and all of its entries?')){
+      if(p&&confirm('Delete “'+pLabel(p)+'” and all of its entries?')){
         state.paintings=state.paintings.filter(x=>x.id!==p.id);state.entries=state.entries.filter(x=>x.paintingId!==p.id);
         if(await save()){view={name:'paintings',q:''};render();toast('Painting deleted');}}break;}
     case 'toggle-status':{const p=getP(t.dataset.id);if(p){p.status=p.status==='finished'?'in-progress':'finished';if(await save())render();}break;}
@@ -859,7 +862,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
       if (k !== lastDay) { lastDay = k; html += `<div class="book-day">${fmtDayLabel(new Date(e.date))}</div>`; }
       html += `<div class="book-tl-entry">
         <div class="book-tl-meta">
-          <span class="book-tl-paint">${p ? '№ ' + String(p.number).padStart(2,'0') + ' — ' + esc(p.title) : '(deleted painting)'}</span>
+          <span class="book-tl-paint">${p ? esc(pLabel(p)) : '(deleted painting)'}</span>
           <span>${fmtTime(e.date)}</span>
           ${e.stage ? `<span class="book-tl-stage">${esc(e.stage)}</span>` : ''}
         </div>
@@ -880,7 +883,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
       const p = getP(currentPaintingId);
       rP = p ? [p] : [];
       rE = entriesOf(currentPaintingId).sort((a,b) => a.date < b.date ? -1 : 1);
-      modeTitle = p ? '№ ' + String(p.number).padStart(2,'0') + ' — ' + p.title : 'Single Painting';
+      modeTitle = p ? pLabel(p) : 'Single Painting';
     } else if (mode === 'timeline') { rP = []; modeTitle = 'Studio Timeline'; }
     else if (mode === 'paintings') { rE = []; modeTitle = 'Paintings Catalog'; }
     
@@ -893,7 +896,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
     
     if ((mode === 'all' || mode === 'paintings') && paintings.length > 1) {
       html += `<section class="book-toc"><h2 class="book-section-title">Contents</h2>
-        <ol>${paintings.map(p => `<li><b>№ ${String(p.number).padStart(2,'0')}</b> — ${esc(p.title)}</li>`).join('')}</ol>
+        <ol>${paintings.map(p => `<li>${esc(pLabel(p))}</li>`).join('')}</ol>
       </section>`;
     }
     
@@ -905,7 +908,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
         const first = es.length ? es[0].date : p.createdAt;
         const last = es.length ? es[es.length-1].date : null;
         html += `<section class="book-painting">
-          <div class="book-pnum">№ ${String(p.number).padStart(2,'0')}</div>
+          ${bookNum(p)}
           <h1 class="book-ptitle">${esc(p.title)}</h1>
           <div class="book-pmeta">${esc(p.medium || 'Medium —')}${p.size ? ' · ' + esc(p.size) : ''} · ${p.status === 'finished' ? 'Finished' : 'In progress'}</div>
           <div class="book-pmeta">Started ${fmtShort(first)} · ${es.length} ${plural('entry','entries',es.length)} · ${imgs.length} ${plural('photo','photos',imgs.length)}${last && first ? ' · ' + (Math.max(1, Math.round((new Date(last) - new Date(first)) / 864e5)) + 1) + ' days active' : ''}</div>
@@ -931,7 +934,7 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
       const p = getP(currentPaintingId);
       rP = p ? [p] : [];
       rE = entriesOf(currentPaintingId).sort((a,b) => a.date < b.date ? -1 : 1);
-      modeTitle = p ? '№ ' + String(p.number).padStart(2,'0') + ' — ' + p.title : 'Single Painting';
+      modeTitle = p ? pLabel(p) : 'Single Painting';
     } else if (mode === 'timeline') { rP = []; modeTitle = 'Studio Timeline'; }
     else if (mode === 'paintings') { rE = []; modeTitle = 'Paintings Catalog'; }
     
@@ -980,7 +983,7 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
 <p class="meta">${esc(modeTitle)} · Exported ${today}</p>`;
     
     if ((mode === 'all' || mode === 'paintings') && paintings.length > 1) {
-      html += `<h2>Contents</h2><ol class="toc">${paintings.map(p => `<li><b>№ ${String(p.number).padStart(2,'0')}</b> — ${esc(p.title)}</li>`).join('')}</ol>`;
+      html += `<h2>Contents</h2><ol class="toc">${paintings.map(p => `<li>${esc(pLabel(p))}</li>`).join('')}</ol>`;
     }
     
     if (rP.length && mode !== 'timeline') {
@@ -991,7 +994,7 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
         const first = es.length ? es[0].date : p.createdAt;
         const last = es.length ? es[es.length-1].date : null;
         html += `<div class="painting">
-          <div class="pnum">№ ${String(p.number).padStart(2,'0')}</div>
+          ${docsNum(p)}
           <div class="ptitle">${esc(p.title)}</div>
           <div class="meta">${esc(p.medium || 'Medium —')}${p.size ? ' · ' + esc(p.size) : ''} · ${p.status === 'finished' ? 'Finished' : 'In progress'}</div>
           <div class="meta">Started ${fmtShort(first)} · ${es.length} ${plural('entry','entries',es.length)} · ${imgs.length} ${plural('photo','photos',imgs.length)}${last && first ? ' · ' + (Math.max(1, Math.round((new Date(last) - new Date(first)) / 864e5)) + 1) + ' days active' : ''}</div>
@@ -1022,7 +1025,7 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
         if (k !== lastDay) { lastDay = k; html += `<div class="day">${fmtDayLabel(new Date(e.date))}</div>`; }
         html += `<div class="tl-entry">
           <div class="tl-meta">
-            <span class="tl-paint">${p ? '№ ' + String(p.number).padStart(2,'0') + ' — ' + esc(p.title) : '(deleted painting)'}</span>
+            <span class="tl-paint">${p ? esc(pLabel(p)) : '(deleted painting)'}</span>
             <span>${fmtTime(e.date)}</span>
             ${e.stage ? `<span class="tl-stage">${esc(e.stage)}</span>` : ''}
           </div>
