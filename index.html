@@ -249,9 +249,9 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
     <h1 class="display"><span class="s1">P</span><span class="s2">ro</span><span class="s3">ve</span><span class="s4">na</span><span class="s5">nce</span></h1>
     <p class="sub">Your art journal.</p>
     <label>Email</label>
-    <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email">
+    <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="off">
     <label>Password</label>
-    <input type="password" id="auth-password" placeholder="at least 6 characters" autocomplete="current-password">
+    <input type="password" id="auth-password" placeholder="at least 6 characters" autocomplete="off">
     <div id="auth-msg" class="auth-msg"></div>
     <button class="btn primary" id="auth-signin" style="width:100%;justify-content:center">Sign in</button>
     <button class="btn ghost" id="auth-signup" style="width:100%;justify-content:center;margin-top:8px">Create account</button>
@@ -357,7 +357,7 @@ function filteredEntries(){
 function timelineHTML(){
   return '<div class="page-head"><div><h1 class="display">Studio timeline</h1>'
     +'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('work','works',state.paintings.length)+' · newest first</p></div>'
-    +(state.paintings.length?'<input id="tl-search" class="search" type="search" placeholder="Search notes, entries…" value="'+esc(view.q)+'">':'')
+    +(state.paintings.length?'<input id="tl-search" class="search" type="search" autocomplete="off" placeholder="Search notes, entries…" value="'+esc(view.q)+'">':'')
     +'</div><div id="tl-list">'+timelineListHTML(filteredEntries())+'</div>';
 }
 function timelineListHTML(entries){
@@ -1523,9 +1523,9 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
     <h1 class="display"><span class="s1">P</span><span class="s2">ro</span><span class="s3">ve</span><span class="s4">na</span><span class="s5">nce</span></h1>
     <p class="sub">Your art journal.</p>
     <label>Email</label>
-    <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email">
+    <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="off">
     <label>Password</label>
-    <input type="password" id="auth-password" placeholder="at least 6 characters" autocomplete="current-password">
+    <input type="password" id="auth-password" placeholder="at least 6 characters" autocomplete="off">
     <div id="auth-msg" class="auth-msg"></div>
     <button class="btn primary" id="auth-signin" style="width:100%;justify-content:center">Sign in</button>
     <button class="btn ghost" id="auth-signup" style="width:100%;justify-content:center;margin-top:8px">Create account</button>
@@ -1633,7 +1633,7 @@ function filteredEntries(){
 function timelineHTML(){
   return '<div class="page-head"><div><h1 class="display">Studio timeline</h1>'
     +'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('work','works',state.paintings.length)+' · newest first</p></div>'
-    +(state.paintings.length?'<input id="tl-search" class="search" type="search" placeholder="Search notes, entries…" value="'+esc(view.q)+'">':'')
+    +(state.paintings.length?'<input id="tl-search" class="search" type="search" autocomplete="off" placeholder="Search notes, entries…" value="'+esc(view.q)+'">':'')
     +'</div><div id="tl-list">'+timelineListHTML(filteredEntries())+'</div>';
 }
 function timelineListHTML(entries){
