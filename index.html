@@ -381,9 +381,9 @@ function entryCardHTML(e,i){
   return '<article class="entry card" style="--i:'+Math.min(i,10)+'">'
     +'<div class="entry-top">'
     +'<button class="chip pchip" data-action="open-painting" data-id="'+p.id+'"><b>'+numTag(p.number)+'</b><span>'+esc(p.title)+'</span></button>'
-    +(e.stage?'<span class="chip stage">'+esc(e.stage)+'</span>':'')
     +'<span class="etime">'+fmtDateTime(e.date)+'</span>'
-    +'<span class="etools"><button class="icon-btn" data-action="edit-entry" data-id="'+e.id+'" title="Edit">✎</button>'
+    +'<span class="etools"><button class="icon-btn" data-action="share-entry" data-id="'+e.id+'" title="Share">📤</button>'
+    +'<button class="icon-btn" data-action="edit-entry" data-id="'+e.id+'" title="Edit">✎</button>'
     +'<button class="icon-btn" data-action="delete-entry" data-id="'+e.id+'" title="Delete">✕</button></span></div>'
     +(e.text?'<p class="etext">'+esc(e.text)+'</p>':'')
     +(imgs?'<div class="thumbs">'+imgs+'</div>':'')
@@ -454,8 +454,7 @@ function openComposer(entryId,presetPainting){
     +'<option value="" disabled '+(selVal?'':'selected')+'>Choose a work…</option>'
     +ps.map(p=>'<option value="'+p.id+'" '+(p.id===selVal?'selected':'')+'>'+esc(pLabel(p))+'</option>').join('')
     +'</select><button type="button" class="btn ghost" data-action="new-painting-from-composer">+ New</button></div>'
-    +'<div class="grid2"><div><label>Date &amp; time</label><input type="datetime-local" name="date" value="'+toLocalInput(e?new Date(e.date):new Date())+'"></div>'
-    +'<div><label>Stage</label><select name="stage"><option value="">—</option>'+STAGES.map(s=>'<option '+(e&&e.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></div></div>'
+        +'<label>Date &amp; time</label><input type="datetime-local" name="date" value="'+toLocalInput(e?new Date(e.date):new Date())+'">'
     +'<label>Notes</label><textarea name="text" placeholder="What changed in this session? Mixes, decisions, what to try next…">'+(e?esc(e.text||''):'')+'</textarea>'
     +'<label>Photos</label><div class="thumbs" id="draft-images"></div>'
     +'<label class="file-btn" for="entry-photos">＋ Add photos…</label><input type="file" id="entry-photos" accept="image/*" multiple hidden data-role="entry-photos">'
@@ -472,7 +471,7 @@ async function onComposerSubmit(ev){
   const wasEdit=!!draft.id,prev=wasEdit?state.entries.find(x=>x.id===draft.id):null;
   const rec={id:draft.id||uid(),paintingId:pid,
     date:f.get('date')?new Date(f.get('date')).toISOString():new Date().toISOString(),
-    stage:f.get('stage')||'',text:(f.get('text')||'').trim(),
+    stage:'',text:(f.get('text')||'').trim(),
     images:draft.images,colors:draft.colors.filter(c=>c.hex),
     createdAt:prev?prev.createdAt:Date.now(),updatedAt:Date.now()};
   if(wasEdit){const i=state.entries.findIndex(x=>x.id===draft.id);state.entries[i]=rec;}else state.entries.push(rec);
@@ -496,7 +495,7 @@ function openPaintingForm(pid,onSaved){
     +'<div class="grid2"><div><label>Number (optional)</label><input type="number" name="number" min="1" placeholder="leave blank for none" value="'+(p?(p.number||''):'')+'"></div>'
     +'<div><label>Status</label><select name="status"><option value="in-progress" '+((!p||p.status==='in-progress')?'selected':'')+'>In progress</option>'
     +'<option value="finished" '+(p&&p.status==='finished'?'selected':'')+'>Finished</option></select></div></div>'
-    +'<label>Title</label><input type="text" name="title" placeholder="e.g. Harbor at Dusk" value="'+(p?esc(p.title):'')+'">'
+    +'<label>Title</label><input type="text" name="title" value="'+(p?esc(p.title):'')+'">'
     +'<div class="grid2"><div><label>Medium</label><select name="medium"><option value="">—</option>'+MEDIUMS.map(m=>'<option value="'+m+'" '+(p&&p.medium===m?'selected':'')+'>'+m+'</option>').join('')+'</select></div>'
     +'<div><label>Size / support</label><input type="text" name="size" placeholder="50 × 70 cm, canvas" value="'+(p?esc(p.size||''):'')+'"></div></div>'
     +'<div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
@@ -526,8 +525,8 @@ function fileToDataURL(file){
 function openLightboxFromEntry(eid,idx){const e=state.entries.find(x=>x.id===eid);if(!e)return;
   const p=getP(e.paintingId);lbSet=(e.images||[]).map(src=>({src,cap:numTag(p?p.number:'?')+' · '+fmtDateTime(e.date)}));showLB(idx);}
 function openLightboxFromPainting(pid,idx){const p=getP(pid);if(!p)return;
-  lbSet=entriesOf(pid).flatMap(e=>(e.images||[]).map(src=>({src,cap:numTag(p.number)+' · '+(e.stage?e.stage+' · ':'')+fmtShort(e.date)})));showLB(idx);}
-function showLB(i){
+  lbSet=entriesOf(pid).flatMap(e=>(e.images||[]).map(src=>({src,cap:numTag(p.number)+' · '+fmtShort(e.date)})));
+  function showLB(i){
   lbIdx=(i+lbSet.length)%lbSet.length;const it=lbSet[lbIdx];
   $('#lightbox').innerHTML='<button class="lb-btn lb-close" data-action="lb-close">✕</button>'
     +(lbSet.length>1?'<button class="lb-btn lb-prev" data-action="lb-nav" data-d="-1">←</button><button class="lb-btn lb-next" data-action="lb-nav" data-d="1">→</button>':'')
@@ -613,6 +612,14 @@ document.addEventListener('click',async e=>{
       if(!state.paintings.length){toast('Create a painting first');openPaintingForm();}
       else openComposer(null,t.dataset.painting||null);
       break;
+          case 'share-entry':{const se=state.entries.find(x=>x.id===t.dataset.id);
+      if(se){const sp=getP(se.paintingId);
+        let shareText=(sp?(sp.number?'№ '+pad2(sp.number)+' — ':'')+sp.title:'Studio session')+' · '+fmtShort(se.date);
+        if(se.text)shareText+=' — "'+(se.text.length>140?se.text.slice(0,140)+'…':se.text)+'"';
+        shareText+=' · Provenance, an art journal';
+        if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
+        else{navigator.clipboard.writeText(shareText+'\n'+location.href).then(()=>toast('🔗 Copied — paste it anywhere'));}}
+      break;}
     case 'edit-entry':openComposer(t.dataset.id);break;
     case 'delete-entry':
       if(confirm('Delete this entry?')){state.entries=state.entries.filter(x=>x.id!==t.dataset.id);if(await save()){closeModal();render();toast('Entry deleted');}}
@@ -847,7 +854,6 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
     return `<div class="book-entry">
       <div class="book-entry-head">
         <span class="book-entry-date">${fmtShort(e.date)} · ${fmtTime(e.date)}</span>
-        ${e.stage ? `<span class="book-entry-stage">${esc(e.stage)}</span>` : ''}
       </div>
       ${e.text ? `<p class="book-entry-text">${esc(e.text)}</p>` : ''}
       ${e.images && e.images.length ? `<div class="book-entry-images">${e.images.map(src => `<img src="${src}" class="book-img" alt="">`).join('')}</div>` : ''}
@@ -865,7 +871,6 @@ Opens your journal in a new tab with a “Copy everything” button — then pas
         <div class="book-tl-meta">
           <span class="book-tl-paint">${p ? esc(pLabel(p)) : '(deleted painting)'}</span>
           <span>${fmtTime(e.date)}</span>
-          ${e.stage ? `<span class="book-tl-stage">${esc(e.stage)}</span>` : ''}
         </div>
         ${e.text ? `<p class="book-tl-text">${esc(e.text)}</p>` : ''}
         ${e.images && e.images.length ? `<div class="book-entry-images small">${e.images.map(src => `<img src="${src}" class="book-img" alt="">`).join('')}</div>` : ''}
@@ -1006,7 +1011,6 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
             return `<div class="entry">
               <div class="entry-head">
                 <span>${fmtShort(e.date)} · ${fmtTime(e.date)}</span>
-                ${e.stage ? `<span class="entry-stage">${esc(e.stage)}</span>` : ''}
               </div>
               ${e.text ? `<p class="entry-text">${esc(e.text)}</p>` : ''}
               ${e.images && e.images.length ? `<div class="images">${e.images.map(src => `<img src="${src}" class="entry-img" alt="">`).join('')}</div>` : ''}
@@ -1028,7 +1032,6 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
           <div class="tl-meta">
             <span class="tl-paint">${p ? esc(pLabel(p)) : '(deleted painting)'}</span>
             <span>${fmtTime(e.date)}</span>
-            ${e.stage ? `<span class="tl-stage">${esc(e.stage)}</span>` : ''}
           </div>
           ${e.text ? `<p class="tl-text">${esc(e.text)}</p>` : ''}
           ${e.images && e.images.length ? `<div class="images">${e.images.map(src => `<img src="${src}" class="entry-img small" alt="">`).join('')}</div>` : ''}
