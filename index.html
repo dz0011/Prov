@@ -221,9 +221,10 @@ main{max-width:1100px;margin:0 auto;padding:28px 18px 120px;position:relative;z-
         <span class="brand-dabs"><i></i><i></i><i></i></span>
         <span class="brand-name"><span class="s1">P</span><span class="s2">ro</span><span class="s3">ve</span><span class="s4">na</span><span class="s5">nce</span></span>
       </button>
-      <nav class="tabs">
+          <nav class="tabs">
         <button class="tab" data-action="goto" data-view="timeline">Timeline</button>
         <button class="tab" data-action="goto" data-view="paintings">Works</button>
+        <button class="tab" data-action="goto" data-view="viewer">Viewer</button>
       </nav>
       <div class="bar-right">
         <div class="menu-wrap">
@@ -352,6 +353,7 @@ function render(){
   if(view.name==='timeline')el.innerHTML=timelineHTML();
   else if(view.name==='paintings')el.innerHTML=paintingsHTML();
   else if(view.name==='entry')el.innerHTML=entryDetailHTML(view.entryId);
+  else if(view.name==='viewer'){el.innerHTML=viewerHTML();if(typeof drawViewer==='function')drawViewer();}
   else el.innerHTML=paintingDetailHTML(view.paintingId);
 }
 function filteredEntries(){
@@ -1522,6 +1524,105 @@ body.dark .auth-wrap{background:
     apply(t);
   });
 })();
+</script>
+<style>
+/* Share & edit icons: more breathing room, starting just below the date line */
+.etools{top:26px;gap:10px}
+</style>
+<script>
+/* ================= Viewer tab: a generative remix of your oeuvre ================= */
+function viewerHTML(){
+  return '<div class="page-head"><div><h1 class="display">Viewer</h1>'
+    +'<p class="sub">A generative remix of your oeuvre — arranged anew every refresh.</p></div>'
+    +'<div class="menu-wrap"><button class="icon-btn" data-action="viewer-menu" title="Viewer options" style="font-size:20px;padding:8px">⋮</button>'
+    +'<div class="menu" id="viewer-menu" style="background:var(--card);border-color:var(--line)">'
+    +'<button data-action="viewer-download" style="color:var(--ink)">⬇ Download image</button>'
+    +'<button data-action="viewer-remix" style="color:var(--ink)">↻ Remix arrangement</button>'
+    +'</div></div></div>'
+    +(state.paintings.length
+      ?'<div class="card" style="padding:10px"><img id="viewer-img" alt="Generative artwork made from your journal" style="width:100%;display:block;border-radius:8px"></div>'
+       +'<p class="hint" style="margin-top:10px;text-align:center">Hold the image down to save it · or tap ⋮ → Download · remix or refresh for a new arrangement.</p>'
+      :'<div class="empty small">Add works and entries and your oeuvre will be remixed here.</div>');
+}
+function drawViewer(){
+  var img=document.getElementById('viewer-img');if(!img)return;
+  var W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;
+  var x=c.getContext('2d');
+  var rnd=mulberry32((Math.random()*1e9)>>>0);
+  var dark=document.body.classList.contains('dark');
+  var hs=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hue-shift'))||0;
+  function hsl(h,s,l,a){return 'hsla('+(((h+hs)%360+360)%360)+','+s+'%,'+l+'%,'+a+')';}
+  function hexA(hex,a){var h=String(hex).replace('#','');if(h.length===3)h=h.split('').map(function(ch){return ch+ch;}).join('');var n=parseInt(h,16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+  x.fillStyle=dark?'#191A20':'#F2F1EC';x.fillRect(0,0,W,H);
+  [[205,45,60,.16],[18,50,50,.13],[152,35,40,.13],[0,0,100,dark?.05:.5]].forEach(function(w){
+    var gx=rnd()*W,gy=rnd()*H,gr=300+rnd()*520;
+    var g=x.createRadialGradient(gx,gy,0,gx,gy,gr);
+    g.addColorStop(0,hsl(w[0],w[1],w[2],w[3]));g.addColorStop(1,hsl(w[0],w[1],w[2],0));
+    x.fillStyle=g;x.fillRect(0,0,W,H);
+  });
+  var ps=[...state.paintings].sort(function(a,b){return a.number-b.number;});
+  var styles=['blob','rect','ring'];
+  x.globalCompositeOperation=dark?'screen':'multiply';
+  x.lineCap='round';
+  ps.forEach(function(p){
+    var es=entriesOf(p.id);
+    var cols=uniqueColors(es).map(function(cc){return cc.hex;});
+    var pal=cols.length?cols:['#2733C9','#DE4A1F','#E39B18','#2E7D5B'];
+    var cx=150+rnd()*(W-300),cy=170+rnd()*(H-340);
+    var style=styles[Math.floor(rnd()*styles.length)];
+    if(p.number){
+      x.save();x.globalCompositeOperation='source-over';
+      x.fillStyle=dark?'rgba(244,242,236,.09)':'rgba(25,26,32,.07)';
+      x.font='italic 700 '+Math.round(180+rnd()*140)+'px Fraunces, Georgia, serif';
+      x.translate(cx,cy);x.rotate((rnd()-.5)*.6);x.textAlign='center';x.textBaseline='middle';
+      x.fillText(pad2(p.number),0,0);x.restore();
+    }
+    var px=cx,py=cy;
+    var n=Math.max(es.length,1);
+    for(var i=0;i<n;i++){
+      var e=es[i];
+      var col=(e&&e.colors&&e.colors.length)?e.colors[Math.floor(rnd()*e.colors.length)].hex:pal[Math.floor(rnd()*pal.length)];
+      var nx=cx+(rnd()-.5)*440,ny=cy+(rnd()-.5)*440;
+      x.strokeStyle=hexA(col,.4);x.lineWidth=2+rnd()*7;
+      x.beginPath();x.moveTo(px,py);
+      x.quadraticCurveTo((px+nx)/2+(rnd()-.5)*180,(py+ny)/2+(rnd()-.5)*180,nx,ny);x.stroke();
+      var r=14+rnd()*46;
+      x.save();x.translate(nx,ny);x.rotate((rnd()-.5)*1.4);
+      if(style==='rect'){x.fillStyle=hexA(col,.45+rnd()*.3);x.fillRect(-r*1.4,-r*.9,r*2.8,r*1.8);}
+      else if(style==='ring'){x.strokeStyle=hexA(col,.55+rnd()*.3);x.lineWidth=3+rnd()*8;x.beginPath();x.arc(0,0,r,0,7);x.stroke();}
+      else{
+        x.fillStyle=hexA(col,.4+rnd()*.35);x.beginPath();x.moveTo(r,0);
+        for(var k=1;k<=7;k++){var ang=k/7*Math.PI*2,rr=r*(.75+rnd()*.5);x.lineTo(Math.cos(ang)*rr,Math.sin(ang)*rr);}
+        x.closePath();x.fill();
+      }
+      x.restore();
+      px=nx;py=ny;
+    }
+  });
+  x.globalCompositeOperation='source-over';
+  for(var i2=0;i2<140;i2++){
+    x.fillStyle=dark?'rgba(244,242,236,'+(.04+rnd()*.08)+')':'rgba(25,26,32,'+(.04+rnd()*.08)+')';
+    x.beginPath();x.arc(rnd()*W,rnd()*H,1+rnd()*3,0,7);x.fill();
+  }
+  var vg=x.createRadialGradient(W/2,H/2,H/3,W/2,H/2,H*.78);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,dark?'rgba(0,0,0,.42)':'rgba(20,18,12,.15)');
+  x.fillStyle=vg;x.fillRect(0,0,W,H);
+  img.src=c.toDataURL('image/jpeg',.9);
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-action]');
+  var m=document.getElementById('viewer-menu');
+  if(m&&m.classList.contains('open')&&(!t||t.dataset.action!=='viewer-menu'))m.classList.remove('open');
+  if(!t)return;
+  var a=t.dataset.action;
+  if(a==='viewer-menu'){if(m)m.classList.toggle('open');}
+  else if(a==='viewer-download'){
+    var img=document.getElementById('viewer-img');
+    if(img&&img.src){var link=document.createElement('a');link.href=img.src;link.download='provenance-viewer-'+new Date().toISOString().slice(0,10)+'.jpg';link.click();toast('Viewer image downloaded');}
+    if(m)m.classList.remove('open');
+  }
+  else if(a==='viewer-remix'){drawViewer();toast('↻ Remixed');if(m)m.classList.remove('open');}
+});
 </script>
 </body>
 </html>
