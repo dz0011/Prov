@@ -2734,7 +2734,7 @@ function drawViewer(){
           var nn=d.length/4;
           var hex='#'+[rr,gg,bb].map(function(vv){return Math.round(vv/nn).toString(16).padStart(2,'0');}).join('');
           w.pal.push(hex);
-      }catch(e3){}
+   }catch(e3){}
 if(vPlaying){vRaf=requestAnimationFrame(vLoop);}else{paintCurrent();}
 syncSaveBtn();
 };
