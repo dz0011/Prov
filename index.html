@@ -297,7 +297,10 @@ const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const pad2=n=>String(n).padStart(2,'0');
 const numTag=n=>n?'№ '+pad2(n):'';
-const pLabel=p=>p.number?('№ '+pad2(p.number)+' — '+p.title):p.title;
+const pLabel=p=>{
+  const name=(p.title&&p.title!=='Untitled')?p.title:(p.number?'Untitled':'Untitled work');
+  return p.number?('№ '+pad2(p.number)+' — '+name):name;
+};
 const bookNum=p=>p.number?('<div class="book-pnum">№ '+pad2(p.number)+'</div>'):'';
 const docsNum=p=>p.number?('<div class="pnum">№ '+pad2(p.number)+'</div>'):'';
 const plural=(s,p,n)=>n===1?s:p;
@@ -510,20 +513,20 @@ function openPaintingForm(pid,onSaved){
   const nextNum=p?p.number:state.paintings.reduce((m,x)=>Math.max(m,x.number||0),0)+1;
   const layer=openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="pform">'
     +'<div class="panel-head"><h2>'+(p?'Edit work':'New work')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
-    +'<div class="grid2"><div><label>Number (optional)</label><input type="number" name="number" min="1" placeholder="leave blank for none" value="'+(p?(p.number||''):'')+'"></div>'
-    +'<div><label>Status</label><select name="status"><option value="in-progress" '+((!p||p.status==='in-progress')?'selected':'')+'>In progress</option>'
-    +'<option value="finished" '+(p&&p.status==='finished'?'selected':'')+'>Finished</option></select></div></div>'
-    +'<label>Title</label><input type="text" name="title" value="'+(p?esc(p.title):'')+'">'
-    +'<div class="grid2"><div><label>Medium</label><select name="medium"><option value="">—</option>'+MEDIUMS.map(m=>'<option value="'+m+'" '+(p&&p.medium===m?'selected':'')+'>'+m+'</option>').join('')+'</select></div>'
-    +'<div><label>Size / support</label><input type="text" name="size" placeholder="50 × 70 cm, canvas" value="'+(p?esc(p.size||''):'')+'"></div></div>'
+      +'<div class="grid2"><div><label>Number (optional)</label><input type="number" name="number" min="1" placeholder="leave blank for none" value="'+(p?(p.number||''):'')+'"></div>'
+    +'<div><label>Medium</label><select name="medium"><option value="">—</option>'+MEDIUMS.map(m=>'<option value="'+m+'" '+(p&&p.medium===m?'selected':'')+'>'+m+'</option>').join('')+'</select></div></div>'
+    +'<label>Title (optional)</label><input type="text" name="title" placeholder="Leave blank for untitled" value="'+(p?esc(p.title==='Untitled'?'':p.title):'')+'">'
+    +(p?'<div class="grid2"><div><label>Status</label><select name="status"><option value="in-progress" '+(p.status==='in-progress'?'selected':'')+'>In progress</option>'
+    +'<option value="finished" '+(p.status==='finished'?'selected':'')+'>Finished</option></select></div>'
+    +'<div><label>Size / support</label><input type="text" name="size" placeholder="50 × 70 cm, canvas" value="'+(p?esc(p.size||''):'')+'"></div></div>':'')
     +'<div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
     +'<button class="btn primary">'+(p?'Save changes':'Create work')+'</button></div></form></div>');
   layer.querySelector('#pform').addEventListener('submit',async ev=>{
     ev.preventDefault();
     const f=new FormData(ev.target);
     const title=(f.get('title')||'').trim();
-    if(!title){toast('Give the piece a title.');return;}
-    const rec={id:p?p.id:uid(),number:parseInt(f.get('number'))||0,title,medium:f.get('medium')||'',size:(f.get('size')||'').trim(),status:f.get('status'),createdAt:p?p.createdAt:Date.now()};
+    // Title is optional — works can be untitled
+    const rec={id:p?p.id:uid(),number:parseInt(f.get('number'))||0,title:title||'Untitled',medium:f.get('medium')||'',size:(f.get('size')||'').trim(),status:f.get('status'),createdAt:p?p.createdAt:Date.now()};
     if(p)Object.assign(p,rec);else state.paintings.push(rec);
     if(await save()){toast(p?'Work updated':'Work '+numTag(rec.number)+' created');closeModal();render();if(onSaved)onSaved(rec.id);}
   });
