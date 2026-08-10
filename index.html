@@ -400,9 +400,9 @@ function entryCardHTML(e,i){
     +'<button class="display" data-action="open-painting" data-id="'+(p?p.id:'')+'" style="font-size:clamp(24px,4vw,34px);background:none;border:0;color:inherit;cursor:pointer;padding:0;text-align:left;font-weight:640;line-height:1.05;letter-spacing:-.5px">'+(p?numTag(p.number)+'<span> '+esc(p.title)+'</span>':'<span>(deleted work)</span>')+'</button>'
     +'<p class="sub">'+fmtDateTime(e.date)+'</p>'
     +'<div class="pd-actions" style="margin-top:14px">'
-    +'<button class="btn ghost" data-action="share-entry" data-id="'+e.id+'">📤 Share</button>'
-    +'<button class="btn ghost" data-action="edit-entry" data-id="'+e.id+'">✎ Edit</button>'
     +(p?'<button class="btn ghost" data-action="open-painting" data-id="'+p.id+'">View work</button>':'')
+    +'<button class="btn ghost" data-action="edit-entry" data-id="'+e.id+'">✎ Edit</button>'
+    +'<button class="btn ghost" data-action="share-entry" data-id="'+e.id+'">📤 Share</button>'
     +'</div></div></div>'
     +(e.text?'<section class="card" style="padding:18px 20px;margin-bottom:14px"><p class="etext" style="margin:0">'+esc(e.text)+'</p></section>':'')
     +(imgs.length?'<section><h3 class="h3">Photos</h3><div class="thumbs">'+imgs.map((src,j)=>'<button class="thumb" style="width:150px;height:112px" data-action="lightbox" data-entry="'+e.id+'" data-idx="'+j+'"><img src="'+src+'" alt="" loading="lazy"></button>').join('')+'</div></section>':'');
