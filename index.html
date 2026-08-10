@@ -556,8 +556,7 @@ function openLightboxFromPainting(pid,idx){const p=getP(pid);if(!p)return;
   lbSet=entriesOf(pid).flatMap(e=>(e.images||[]).map(src=>({src,cap:numTag(p.number)+' · '+fmtShort(e.date)})));showLB(idx);}
 function showLB(i){
   lbIdx=(i+lbSet.length)%lbSet.length;const it=lbSet[lbIdx];
-  $('#lightbox').innerHTML='<button class="lb-btn lb-close" data-action="lb-close">✕</button>'
-    +(lbSet.length>1?'<button class="lb-btn lb-prev" data-action="lb-nav" data-d="-1">←</button><button class="lb-btn lb-next" data-action="lb-nav" data-d="1">→</button>':'')
+  $('#lightbox').innerHTML=(lbSet.length>1?'<button class="lb-btn lb-prev" data-action="lb-nav" data-d="-1">←</button><button class="lb-btn lb-next" data-action="lb-nav" data-d="1">→</button>':'')
     +'<figure><img src="'+it.src+'" alt=""><figcaption>'+it.cap+' · '+(lbIdx+1)+' / '+lbSet.length+'</figcaption></figure>';
   $('#lightbox').classList.add('open');document.body.classList.add('locked');
 }
@@ -627,7 +626,7 @@ function showApp(){$('#auth-screen').style.display='none';$('#app-shell').style.
 function showAuth(){$('#app-shell').style.display='none';$('#auth-screen').style.display='flex';setAuthMsg('');}
 
 document.addEventListener('click',async e=>{
-  if(e.target.id==='lightbox'){hideLB();return;}
+  if(e.target.closest('#lightbox')&&!e.target.closest('[data-action]')){hideLB();return;}
   const t=e.target.closest('[data-action]');
   const menu=$('#menu');
   if(menu&&menu.classList.contains('open')&&!e.target.closest('.menu-wrap'))menu.classList.remove('open');
@@ -781,7 +780,7 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     menu.insertBefore(btnDocs, signOut);
         const btnSupport = document.createElement('button');
     btnSupport.dataset.action = 'report-issue';
-    btnSupport.innerHTML = '🐛 Report an issue';
+    btnSupport.innerHTML = '🐛 Report a bug';
     menu.insertBefore(btnSupport, signOut);
   }
   
@@ -1095,7 +1094,7 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
     db.auth.getUser().then(({data})=>{
       const email=(data&&data.user&&data.user.email)||'';
       openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="ticket-form">'
-        +'<div class="panel-head"><h2>🐛 Report an issue</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
+        +'<div class="panel-head"><h2>🐛 Report a bug</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
         +'<p class="sub" style="margin-bottom:14px">Tell us what went wrong — your report goes straight to the developer.</p>'
         +'<label>What happened?</label>'
         +'<textarea name="message" placeholder="Describe the issue — what you tapped, what you expected, what happened instead…" required style="min-height:120px"></textarea>'
@@ -1836,8 +1835,7 @@ function openLightboxFromPainting(pid,idx){const p=getP(pid);if(!p)return;
   lbSet=entriesOf(pid).flatMap(e=>(e.images||[]).map(src=>({src,cap:numTag(p.number)+' · '+fmtShort(e.date)})));showLB(idx);}
 function showLB(i){
   lbIdx=(i+lbSet.length)%lbSet.length;const it=lbSet[lbIdx];
-  $('#lightbox').innerHTML='<button class="lb-btn lb-close" data-action="lb-close">✕</button>'
-    +(lbSet.length>1?'<button class="lb-btn lb-prev" data-action="lb-nav" data-d="-1">←</button><button class="lb-btn lb-next" data-action="lb-nav" data-d="1">→</button>':'')
+  $('#lightbox').innerHTML=(lbSet.length>1?'<button class="lb-btn lb-prev" data-action="lb-nav" data-d="-1">←</button><button class="lb-btn lb-next" data-action="lb-nav" data-d="1">→</button>':'')
     +'<figure><img src="'+it.src+'" alt=""><figcaption>'+it.cap+' · '+(lbIdx+1)+' / '+lbSet.length+'</figcaption></figure>';
   $('#lightbox').classList.add('open');document.body.classList.add('locked');
 }
@@ -1909,7 +1907,7 @@ function showApp(){$('#auth-screen').style.display='none';$('#app-shell').style.
 function showAuth(){$('#app-shell').style.display='none';$('#auth-screen').style.display='flex';setAuthMsg('');}
 
 document.addEventListener('click',async e=>{
-  if(e.target.id==='lightbox'){hideLB();return;}
+  if(e.target.closest('#lightbox')&&!e.target.closest('[data-action]')){hideLB();return;}
   const t=e.target.closest('[data-action]');
   const menu=$('#menu');
   if(menu&&menu.classList.contains('open')&&!e.target.closest('.menu-wrap'))menu.classList.remove('open');
@@ -2059,7 +2057,7 @@ try{const _k=new URLSearchParams(location.search).get('key');if(_k){anonKey=_k;t
     menu.insertBefore(btnDocs, signOut);
         const btnSupport = document.createElement('button');
     btnSupport.dataset.action = 'report-issue';
-    btnSupport.innerHTML = '🐛 Report an issue';
+    btnSupport.innerHTML = '🐛 Report a bug';
     menu.insertBefore(btnSupport, signOut);
   }
   
@@ -2373,7 +2371,7 @@ h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#4A4B54;mar
     db.auth.getUser().then(({data})=>{
       const email=(data&&data.user&&data.user.email)||'';
       openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="ticket-form">'
-        +'<div class="panel-head"><h2>🐛 Report an issue</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
+        +'<div class="panel-head"><h2>🐛 Report a bug</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
         +'<p class="sub" style="margin-bottom:14px">Tell us what went wrong — your report goes straight to the developer.</p>'
         +'<label>What happened?</label>'
         +'<textarea name="message" placeholder="Describe the issue — what you tapped, what you expected, what happened instead…" required style="min-height:120px"></textarea>'
