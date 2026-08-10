@@ -3922,7 +3922,160 @@ return h;
 };
 document.addEventListener('click',function(e){
 if(e.target.closest('.museum-note'))e.stopImmediatePropagation();
-},true);
+}
+</script>
+<style>
+/* ---- Gear pinned to the TOP-right of the header on all pages ---- */
+.bar{position:relative;padding-right:54px}
+.bar-right{position:absolute;top:8px;right:12px;margin-left:0}
+/* ---- Timeline/Works toggle: more translucent, refined crisp edge ---- */
+.tabs{background:rgba(252,251,247,.16);border:1.5px solid rgba(25,26,32,.30);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 2px 12px -6px rgba(25,26,32,.35)}
+body.dark .tabs{background:rgba(25,26,32,.22);border-color:rgba(242,241,236,.32);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 2px 12px -6px rgba(0,0,0,.5)}
+.tabs::before{background:rgba(25,26,32,.12);border:1px solid rgba(25,26,32,.25);box-shadow:none}
+body.dark .tabs::before{background:rgba(242,241,236,.14);border-color:rgba(242,241,236,.28);box-shadow:none}
+/* ---- Viewer-only gear items ---- */
+#menu [data-action="viewer-explain"],#menu [data-action="viewer-melt"]{display:none}
+body.on-viewer #menu [data-action="viewer-explain"],body.on-viewer #menu [data-action="viewer-melt"]{display:block}
+/* ---- Speed creature (dark mode skin) ---- */
+body.dark #vspeed-ico{background:rgba(25,26,32,.45);box-shadow:0 2px 8px rgba(0,0,0,.5)}
+</style>
+<script>
+/* ---- 1) Search boxes: plain, predictable text fields (no password/autocomplete hints) ---- */
+function fixSearchInputs(){
+var inps=document.querySelectorAll('#tl-search,#wk-search');
+for(var i=0;i<inps.length;i++){var inp=inps[i];
+inp.setAttribute('type','text');
+inp.setAttribute('inputmode','search');
+inp.setAttribute('enterkeyhint','search');
+inp.setAttribute('autocapitalize','off');
+inp.setAttribute('autocorrect','off');
+inp.setAttribute('spellcheck','false');
+inp.setAttribute('autocomplete','off');
+inp.setAttribute('name','provenance-search');
+inp.setAttribute('role','searchbox');
+inp.setAttribute('data-lpignore','true');
+}
+}
+if(typeof render==='function'&&!render._searchWrapped){
+var _r4=render;
+render=function(){var r=_r4.apply(this,arguments);fixSearchInputs();return r;};
+render._searchWrapped=1;
+}
+fixSearchInputs();
+/* ---- 2) Speed creature: inject at the right edge, level with the refresh button ---- */
+(function(){
+var _vh10=viewerHTML;
+viewerHTML=function(){
+var h=_vh10();
+h=h.replace('margin-top:14px;padding-right:16px','margin-top:14px;padding-right:56px;position:relative');
+h=h.replace('>↻</button></div>','>↻</button><button id="vspeed-ico" type="button" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);border:0;border-radius:999px;padding:6px 10px;font-size:16px;line-height:1;cursor:pointer;background:rgba(252,251,247,.4);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);box-shadow:0 2px 8px rgba(20,18,12,.25)" aria-label="Current movement speed" title="Movement speed">🪨</button></div>');
+return h;
+};
+})();
+function syncSpeedIco(){
+var el=document.getElementById('vspeed-ico');if(!el)return;
+var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));
+var label=vSpeedIdx===0?'Stopped (tap to start)':'Speed '+vSpeedIdx+' of 10';
+if(el.textContent!==ic){
+if(el.animate){
+el.animate([{filter:'blur(0px)',transform:'translateY(-50%) scale(1)',opacity:.9},
+{filter:'blur(6px)',transform:'translateY(-50%) scale(.6)',opacity:0}],
+{duration:150,easing:'ease-in'}).onfinish=function(){
+el.textContent=ic;el.title=label;el.setAttribute('aria-label',label);
+el.animate([{filter:'blur(6px)',transform:'translateY(-50%) scale(1.3)',opacity:0},
+{filter:'blur(0px)',transform:'translateY(-50%) scale(1)',opacity:.9}],
+{duration:230,easing:'ease-out'});
+};
+}else{el.textContent=ic;el.title=label;el.setAttribute('aria-label',label);}
+}else{el.title=label;el.setAttribute('aria-label',label);}
+}
+document.addEventListener('click',function(e){
+if(!e.target.closest('#vspeed-ico'))return;
+vSpeedIdx=(vSpeedIdx+1)%VSPEEDS.length;
+cancelAnimationFrame(vRaf);
+if(VSPEEDS[vSpeedIdx]>0){vPrev=performance.now();vLast=0;vRaf=requestAnimationFrame(vLoop);}
+else{paintCurrent();}
+syncSpeedIco();
+});
+/* ---- 3) Gear menu on Viewer: Explain + Extra melt ---- */
+(function(){
+var menu=document.getElementById('menu');
+if(menu){
+if(!menu.querySelector('[data-action="viewer-explain"]')){
+var b1=document.createElement('button');b1.dataset.action='viewer-explain';b1.innerHTML='❓ Explain the Viewer';
+menu.insertBefore(b1,menu.querySelector('[data-action="sign-out"]'));
+}
+if(!menu.querySelector('[data-action="viewer-melt"]')){
+var b2=document.createElement('button');b2.dataset.action='viewer-melt';
+menu.insertBefore(b2,menu.querySelector('[data-action="sign-out"]'));
+}
+}
+function meltLabel(){var on=document.body.classList.contains('viewer-melt');
+var b=document.querySelector('[data-action="viewer-melt"]');
+if(b)b.innerHTML=on?'🫠 Extra melty blending ✓':'🫠 Extra melty blending';}
+try{if(localStorage.getItem('provenance.melt')==='1')document.body.classList.add('viewer-melt');}catch(e){}
+meltLabel();
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="viewer-explain"]');
+if(t){
+document.getElementById('menu').classList.remove('open');
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
++'<div class="panel-head"><h2>The Viewer</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="sub" style="margin-bottom:12px">A living painting composed from your own studio.</p>'
++'<p class="etext">• Each visit arranges your works — their photos, palettes and history — into a one-of-a-kind composition. No two are alike.</p>'
++'<p class="etext">• Tap the painting (or the little creature at the right) to cycle its movement: 🪨 stopped →  slow →  lively → 🚀 wild, then back to rest.</p>'
++'<p class="etext">• ↻ composes a brand-new arrangement; ⋮ downloads the current painting as an image.</p>'
++'<p class="etext">• “Extra melty blending” in this menu softens all edges into wet, moldy washes.</p>'
++'<p class="etext">• Before you add works, the wall hangs public-domain homages so it is never empty.</p>'
++'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div>'
++'</div></div>');
+return;
+}
+var m=e.target.closest('[data-action="viewer-melt"]');
+if(m){
+document.body.classList.toggle('viewer-melt');
+try{localStorage.setItem('provenance.melt',document.body.classList.contains('viewer-melt')?'1':'0');}catch(e2){}
+meltLabel();
+document.getElementById('menu').classList.remove('open');
+if(typeof paintCurrent==='function')paintCurrent();
+}
+});
+})();
+/* ---- 4) Softer, meltier Viewer edges (plus a heavy-melt option) ---- */
+var _pv4=paintViewer;
+paintViewer=function(x,W,H,s,t){
+_pv4(x,W,H,s,t);
+var sc=W/1080;
+x.save();
+x.filter='blur('+(7*sc)+'px)';
+x.globalAlpha=.15;
+x.drawImage(x.canvas,0,0,W,H,-3*sc,-2*sc,W,H);
+x.restore();
+if(document.body.classList.contains('viewer-melt')){
+x.save();
+x.filter='blur('+(10*sc)+'px)';
+x.globalAlpha=.30;
+x.drawImage(x.canvas,0,0,W,H,4*sc,5*sc,W,H);
+x.drawImage(x.canvas,0,0,W,H,-5*sc,-4*sc,W,H);
+x.restore();
+}
+};
+/* ---- 5) Phone back button → Timeline instead of exiting ---- */
+(function(){
+function pushSentinel(){try{history.pushState({prov:1},'');}catch(e){}}
+window.addEventListener('popstate',function(){
+var shell=document.getElementById('app-shell');
+if(!shell||shell.style.display==='none')return;
+if(typeof view==='undefined')return;
+if(view.name!=='timeline'){
+view={name:'timeline',q:''};render();window.scrollTo(0,0);
+pushSentinel();
+}
+});
+pushSentinel();
+})();
 </script>
 </body>
 </html>
