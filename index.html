@@ -3729,5 +3729,25 @@ body.on-viewer .page-head::before{
   };
 })();
 </script>
+<script>
+/* ---- Viewer-only: tap any background space to toggle light/dark ---- */
+(function(){
+  var _vh8=viewerHTML;
+  viewerHTML=function(){
+    return _vh8()
+      .replace('<div style="border-radius:6px;padding:','<div class="vframe" style="border-radius:6px;padding:')
+      .replace('<div style="display:flex;justify-content:center;align-items:center;margin-top:14px">','<div style="display:flex;justify-content:center;align-items:center;margin-top:14px;padding-right:16px">');
+  };
+})();
+document.addEventListener('click',function(e){
+  if(typeof view==='undefined'||view.name!=='viewer')return;
+  if(e.target.closest('button, a, input, select, textarea, label, .menu, #viewer-canvas, .vframe, h1, p'))return;
+  var dark=!document.body.classList.contains('dark');
+  document.body.classList.toggle('dark',dark);
+  try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+  var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+  if(typeof paintCurrent==='function'&&typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]===0)paintCurrent();
+});
+</script>
 </body>
 </html>
