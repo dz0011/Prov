@@ -518,7 +518,7 @@ function openPaintingForm(pid,onSaved){
     +'<label>Title (optional)</label><input type="text" name="title" placeholder="Leave blank for untitled" value="'+(p&&p.title!=='Untitled'?esc(p.title):'')+'">'
     +(p?'<div class="grid2"><div><label>Status</label><select name="status"><option value="in-progress" '+(p.status==='in-progress'?'selected':'')+'>In progress</option>'
     +'<option value="finished" '+(p.status==='finished'?'selected':'')+'>Finished</option></select></div>'
-    +'<div><label>Size / support</label><input type="text" name="size" placeholder="50 × 70 cm, canvas" value="'+esc(p.size||'')+'"></div></div>':'')
+    +'<div><label>Size</label><input type="text" name="size" value="'+esc(p.size||'')+'"></div></div>':'')
     +'<div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
     +'<button class="btn primary">'+(p?'Save changes':'Create work')+'</button></div></form></div>');
   layer.querySelector('#pform').addEventListener('submit',async ev=>{
@@ -1698,7 +1698,7 @@ function pcardHTML(p,i){
   return '<article class="pcard card" style="--i:'+Math.min(i,8)+'" data-action="open-painting" data-id="'+p.id+'" role="button" tabindex="0">'
     +'<div class="pcover" style="'+(cover?'':'--h:'+((p.number*47)%360))+'">'
     +(cover?'<img src="'+cover+'" alt="" loading="lazy">':'<span class="pnum-ghost">'+(p.number?pad2(p.number):'')+'</span>')
-    +'<span class="status '+(p.status==='finished'?'done':'wip')+'">'+(p.status==='finished'?'Finished':'In progress')+'</span></div>'
+    +'</div>'
     +'<div class="pinfo"><div class="prow"><span class="pnum">'+numTag(p.number)+'</span><span class="ptitle">'+esc(p.title)+'</span></div>'
     +'<div class="pmeta">'+(p.medium||'—')+(p.size?' · '+esc(p.size):'')+' · '+es.length+' '+plural('entry','entries',es.length)+(es.length?' · '+timeAgo(lastActivity(p)):'')+'</div>'
     +'</div></article>';
@@ -1792,7 +1792,7 @@ function openPaintingForm(pid,onSaved){
     +'<label>Title (optional)</label><input type="text" name="title" placeholder="Leave blank for untitled" value="'+(p&&p.title!=='Untitled'?esc(p.title):'')+'">'
     +(p?'<div class="grid2"><div><label>Status</label><select name="status"><option value="in-progress" '+(p.status==='in-progress'?'selected':'')+'>In progress</option>'
     +'<option value="finished" '+(p.status==='finished'?'selected':'')+'>Finished</option></select></div>'
-    +'<div><label>Size / support</label><input type="text" name="size" placeholder="50 × 70 cm, canvas" value="'+esc(p.size||'')+'"></div></div>':'')
+    +'<div><label>Size</label><input type="text" name="size" value="'+esc(p.size||'')+'"></div></div>':'')
     +'<div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
     +'<button class="btn primary">'+(p?'Save changes':'Create work')+'</button></div></form></div>');
   layer.querySelector('#pform').addEventListener('submit',async ev=>{
@@ -2578,6 +2578,9 @@ img, .pcover, .film img, .thumb img, .book-img, .entry-img, .book-film img, .lig
 .bar .btn.primary::before,.fab::before{position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8B877C;opacity:.7;white-space:nowrap;pointer-events:none}
 .bar .btn.primary::before{content:'New entry'}
 .fab::before{content:'New work'}
+</style>
+  <style>
+.pgrid .pcard{border-radius:0}
 </style>
 </body>
 </html>
