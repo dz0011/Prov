@@ -4663,5 +4663,43 @@ inp.setAttribute('data-lpignore','true');inp.setAttribute('data-1p-ignore','');i
 if(typeof render==='function'&&!render._searchWrapped){var _rX=render;render=function(){var r=_rX.apply(this,arguments);fixSearchInputs();return r;};render._searchWrapped=1;}
 fixSearchInputs();
 </script>
+<style>
+/* ---- Timeline/Works: keep the rainbow, but at 15% strength, with crisp readable labels ---- */
+.tab[data-view="timeline"],.tab[data-view="paintings"]{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),75%,55%,.15),
+hsla(calc(15 + var(--hue-shift,0)),80%,58%,.15) 45%,
+hsla(calc(45 + var(--hue-shift,0)),85%,52%,.15) 78%,
+hsla(calc(160 + var(--hue-shift,0)),65%,48%,.15))!important;
+background-size:100% 100%!important;
+-webkit-background-clip:border-box!important;
+background-clip:border-box!important;
+animation:none!important;
+color:var(--ink)!important;
+-webkit-text-fill-color:var(--ink)!important;
+}
+body.dark .tab[data-view="timeline"],body.dark .tab[data-view="paintings"]{
+color:#F2F1EC!important;
+-webkit-text-fill-color:#F2F1EC!important;
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),80%,68%,.15),
+hsla(calc(15 + var(--hue-shift,0)),85%,68%,.15) 45%,
+hsla(calc(45 + var(--hue-shift,0)),90%,62%,.15) 78%,
+hsla(calc(160 + var(--hue-shift,0)),70%,60%,.15))!important;
+}
+/* Sliding knob stays a soft translucent tint so labels never fight it */
+.tabs::before{background:rgba(25,26,32,.10)!important;border:1px solid rgba(25,26,32,.28);box-shadow:none!important}
+body.dark .tabs::before{background:rgba(242,241,236,.14)!important;border:1px solid rgba(242,241,236,.32);box-shadow:none!important}
+</style>
+<script>
+/* ---- "Newest first" always means the entry's own date, never when it was typed in ---- */
+function filteredEntries(){
+let es=[...state.entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+if(view.tlDir==='asc')es.reverse();
+const q=(view.q||'').trim().toLowerCase();
+if(!q)return es;
+return es.filter(e=>{const p=getP(e.paintingId);const hay=[e.text,e.stage,p?(p.title+' '+p.number):''].join(' ').toLowerCase();return hay.includes(q);});
+}
+</script>
 </body>
 </html>
