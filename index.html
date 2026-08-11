@@ -5333,7 +5333,43 @@ return '<div class="page-head"><div><h1 class="display">Studio timeline</h1>'
 +'</div><div id="tl-list">'+timelineListHTML(filteredEntries())+'</div>';
 }
 </script>
-</body>
-</html>
+<style>
+/* On the Viewer, don't slide the highlight back onto Timeline — just clear it */
+body.on-viewer .tabs::before{opacity:0}
+</style>
+<script>
+/* Medium "Other" → free-text field that becomes the work's medium */
+function openPaintingForm(pid,onSaved){
+const p=pid?getP(pid):null;
+const isOther=p&&(p.medium==='Other'||MEDIUMS.indexOf(p.medium)===-1);
+const otherVal=isOther?(p.medium==='Other'?'':p.medium):'';
+const es=p?entriesOf(p.id):[];
+const allImgs=es.flatMap(e=>e.images||[]);
+const coverHTML=p&&allImgs.length?('<label>Cover photo</label><input type="hidden" name="cover" value="'+esc(p.cover||'')+'"><div class="thumbs" id="cover-picker">'+allImgs.map(src=>'<button type="button" class="thumb cover-opt'+((p.cover||'')===src?' sel':'')+'" data-action="pick-cover" data-src="'+src+'"><img src="'+src+'" alt=""></button>').join('')+'</div><p class="hint">Tap a photo to choose the Works-tab cover.</p>'):'';
+const layer=openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="pform">'
++'<div class="panel-head"><h2>'+(p?'Edit work':'New work')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div class="grid2"><div><label>Number (optional)</label><input type="number" name="number" min="1" placeholder="leave blank for none" value="'+(p?(p.number||''):'')+'"></div>'
++'<div><label>Medium</label><select name="medium"><option value="">—</option>'+MEDIUMS.map(m=>'<option value="'+m+'" '+((p&&(p.medium===m||(m==='Other'&&isOther)))?'selected':'')+'>'+m+'</option>').join('')+'</select></div></div>'
++'<div id="other-medium-wrap" style="display:'+(isOther?'block':'none')+'"><label>Describe your medium</label><input type="text" name="mediumOther" placeholder="e.g. spray paint, collage, encaustic…" value="'+esc(otherVal)+'"></div>'
++'<label>Title (optional)</label><input type="text" name="title" placeholder="Leave blank for untitled" value="'+(p&&p.title!=='Untitled'?esc(p.title):'')+'">'
++(p?'<div class="grid2"><div><label>Status</label><select name="status"><option value="in-progress" '+(p.status==='in-progress'?'selected':'')+'>In progress</option>'
++'<option value="finished" '+(p.status==='finished'?'selected':'')+'>Finished</option></select></div>'
++'<div><label>Size</label><input type="text" name="size" value="'+esc(p.size||'')+'"></div></div>':'')
++coverHTML
++'<div class="panel-foot">'+(p?'<button type="button" class="btn ghost danger-btn" data-action="delete-painting" data-id="'+p.id+'">🗑 Delete</button><span class="spacer"></span>':'<span class="spacer"></span>')+'<button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
++'<button class="btn primary">'+(p?'Save changes':'Create work')+'</button></div></form></div>');
+layer.querySelector('#pform').addEventListener('submit',async ev=>{
+ev.preventDefault();
+const f=new FormData(ev.target);
+const title=(f.get('title')||'').trim();
+let med=(f.get('medium')||'').trim();
+if(med==='Other'){const mo=(f.get('mediumOther')||'').trim();if(mo)med=mo;}
+const rec={id:p?p.id:uid(),number:parseInt(f.get('number'))||0,title:title||'Untitled',medium:med,size:(f.get('size')||'').trim(),status:f.get('status')||(p?p.status:'in-progress'),createdAt:p?p.createdAt:Date.now()};
+if(p)Object.assign(p,rec);else state.paintings.push(rec);
+if(await save()){toast(p?'Work updated':'Work '+numTag(rec.number)+' created');closeModal();render();if(onSaved)onSaved(rec.id);}
+});
+setTimeout(()=>{const t=layer.querySelector('input[name=title]');if(t)t.focus();},60);
+}
+</script>
 </body>
 </html>
