@@ -4247,8 +4247,8 @@ openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
 +'<p class="sub" style="margin-bottom:12px">A living visualization of your studio log.</p>'
 +'<p class="etext">• Every visit composes an ever-shifting visualization from your works — their photos, palettes and history. No two are alike.</p>'
 +'<p class="etext">• Before anything is logged, the Viewer shows gentle visualizations after public-domain masterworks so the wall is never empty; your own material takes over with your first work.</p>'
-+'<p class="etext">• Tap the visualization to cycle its movement: 🪨 stopped → 🐢 slow →  lively →  wild.</p>'
-+'<p class="etext">• ↻ composes a brand-new visualization; ⋮ downloads the current one as an image.</p>'
++'<p class="etext">• Tap the visualization to cycle its movement
++'<p class="etext">• ↻ composes a brand-new visualization </p>'
 +'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div>'
 +'</div></div>');
 },true);
@@ -5491,5 +5491,56 @@ hsla(calc(160 + var(--hue-shift,0)),70%,60%,.22))!important;
 box-shadow:inset 0 0 0 1px rgba(255,255,255,.12), 0 1px 8px -2px rgba(0,0,0,.45)!important;
 }
 </style>
+<style>
+/* Colorful background follows the ACTIVE tab only */
+.tab[data-view="timeline"]:not(.active),.tab[data-view="paintings"]:not(.active){background-image:none!important}
+.tab[data-view="timeline"].active,.tab[data-view="paintings"].active{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),75%,55%,.22),
+hsla(calc(15 + var(--hue-shift,0)),80%,58%,.22) 45%,
+hsla(calc(45 + var(--hue-shift,0)),85%,52%,.22) 78%,
+hsla(calc(160 + var(--hue-shift,0)),65%,48%,.22))!important;
+}
+body.dark .tab[data-view="timeline"].active,body.dark .tab[data-view="paintings"].active{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),80%,68%,.22),
+hsla(calc(15 + var(--hue-shift,0)),85%,68%,.22) 45%,
+hsla(calc(45 + var(--hue-shift,0)),90%,62%,.22) 78%,
+hsla(calc(160 + var(--hue-shift,0)),70%,60%,.22))!important;
+}
+</style>
+<script>
+/* Put the speed icon BELOW the frame, level with the refresh button */
+(function(){
+function fixControls(){
+var frame=document.querySelector('.vframe');
+if(frame){var d=frame.querySelector('#vspeed-ico');if(d)d.remove();}
+var rem=document.getElementById('viewer-remix');
+if(rem&&rem.parentNode){rem.parentNode.style.position='relative';rem.parentNode.style.paddingRight='0';}
+}
+var _dv=drawViewer;
+drawViewer=function(){var r=_dv.apply(this,arguments);fixControls();return r;};
+fixControls();
+})();
+/* Brightness governor: never let the Viewer get far too dark or far too light */
+(function(){
+var meter=document.createElement('canvas');meter.width=8;meter.height=8;
+var mx=meter.getContext('2d',{willReadFrequently:true});
+var _pc=paintCurrent;
+paintCurrent=function(){
+_pc.apply(this,arguments);
+var cv=document.getElementById('viewer-canvas');if(!cv)return;
+mx.drawImage(cv,0,0,8,8);
+var d=mx.getImageData(0,0,8,8).data,sum=0;
+for(var i=0;i<d.length;i+=4){sum+=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];}
+var lum=sum/(d.length/4)/255;
+var x=cv.getContext('2d');
+if(lum<0.16){x.save();x.globalCompositeOperation='source-over';x.fillStyle='rgba(244,242,236,'+Math.min(.35,(0.16-lum)*1.2)+')';x.fillRect(0,0,cv.width,cv.height);x.restore();}
+else if(lum>0.86){x.save();x.globalCompositeOperation='source-over';x.fillStyle='rgba(20,18,12,'+Math.min(.35,(lum-0.86)*1.2)+')';x.fillRect(0,0,cv.width,cv.height);x.restore();}
+};
+})();
+</script>
+</body>
+</html>
 </body>
 </html>
