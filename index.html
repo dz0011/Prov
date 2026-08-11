@@ -5428,5 +5428,37 @@ else if(typeof toast==='function'){toast(/iphone|ipad|ipod/i.test(navigator.user
 });
 })();
 </script>
+<style>
+/* Speed creature: below the viewer, far right with a small buffer, centered on the refresh button */
+#view .vframe + div{position:relative}
+#vspeed-ico{position:absolute;right:12px;top:50%;transform:translateY(-50%);margin-left:0!important}
+/* Gear: a hair lower and a hair left */
+.bar-right{top:11px;right:15px}
+</style>
+<script>
+/* Works grid: show the real date, never "2d ago" */
+function pcardHTML(p,i){
+const es=entriesOf(p.id);
+const allImgs=es.flatMap(e=>e.images||[]);
+let cover=p.cover&&allImgs.includes(p.cover)?p.cover:null;
+if(!cover){const imgEntry=[...es].reverse().find(e=>e.images&&e.images.length);cover=imgEntry?imgEntry.images[0]:null;}
+const cols=uniqueColors(es).slice(0,6);
+const hasTitle=p.title&&p.title!=='Untitled';
+const hasNumber=!!p.number;
+const titleClass=(!hasTitle&&!hasNumber)?'ptitle untitled':'ptitle';
+const titleText=hasTitle?esc(p.title):(hasNumber?'':'Untitled work');
+const last=lastActivity(p);
+return '<article class="pcard card" style="--i:'+Math.min(i,8)+'" data-action="open-painting" data-id="'+p.id+'" role="button" tabindex="0">'
++'<div class="pcover" style="'+(cover?'':'--h:'+((p.number*47)%360))+'">'
++(cover?'<img src="'+cover+'" alt="" loading="lazy">':'<span class="pnum-ghost">'+(p.number?pad2(p.number):'')+'</span>')
++'</div>'
++'<div class="pinfo"><div class="prow">'
++(hasNumber?'<span class="pnum">'+numTag(p.number)+'</span>':'')
++'<span class="'+titleClass+'">'+titleText+'</span>'
++'</div>'
++'<div class="pmeta">'+(p.medium||'—')+(p.size?' · '+esc(p.size):'')+' · '+es.length+' '+plural('entry','entries',es.length)+(es.length?' · '+fmtShort(last):'')+'</div>'
++'</div></article>';
+}
+</script>
 </body>
 </html>
