@@ -5201,5 +5201,46 @@ showAuth._ipWrapped=1;
 </script>
 </body>
 </html>
+<script>
+/* Sort semantics: newest = closest to today; oldest = farthest from today */
+function filteredEntries(){
+let es=[...state.entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+if(view.tlDir==='asc')es.reverse();
+const q=(view.q||'').trim().toLowerCase();
+if(!q)return es;
+return es.filter(e=>{const p=getP(e.paintingId);const hay=[e.text,e.stage,p?(p.title+' '+p.number):''].join(' ').toLowerCase();return hay.includes(q);});
+}
+function filteredPaintings(){
+if(!view.wkDir)view.wkDir='new';
+let ps=[...state.paintings];
+if(view.wkDir==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(view.wkDir==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+const q=(view.wq||'').trim().toLowerCase();
+if(!q)return ps;
+return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));
+}
+function timelineHTML(){
+const asc=view.tlDir==='asc';
+return '<div class="page-head"><div><h1 class="display">Studio timeline</h1>'
++'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('work','works',state.paintings.length)+' · '+(asc?'oldest first':'newest first')+'</p></div>'
++(state.paintings.length?'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="tl-sort">'+(asc?'↑ Oldest first':'↓ Newest first')+'</button>'
++'<input id="tl-search" class="search" type="search" autocomplete="off" placeholder="Search notes, entries…" value="'+esc(view.q)+'"></div>':'')
++'</div><div id="tl-list">'+timelineListHTML(filteredEntries())+'</div>';
+}
+function paintingsHTML(){
+if(!state.paintings.length)return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">0 in the catalog</p></div></div>'+emptyStudioHTML();
+const d=view.wkDir||'new';
+const lbl=d==='new'?'↓ Newest first':(d==='old'?'↑ Oldest first':'№ By number');
+const sub=d==='new'?'newest first':(d==='old'?'oldest first':'by number');
+return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+state.paintings.length+' in the catalog · '+sub+'</p></div>'
++'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="wk-sort">'+lbl+'</button>'
++'<input id="wk-search" class="search search-sm" type="search" autocomplete="off" placeholder="Search works…" value="'+esc(view.wq||'')+'"></div>'
++'</div><div id="wk-grid">'+wkGridHTML(filteredPaintings())+'</div>';
+}
+</script>
 </body>
+</html></body>
 </html>
