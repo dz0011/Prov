@@ -5033,5 +5033,35 @@ view.wkDir=view.wkDir==='num'?'new':(view.wkDir==='new'?'old':'num');
 render();
 },true);
 </script>
+<style>
+/* Underline work titles & numbers so they read as tappable */
+.pcard .ptitle{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;text-decoration-color:rgba(39,51,201,.45)}
+.pcard .pnum{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;text-decoration-color:rgba(222,74,31,.45)}
+body.dark .pcard .ptitle{text-decoration-color:rgba(147,162,255,.5)}
+body.dark .pcard .pnum{text-decoration-color:rgba(255,138,102,.5)}
+/* Guarantee the + buttons are visible on Timeline/Works */
+body:not(.auth-screen-active):not(.on-viewer) .float-btn{opacity:1!important}
+/* Install banner can show even on the sign-in screen when flagged */
+body.show-install #install-btn{display:block!important}
+</style>
+<script>
+/* Install-as-App: nudge once every 4th visit; never once installed */
+(function(){
+var KEY='provenance.install';
+try{
+var st=JSON.parse(localStorage.getItem(KEY)||'{}');
+if(st.installed)return;
+var n=(st.count||0)+1;st.count=n;localStorage.setItem(KEY,JSON.stringify(st));
+if(n%4===0)document.body.classList.add('show-install');
+}catch(e){}
+})();
+window.addEventListener('appinstalled',function(){
+try{var st=JSON.parse(localStorage.getItem('provenance.install')||'{}');st.installed=true;localStorage.setItem('provenance.install',JSON.stringify(st));}catch(e){}
+var b=document.getElementById('install-btn');if(b)b.style.display='none';
+document.body.classList.remove('show-install');
+});
+</script>
+</body>
+</html>
 </body>
 </html>
