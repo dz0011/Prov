@@ -4978,6 +4978,28 @@ try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
 var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
 if(typeof paintCurrent==='function'&&typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]===0)paintCurrent();
 },true);
+</style>
+<style>
+/* Let the Install button appear even while the app shell is hidden (sign-in / guest) */
+#app-shell[style*="none"] ~ #install-btn{display:block!important}
+</style>
+<script>
+/* ---- Show Install on sign-in & guest mode; platform-aware hint ---- */
+(function(){
+var b=document.getElementById('install-btn');if(!b)return;
+var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+var mobile=/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+if(mobile||ios)b.style.display='block';
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();b._ip=e;b.style.display='block';},true);
+document.addEventListener('click',function(e){
+if(!e.target.closest('#install-btn'))return;
+e.stopPropagation();e.preventDefault();
+if(b._ip){b._ip.prompt();b._ip.userChoice.then(function(){b._ip=null;b.style.display='none';});}
+else if(typeof toast==='function'){
+toast(ios?'Tap Share, then "Add to Home Screen"':'Browser menu → "Add to Home screen" / "Install app"');
+}
+},true);
+})();
 </script>
 </body>
 </html>
