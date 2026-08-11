@@ -5141,5 +5141,65 @@ var m=document.getElementById('menu');if(m)m.classList.remove('open');
 if(typeof openPaintingForm==='function')openPaintingForm();
 },true);
 </script>
+<style>
+/* Hide the old always-on floating Install button; use the pop-up instead */
+#install-btn{display:none!important}
+#install-pop{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));z-index:140;pointer-events:none;opacity:0;transform:translateY(24px);transition:opacity .35s ease,transform .35s ease}
+#install-pop.show{opacity:1;transform:translateY(0);pointer-events:auto}
+#install-pop .ip-card{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:0 12px 32px -12px rgba(20,18,12,.4);max-width:430px;width:100%}
+#install-pop .ip-ico{font-size:22px}
+#install-pop .ip-txt{flex:1;display:flex;flex-direction:column;line-height:1.2}
+#install-pop .ip-txt b{font-size:14px;color:var(--ink)}
+#install-pop .ip-txt span{font-size:12px;color:var(--ink-soft)}
+#install-pop .btn{padding:8px 12px;font-size:13px}
+</style>
+<script>
+(function(){
+if(!document.getElementById('install-pop')){
+var d=document.createElement('div');d.id='install-pop';
+d.innerHTML='<div class="ip-card"><span class="ip-ico">📥</span><div class="ip-txt"><b>Install Provenance</b><span>Keep your studio one tap away.</span></div><button type="button" class="btn primary" id="ip-yes">Install</button><button type="button" class="btn ghost" id="ip-no">Not now</button></div>';
+document.body.appendChild(d);
+}
+var ipPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ipPrompt=e;},true);
+function installed(){
+try{if(localStorage.getItem('provenance.installed')==='1')return true;}catch(e){}
+if(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)return true;
+if(navigator.standalone)return true;
+return false;
+}
+function mobile(){return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);}
+function hide(){var p=document.getElementById('install-pop');p.classList.remove('show');}
+function show(){
+if(installed()||!mobile)return;
+var p=document.getElementById('install-pop');p.classList.add('show');
+clearTimeout(p._t);p._t=setTimeout(hide,9000);
+}
+document.getElementById('ip-yes').addEventListener('click',function(){
+if(ipPrompt){ipPrompt.prompt();ipPrompt.userChoice.then(function(){ipPrompt=null;hide();});}
+else if(typeof toast==='function'){toast(/iphone|ipad|ipod/i.test(navigator.userAgent)?'Tap Share, then "Add to Home Screen"':'Browser menu → "Add to Home screen"');}
+hide();
+});
+document.getElementById('ip-no').addEventListener('click',hide);
+window.addEventListener('appinstalled',function(){try{localStorage.setItem('provenance.installed','1');}catch(e){}hide();});
+/* Pop up every 3rd page visited inside the app */
+if(typeof render==='function'&&!render._ipWrapped){
+var _rr=render,last=null,visits=0;
+render=function(){var r=_rr.apply(this,arguments);
+var n=(typeof view!=='undefined'&&view)?view.name:null;
+if(n&&n!==last){last=n;visits++;if(visits%3===0)show();}
+return r;};
+render._ipWrapped=1;
+}
+/* Also show it on the sign-in screen for non-users (and guests) */
+if(typeof showAuth==='function'&&!showAuth._ipWrapped){
+var _sa=showAuth;
+showAuth=function(){var r=_sa.apply(this,arguments);setTimeout(show,900);return r;};
+showAuth._ipWrapped=1;
+}
+})();
+</script>
+</body>
+</html>
 </body>
 </html>
