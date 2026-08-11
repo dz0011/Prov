@@ -5460,5 +5460,36 @@ return '<article class="pcard card" style="--i:'+Math.min(i,8)+'" data-action="o
 +'</div></article>';
 }
 </script>
+<style>
+/* Selected tab wears the soft rainbow (on the sliding knob); unselected gets a light indent */
+.tab[data-view="timeline"],.tab[data-view="paintings"]{
+background-image:none!important;
+background-color:transparent!important;
+box-shadow:inset 0 1px 3px rgba(20,20,25,.14), inset 0 -1px 0 rgba(255,255,255,.45);
+}
+body.dark .tab[data-view="timeline"],body.dark .tab[data-view="paintings"]{
+box-shadow:inset 0 1px 3px rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,255,255,.05);
+}
+.tab[data-view="timeline"].active,.tab[data-view="paintings"].active{
+box-shadow:none;
+}
+/* The knob carries the soft rainbow and slides to the selected tab */
+.tabs::before{
+background:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),75%,55%,.25),
+hsla(calc(15 + var(--hue-shift,0)),80%,58%,.25) 45%,
+hsla(calc(45 + var(--hue-shift,0)),85%,52%,.25) 78%,
+hsla(calc(160 + var(--hue-shift,0)),65%,48%,.25))!important;
+box-shadow:inset 0 0 0 1px rgba(25,26,32,.10), 0 1px 6px -2px rgba(25,26,32,.20)!important;
+}
+body.dark .tabs::before{
+background:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),80%,68%,.22),
+hsla(calc(15 + var(--hue-shift,0)),85%,68%,.22) 45%,
+hsla(calc(45 + var(--hue-shift,0)),90%,62%,.22) 78%,
+hsla(calc(160 + var(--hue-shift,0)),70%,60%,.22))!important;
+box-shadow:inset 0 0 0 1px rgba(255,255,255,.12), 0 1px 8px -2px rgba(0,0,0,.45)!important;
+}
+</style>
 </body>
 </html>
