@@ -5242,5 +5242,98 @@ return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub"
 }
 </script>
 </body>
-</html></body>
+</html>
+<style>
+/* Refresh fully centered; speed icon pushed to the far right */
+#view div:has(> #viewer-remix){position:relative;padding-right:0!important}
+#vspeed-ico{position:absolute;right:2px;top:50%;transform:translateY(-50%);margin-left:0!important}
+</style>
+<script>
+/* ---- Viewer: full tonal range, never stuck dark or bright ---- */
+function cleanPaint(x,W,H,s,t){
+var dark=document.body.classList.contains('dark');
+var sc=W/1080;
+var hs=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hue-shift'))||0;
+function hsl(h,ss,l,a){return 'hsla('+(((h+hs)%360+360)%360)+','+ss+'%,'+l+'%,'+a+')';}
+function hexA(hex,a){var h=String(hex).replace('#','');if(h.length===3)h=h.split('').map(function(ch){return ch+ch;}).join('');var n=parseInt(h,16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+var i,v;
+x.globalCompositeOperation='source-over';
+x.fillStyle=dark?'#191A20':'#F2F1EC';x.fillRect(0,0,W,H);
+/* washes alternate light & dark so the piece always has tonal range */
+(s.washes||[]).forEach(function(L,idx){
+var gx=(L.fx+Math.sin(t*L.sp+L.ph)*L.amp)*W,gy=(L.fy+Math.cos(t*L.sp*.8+L.ph)*L.amp)*H,gr=L.fr*H;
+var lt=(idx%2===0)?(dark?64:36):(dark?26:72);
+var g=x.createRadialGradient(gx,gy,0,gx,gy,gr);
+g.addColorStop(0,hsl(L.h,42,lt,Math.min(.5,L.al*1.6)));
+g.addColorStop(1,hsl(L.h,42,lt,0));
+x.fillStyle=g;x.fillRect(0,0,W,H);
+});
+x.lineCap='round';x.lineJoin='round';
+(s.marks||[]).forEach(function(M){
+var mx=(M.fx+Math.sin(t*(M.sp||.06)+M.ph)*.006)*W,my=(M.fy+Math.cos(t*(M.sp||.06)*.8+M.ph)*.006)*H;
+var ln=M.len*H,ca=Math.cos(M.a),sa=Math.sin(M.a);
+x.strokeStyle=hexA(M.col,M.al);x.lineWidth=M.w;
+x.beginPath();x.moveTo(mx-ca*ln/2,my-sa*ln/2);
+if(M.t==='stroke')x.quadraticCurveTo(mx+sa*ln*.2,my-ca*ln*.2,mx+ca*ln/2,my+sa*ln/2);else x.lineTo(mx+ca*ln/2,my+sa*ln/2);
+x.stroke();
+});
+(s.works||[]).forEach(function(wk){
+if(wk.hasColor===false)return;
+var pts=(wk.nodes||[]).map(function(nd,idx){return[(nd.fx+Math.sin(t*.08+idx*1.7)*.008)*W,(nd.fy+Math.cos(t*.07+idx*2.3)*.008)*H];});
+if(pts.length>1){
+x.strokeStyle=hexA((wk.pal&&wk.pal[0])||'#8B877C',.14);x.lineWidth=6;
+x.beginPath();
+pts.forEach(function(pt,idx){if(idx===0)x.moveTo(pt[0],pt[1]);else{var pv=pts[idx-1],ct=(wk.ctrl||[])[idx-1]||{dx:0,dy:0};x.quadraticCurveTo((pv[0]+pt[0])/2+ct.dx*W,(pv[1]+pt[1])/2+ct.dy*H,pt[0],pt[1]);}});
+x.stroke();
+}
+(wk.patches||[]).forEach(function(pa){
+if(!pa.ready)return;
+var iw=pa.ready.width||4,ih=pa.ready.height||3;
+(pa.frags||[]).forEach(function(fr){
+var dw=fr.dw*W,dh=dw*fr.rh;
+x.save();x.translate((pa.fx+fr.ox)*W,(pa.fy+fr.oy)*H);x.rotate(pa.rot*.3+fr.rot);
+x.globalAlpha=Math.min(.85,fr.al*1.4);
+x.drawImage(pa.ready,fr.sx*iw,fr.sy*ih,Math.max(1,fr.sw*iw),Math.max(1,fr.sh*ih),-dw/2,-dh/2,dw,dh);
+x.restore();
+});
+});
+(wk.nodes||[]).forEach(function(nd,idx){
+var pt=pts[idx],r=nd.r*W;
+var g2=x.createRadialGradient(pt[0],pt[1],0,pt[0],pt[1],r*2.2);
+g2.addColorStop(0,hexA(nd.col,.25));g2.addColorStop(1,hexA(nd.col,0));
+x.fillStyle=g2;x.beginPath();x.arc(pt[0],pt[1],r*2.2,0,7);x.fill();
+x.save();x.translate(pt[0],pt[1]);x.rotate(nd.rot0+t*nd.rots);
+x.fillStyle=hexA(nd.col,.6);
+x.beginPath();x.moveTo(r,0);
+for(v=0;v<nd.verts.length;v++){var va=(v+1)/nd.verts.length*6.283,vr=r*nd.verts[v];x.lineTo(Math.cos(va)*vr,Math.sin(va)*vr);}
+x.closePath();x.fill();
+x.fillStyle=dark?'rgba(255,255,255,.18)':'rgba(255,255,255,.35)';
+x.beginPath();x.arc(-r*.3,-r*.3,r*.4,0,7);x.fill();
+x.restore();
+});
+});
+x.globalCompositeOperation='source-over';
+if(document.body.classList.contains('viewer-melt')){x.globalAlpha=.22;x.drawImage(x.canvas,2,2,W,H,0,0,W,H);x.globalAlpha=1;}
+for(i=0;i<(s.grain||[]).length;i++){var g3=s.grain[i];
+x.fillStyle=g3.light?(dark?'rgba(244,242,236,'+g3.a+')':'rgba(255,255,255,'+g3.a+')'):(dark?'rgba(0,0,0,'+g3.a+')':'rgba(25,26,32,'+g3.a+')');
+x.beginPath();x.arc(g3.fx*W,g3.fy*H,g3.r*sc,0,7);x.fill();}
+var vg=x.createRadialGradient(W/2,H/2,H/3,W/2,H/2,H*.8);
+vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,dark?'rgba(0,0,0,'+((s.vig||.06)*.6)+')':'rgba(20,18,12,'+((s.vig||.06)*.6)+')');
+x.fillStyle=vg;x.fillRect(0,0,W,H);
+}
+/* ---- Timeline: sub-label always matches the sort button ---- */
+function timelineHTML(){
+const asc=view.tlDir==='asc';
+const mode=asc?'oldest first':'newest first';
+return '<div class="page-head"><div><h1 class="display">Studio timeline</h1>'
++'<p class="sub">'+state.entries.length+' '+plural('entry','entries',state.entries.length)+' across '+state.paintings.length+' '+plural('work','works',state.paintings.length)+' · '+mode+'</p></div>'
++(state.paintings.length?'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="tl-sort">'+(asc?'↑ Oldest first':'↓ Newest first')+'</button>'
++'<input id="tl-search" class="search" type="search" autocomplete="off" placeholder="Search notes, entries…" value="'+esc(view.q)+'"></div>':'')
++'</div><div id="tl-list">'+timelineListHTML(filteredEntries())+'</div>';
+}
+</script>
+</body>
+</html>
+</body>
 </html>
