@@ -5371,5 +5371,62 @@ if(await save()){toast(p?'Work updated':'Work '+numTag(rec.number)+' created');c
 setTimeout(()=>{const t=layer.querySelector('input[name=title]');if(t)t.focus();},60);
 }
 </script>
+<style>
+/* Hide the old install pill entirely; we use our own persistent one */
+#install-btn{display:none!important}
+/* Timeline/Works: the DULL pill now sits under the UNSELECTED tab */
+.tabs::before{transform:translateX(100%)}
+.tabs:has(.tab[data-view="paintings"].active)::before{transform:translateX(0)}
+/* Persistent install pill */
+#install-pill{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:130;display:none;align-items:center;gap:10px;border-radius:16px;padding:10px 12px;background:var(--ink);color:#F4F2EC;box-shadow:0 10px 30px rgba(0,0,0,.3);font-family:'Space Grotesk',sans-serif;max-width:92vw}
+#install-pill.show{display:flex}
+#install-pill .ip-ico{font-size:20px}
+#install-pill .ip-txt{display:flex;flex-direction:column;line-height:1.2;text-align:left}
+#install-pill .ip-txt b{font-size:13.5px}
+#install-pill .ip-txt span{font-size:11.5px;opacity:.75}
+#install-go{border:0;border-radius:10px;background:var(--verm);color:#FFF7F2;font:600 13px 'Space Grotesk';padding:8px 12px;cursor:pointer;margin-left:auto}
+#install-x{position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:50%;border:0;background:var(--ink);color:#F4F2EC;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer}
+body.dark #install-pill{background:#2A2B33}
+body.dark #install-x{background:#3A3B44}
+</style>
+<script>
+/* Install pill: stays until the user taps the ✕ */
+(function(){
+var KEY='provenance.install';
+function installed(){try{return (JSON.parse(localStorage.getItem(KEY)||'{}')).installed}catch(e){return false}}
+function dismissed(){try{return sessionStorage.getItem(KEY+'.dismissed')==='1'}catch(e){return false}}
+var pill=document.createElement('div');
+pill.id='install-pill';
+pill.innerHTML='<button id="install-x" aria-label="Dismiss install prompt">✕</button>'
++'<span class="ip-ico">📥</span>'
++'<span class="ip-txt"><b>Install Provenance</b><span>Keep your studio one tap away</span></span>'
++'<button id="install-go">Install</button>';
+document.body.appendChild(pill);
+var ip=null;
+function hide(){pill.classList.remove('show');}
+function maybeShow(){
+if(installed()||dismissed())return;
+var shell=document.getElementById('app-shell');
+var authHidden=shell&&shell.style.display==='none';
+if(document.body.classList.contains('show-install')||authHidden||/iphone|ipad|ipod/i.test(navigator.userAgent))pill.classList.add('show');
+}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ip=e;maybeShow();});
+window.addEventListener('appinstalled',function(){
+try{var st=JSON.parse(localStorage.getItem(KEY)||'{}');st.installed=true;localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}
+hide();
+});
+maybeShow();
+pill.querySelector('#install-x').addEventListener('click',function(e){
+e.stopPropagation();
+try{sessionStorage.setItem(KEY+'.dismissed','1');}catch(e){}
+hide();
+});
+pill.querySelector('#install-go').addEventListener('click',function(e){
+e.stopPropagation();
+if(ip){ip.prompt();}
+else if(typeof toast==='function'){toast(/iphone|ipad|ipod/i.test(navigator.userAgent)?'Tap Share, then "Add to Home Screen"':'Browser menu → "Add to Home screen"');}
+});
+})();
+</script>
 </body>
 </html>
