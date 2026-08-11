@@ -685,12 +685,6 @@ break;
         shareText+=' · Provenance, an art journal';
         if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
 else{navigator.clipboard.writeText(shareText+'\n'+location.href).then(()=>toast('🔗 Copied — paste it anywhere'));}}
-break;}
-    case 'new-painting':openPaintingForm();break;
-          case 'share-work':{const sp=getP(t.dataset.id);
-      if(sp){const shareText=(sp.number?''+pad2(sp.number)+' — ':'')+sp.title+' · Provenance, an art journal';
-        if(navigator.share){navigator.share({title:'Provenance',text:shareText,url:location.href}).catch(()=>{});}
-        else{navigator.clipboard.writeText(location.href).then(()=>toast('🔗 Link copied — paste it anywhere'));}}
       break;}
     case 'edit-painting':openPaintingForm(t.dataset.id);break;
     case 'new-painting-from-composer':
@@ -4504,5 +4498,73 @@ try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
 var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
 },true);
 </script>
+<script>
+(function(){
+var _vh=viewerHTML;
+viewerHTML=function(){var h=_vh();
+if(h.indexOf('vspeed-ico')===-1){h=h.replace('>↻</button>','>↻</button><button id="vspeed-ico" type="button" style="margin-left:12px;font-size:15px;line-height:1;opacity:.85;border:0;background:transparent;cursor:pointer" aria-label="Current movement speed">🪨</button>');}
+return h;};
+var _dv=drawViewer;
+drawViewer=function(){_dv.apply(this,arguments);syncSpeedIco();};
+document.addEventListener('click',function(e){if(e.target.closest('#viewer-canvas'))syncSpeedIco();});
+})();
+function syncSpeedIco(){
+var el=document.getElementById('vspeed-ico');if(!el)return;
+var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':'');
+var label=vSpeedIdx===0?'Stopped (tap to start)':'Speed '+vSpeedIdx+' of 10';
+if(el.textContent!==ic){el.textContent=ic;}
+el.title=label;el.setAttribute('aria-label',label);
+}
+/* exponential speeds */
+VSPEEDS=[0];for(var i=1;i<=10;i++){VSPEEDS.push(+(0.3*Math.pow(40,(i-1)/9)).toFixed(2));}
+</script>
+<script>
+/* new-entry always opens the composer */
+document.addEventListener('click',function(e){var t=e.target.closest('[data-action="new-entry"]');if(!t)return;e.stopImmediatePropagation();openComposer(null,t.dataset.painting||null);},true);
+/* works: 3-way sort by last worked-on */
+function filteredPaintings(){let ps=[...state.paintings];
+if(view.wkDir==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(view.wkDir==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+const q=(view.wq||'').trim().toLowerCase();if(!q)return ps;
+return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));}
+document.addEventListener('click',function(e){var t=e.target.closest('[data-action="wk-sort"]');if(!t)return;e.stopImmediatePropagation();
+view.wkDir=view.wkDir==='num'?'new':(view.wkDir==='new'?'old':'num');render();},true);
+/* menu: About / Explain / Melt */
+(function(){var m=document.getElementById('menu');if(!m)return;
+var so=m.querySelector('[data-action="sign-out"]');
+function add(act,txt){if(m.querySelector('[data-action="'+act+'"]'))return;var b=document.createElement('button');b.dataset.action=act;b.innerHTML=txt;m.insertBefore(b,so);}
+add('viewer-explain','❓ Explain the Viewer');add('viewer-melt','🫠 Extra melty viewing');add('about','ℹ️ About Provenance');
+document.addEventListener('click',function(e){var t=e.target.closest('[data-action]');if(!t)return;
+if(t.dataset.action==='about'){m.classList.remove('open');openModal('<div class="overlay" data-action="overlay-close"><div class="panel"><div class="panel-head"><h2>About</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div><p class="etext">A quiet ledger for making — each work gathers its sessions, photos and pigments into one living timeline. © 2026</p><div class="panel-foot"><span class="spacer"></span><button class="btn ghost" data-action="close-modal">Close</button></div></div></div>');}
+if(t.dataset.action==='viewer-explain'){m.classList.remove('open');openModal('<div class="overlay" data-action="overlay-close"><div class="panel"><div class="panel-head"><h2>The Viewer</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div><p class="etext">A living visualization of your studio. Tap it to cycle speed 🪨→🐢→🐇→🚀; ↻ remixes; ⋮ downloads.</p><div class="panel-foot"><span class="spacer"></span><button class="btn ghost" data-action="close-modal">Close</button></div></div></div>');}
+if(t.dataset.action==='viewer-melt'){m.classList.remove('open');document.body.classList.toggle('viewer-melt');if(typeof paintCurrent==='function')paintCurrent();}
+});})();
+/* extra melt */
+(function(){var _p=paintViewer;paintViewer=function(x,W,H,s,t){_p(x,W,H,s,t);if(document.body.classList.contains('viewer-melt')){var sc=W/1080;x.save();x.filter='blur('+(10*sc)+'px)';x.globalAlpha=.28;x.drawImage(x.canvas,0,0,W,H,3*sc,4*sc,W,H);x.drawImage(x.canvas,0,0,W,H,-4*sc,-3*sc,W,H);x.restore();}};})();
+/* guest mode */
+function isGuest(){try{return localStorage.getItem('provenance.guest')==='1';}catch(e){return false;}}
+(function(){var c=document.querySelector('#auth-screen .auth-card');if(c&&!document.getElementById('guest-btn')){var b=document.createElement('button');b.id='guest-btn';b.className='btn ghost';b.style.cssText='width:100%;justify-content:center;margin-top:8px;font-size:12.5px;color:var(--ink-soft)';b.textContent='Try on Guest Mode*';c.appendChild(b);var n=document.createElement('p');n.style.cssText='font-size:11px;color:var(--ink-soft);text-align:center;margin-top:6px';n.textContent='*Test everything — saved on this device until you create an account.';c.appendChild(n);b.addEventListener('click',startGuest);}
+if(isGuest())startGuest();})();
+function startGuest(){try{localStorage.setItem('provenance.guest','1');}catch(e){}
+$('#auth-screen').style.display='none';document.body.classList.remove('auth-screen-active');$('#app-shell').style.display='block';document.body.classList.add('app-ready');
+loadJournal().then(function(){render();});}
+function showAuth(){if(isGuest())return;$('#app-shell').style.display='none';$('#auth-screen').style.display='flex';document.body.classList.add('auth-screen-active');setAuthMsg('');}
+function loadJournal(){if(isGuest()){try{var r=localStorage.getItem('provenance.local');state=r?JSON.parse(r):{paintings:[],entries:[]};}catch(e){state={paintings:[],entries:[]};}return Promise.resolve();}
+if(!db)return Promise.resolve();return db.auth.getUser().then(function(_a){var u=_a.data.user;if(!u)return;return db.from('journals').select('data').eq('user_id',u.id).maybeSingle().then(function(r){if(r.data&&r.data.data)state=r.data.data;});});}
+function save(){if(isGuest()){try{localStorage.setItem('provenance.local',JSON.stringify(state));}catch(e){return Promise.resolve(false);}return Promise.resolve(true);}
+if(!db)return Promise.resolve(false);return db.auth.getUser().then(function(_a){var u=_a.data.user;if(!u)return false;return db.from('journals').upsert({user_id:u.id,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'}).then(function(r){return !r.error;});});}
+/* auth: slow background tap toggle + oceanic palette */
+document.addEventListener('click',function(e){var a=document.getElementById('auth-screen');if(!a||getComputedStyle(a).display==='none')return;if(e.target.closest('.auth-card,button,input,a,label'))return;
+var d=!document.body.classList.contains('dark');var ov=document.getElementById('theme-fade');if(!ov){ov=document.createElement('div');ov.id='theme-fade';ov.style.cssText='position:fixed;inset:0;z-index:200;pointer-events:none;opacity:0';document.body.appendChild(ov);}
+ov.style.background=d?'radial-gradient(90% 70% at 50% 42%,#23242B 0%,#191A20 70%)':'radial-gradient(90% 70% at 50% 42%,#FCFBF7 0%,#F2F1EC 70%)';ov.style.transition='none';ov.style.opacity='0';void ov.offsetWidth;ov.style.transition='opacity 1s ease-in';ov.style.opacity='1';
+setTimeout(function(){document.body.classList.toggle('dark',d);try{localStorage.setItem('provenance.theme',d?'dark':'light');}catch(e){}ov.style.transition='opacity 1.4s ease-out';ov.style.opacity='0';},1000);},true);
+</script>
+<style>
+html,body{overflow-x:hidden}#auth-screen{overflow:hidden}
+.auth-card .display .s1{color:#2E3A40}.auth-card .display .s2{color:#3E545C}.auth-card .display .s3{color:#4E6A70}.auth-card .display .s4{color:#5F8087}.auth-card .display .s5{color:#6F939B}
+body.dark .auth-card .display .s1{color:#E8EDEA}body.dark .auth-card .display .s2{color:#B9CDCB}body.dark .auth-card .display .s3{color:#93B1B2}body.dark .auth-card .display .s4{color:#7C9CA3}body.dark .auth-card .display .s5{color:#6C8F9C}
+#auth-screen .btn.primary{background:#C4705A;box-shadow:0 2px 0 #9C5747}
+</style>
 </body>
 </html>
