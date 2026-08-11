@@ -5000,6 +5000,38 @@ toast(ios?'Tap Share, then "Add to Home Screen"':'Browser menu → "Add to Home 
 }
 },true);
 })();
+</style>
+<script>
+/* Works sorting: newest/oldest = date of each work's MOST RECENT entry */
+function filteredPaintings(){
+let ps=[...state.paintings];
+if(view.wkDir==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(view.wkDir==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+const q=(view.wq||'').trim().toLowerCase();
+if(!q)return ps;
+return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));
+}
+function wkGridHTML(ps){
+return ps.length?'<div class="pgrid">'+ps.map((p,i)=>pcardHTML(p,i)).join('')+'</div>':'<div class="empty small">Nothing matches that search.</div>';
+}
+function paintingsHTML(){
+if(!state.paintings.length)return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">0 in the catalog</p></div></div>'+emptyStudioHTML();
+const d=view.wkDir;
+const lbl=d==='new'?'↓ Newest first':(d==='old'?'↑ Oldest first':'№ By number');
+const sub=d==='new'?'newest first':(d==='old'?'oldest first':'by number');
+return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+state.paintings.length+' in the catalog · '+sub+'</p></div>'
++'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="wk-sort">'+lbl+'</button>'
++'<input id="wk-search" class="search search-sm" type="search" autocomplete="off" placeholder="Search works…" value="'+esc(view.wq||'')+'"></div>'
++'</div><div id="wk-grid">'+wkGridHTML(filteredPaintings())+'</div>';
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="wk-sort"]');if(!t)return;
+e.stopImmediatePropagation();
+view.wkDir=view.wkDir==='num'?'new':(view.wkDir==='new'?'old':'num');
+render();
+},true);
 </script>
 </body>
 </html>
