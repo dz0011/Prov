@@ -4565,6 +4565,103 @@ html,body{overflow-x:hidden}#auth-screen{overflow:hidden}
 .auth-card .display .s1{color:#2E3A40}.auth-card .display .s2{color:#3E545C}.auth-card .display .s3{color:#4E6A70}.auth-card .display .s4{color:#5F8087}.auth-card .display .s5{color:#6F939B}
 body.dark .auth-card .display .s1{color:#E8EDEA}body.dark .auth-card .display .s2{color:#B9CDCB}body.dark .auth-card .display .s3{color:#93B1B2}body.dark .auth-card .display .s4{color:#7C9CA3}body.dark .auth-card .display .s5{color:#6C8F9C}
 #auth-screen .btn.primary{background:#C4705A;box-shadow:0 2px 0 #9C5747}
+}
+</script>
+<style>
+/* Hide any leftover artist-caption under the empty Viewer */
+.museum-note{display:none!important}
 </style>
+<script>
+/* ---- Guest Mode: rename Sign out -> Exit Guest Mode ---- */
+if(typeof isGuest!=='function'){window.isGuest=function(){try{return localStorage.getItem('provenance.guest')==='1'}catch(e){return false}};}
+function refreshSignOutLabel(){
+var so=document.querySelector('[data-action="sign-out"]');
+if(so)so.textContent=isGuest()?'Exit Guest Mode':'Sign out';
+}
+if(typeof startGuest==='function'){var _sg=startGuest;startGuest=function(){_sg();refreshSignOutLabel();};}
+document.addEventListener('click',function(e){
+if(e.target.closest('[data-action="menu-toggle"]'))setTimeout(refreshSignOutLabel,0);
+},true);
+/* ---- Empty-studio scene (used for guests & brand-new users) ---- */
+function museumScene(){
+var rnd=mulberry32((Math.random()*1e9)>>>0);
+var s={washes:[],marks:[],works:[],grain:[],blend:rnd()<.5?'multiply':'screen',vig:.06+rnd()*.16};
+var masters=[
+['#6E8FAC','#A7C4C8','#7FA88B','#C9B6D8','#E4CFA9'],
+['#1F3B73','#2C4F9E','#E8C34A','#8E9E5B','#20294F'],
+['#274B8F','#3C7DA6','#7FB2D9','#EDE6D6','#20294F'],
+['#D8402A','#F2B621','#2733C9','#F6F4EE','#23211E']];
+var shapes=['daub','patch','smear'];
+var pos=[[.28,.3],[.72,.28],[.3,.72],[.7,.7]];
+for(var m=0;m<4;m++){
+var pal=masters[m];
+s.washes.push({h:(parseInt(pal[0].slice(1),16))%360,fx:pos[m][0],fy:pos[m][1],fr:.3+rnd()*.2,sp:.03+rnd()*.03,ph:rnd()*6.28,amp:.02+rnd()*.02,al:.10+rnd()*.06});
+var w={pal:pal,shape:shapes[(rnd()*shapes.length)|0],hasColor:true,cx:pos[m][0],cy:pos[m][1],nodes:[],ctrl:[],patches:[]};
+var n=5+((rnd()*3)|0);
+for(var k=0;k<n;k++){
+var node={fx:pos[m][0]+(rnd()-.5)*.34,fy:pos[m][1]+(rnd()-.5)*.3,r:.016+rnd()*.03,col:pal[(rnd()*pal.length)|0],rot0:(rnd()-.5)*1.4,rots:(rnd()-.5)*.05,verts:[]};
+for(var v=0;v<10;v++)node.verts.push(.7+rnd()*.55);
+w.nodes.push(node);
+if(k>0)w.ctrl.push({dx:(rnd()-.5)*.1,dy:(rnd()-.5)*.1});
+}
+s.works.push(w);
+}
+for(var i=0;i<140;i++)s.grain.push({fx:rnd(),fy:rnd(),r:.5+rnd()*2,a:.025+rnd()*.05,light:rnd()<.5});
+return s;
+}
+/* ---- Viewer: empty studio gets the museum wall (never a black canvas) ---- */
+var _vhX=viewerHTML;
+viewerHTML=function(){
+var h=_vhX();
+if(!state.paintings.length){
+h=h.replace('<div class="empty small">Add works and entries and your oeuvre will be remixed here.</div>',
+'<div class="vframe" style="border-radius:6px;padding:10px"><canvas id="viewer-canvas" style="width:100%;display:block;border-radius:8px;cursor:pointer" aria-label="Living visualization — tap to change the movement speed"></canvas></div>'
++'<p class="hint" style="margin-top:10px;text-align:center">Your wall is waiting — log a work and it becomes yours.</p>');
+}
+return h;
+};
+var _bsX=buildScene;
+buildScene=function(){
+if(!state.paintings.length)return museumScene();
+var s=_bsX();
+/* Zoom fragments in & blend them so it reads as paint, not a photo stack */
+s.works.forEach(function(w){
+w.patches.forEach(function(pa){
+var F=[];
+pa.frags.forEach(function(fr){
+fr.sw=Math.min(fr.sw,.18+Math.random()*.18);
+fr.sh=Math.min(fr.sh,.18+Math.random()*.18);
+fr.dw*=1.7;fr.al*=.75;
+F.push(fr);
+F.push({sx:Math.min(.85,Math.max(0,fr.sx+(Math.random()-.5)*.2)),sy:Math.min(.85,Math.max(0,fr.sy+(Math.random()-.5)*.2)),sw:fr.sw*.8,sh:fr.sh*.8,ox:fr.ox+(Math.random()-.5)*.2,oy:fr.oy+(Math.random()-.5)*.2,dw:fr.dw*1.25,rh:fr.rh,rot:fr.rot+(Math.random()-.5)*.6,al:fr.al*.7});
+});
+pa.frags=F;
+});
+});
+return s;
+};
+var _pvX=paintViewer;
+paintViewer=function(x,W,H,s,t){
+_pvX(x,W,H,s,t);
+var sc=W/1080;
+x.save();x.globalCompositeOperation='source-over';
+x.filter='blur('+(9*sc)+'px)';x.globalAlpha=.22;
+x.drawImage(x.canvas,0,0,W,H,3*sc,2*sc,W,H);
+x.drawImage(x.canvas,0,0,W,H,-3*sc,-2*sc,W,H);
+x.restore();
+};
+/* ---- Search boxes: tell keyboards/autofill "this is just a search field" ---- */
+function fixSearchInputs(){
+var inps=document.querySelectorAll('#tl-search,#wk-search');
+for(var i=0;i<inps.length;i++){var inp=inps[i];
+inp.setAttribute('type','search');inp.setAttribute('inputmode','search');inp.setAttribute('enterkeyhint','search');
+inp.setAttribute('autocapitalize','off');inp.setAttribute('autocorrect','off');inp.setAttribute('spellcheck','false');
+inp.setAttribute('autocomplete','off');inp.setAttribute('name','provenance-search');inp.setAttribute('role','searchbox');
+inp.setAttribute('data-lpignore','true');inp.setAttribute('data-1p-ignore','');inp.setAttribute('data-form-type','other');
+}
+}
+if(typeof render==='function'&&!render._searchWrapped){var _rX=render;render=function(){var r=_rX.apply(this,arguments);fixSearchInputs();return r;};render._searchWrapped=1;}
+fixSearchInputs();
+</script>
 </body>
 </html>
