@@ -4719,7 +4719,20 @@ if(!t)return;
 e.stopImmediatePropagation();
 if(t.dataset.action==='edit-painting')openPaintingForm(t.dataset.id);
 else openComposer(t.dataset.id);
-},true);
+}
 </script>
+<style>
+/* ==== Make the selected tab unmistakable ==== */
+.tabs .tab{transition:opacity .25s ease}
+.tabs .tab:not(.active){opacity:.5}
+.tabs .tab.active{opacity:1}
+/* Subtle diagonal pattern inside the selected pill — same opacity as before */
+.tabs::before{
+background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.14) 0 3px, rgba(255,255,255,0) 3px 7px);
+}
+body.dark .tabs::before{
+background-image:repeating-linear-gradient(45deg, rgba(25,26,32,.16) 0 3px, rgba(25,26,32,0) 3px 7px);
+}
+</style>
 </body>
 </html>
