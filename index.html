@@ -5061,7 +5061,74 @@ var b=document.getElementById('install-btn');if(b)b.style.display='none';
 document.body.classList.remove('show-install');
 });
 </script>
-</body>
-</html>
+<script>
+/* Fix 1: restore the missing action on the recreated New Work button */
+(function(){
+var w=document.getElementById('work-fab');
+if(w){w.dataset.action='new-painting';w.setAttribute('aria-label','New work');}
+var e2=document.getElementById('entry-fab');
+if(e2){e2.dataset.action='new-entry';e2.setAttribute('aria-label','New entry');}
+})();
+/* Fix 2: corrected New Entry form with "＋ Create a new work…" inside the selector */
+function openComposer(entryId,presetPainting){
+const e=entryId?state.entries.find(x=>x.id===entryId):null;
+if(entryId&&!e)return;
+draft={id:e?e.id:null,images:e?[...(e.images||[])]:[],colors:e?(e.colors||[]).map(c=>({...c})):[]};
+const ps=[...state.paintings].sort((a,b)=>a.number-b.number);
+const selVal=e?e.paintingId:(presetPainting||'');
+const layer=openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="composer">'
++'<div class="panel-head"><h2>'+(e?'Edit entry':'New entry')+'</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<label>Work</label><div class="rowflex"><select name="paintingId">'
++'<option value="" disabled '+(selVal?'':'selected')+'>Choose a work…</option>'
++ps.map(p=>'<option value="'+p.id+'" '+(p.id===selVal?'selected':'')+'>'+esc(pLabel(p))+'</option>').join('')
++'<option value="__new__">＋ Create a new work…</option>'
++'</select><button type="button" class="btn ghost" data-action="new-painting-from-composer">+ New</button></div>'
++(ps.length?'':'<p class="hint" style="margin:6px 0 0">No works yet — create one, then save this entry to it.</p>')
++'<label>Date &amp; time</label><input type="datetime-local" name="date" value="'+toLocalInput(e?new Date(e.date):new Date())+'">'
++'<label>Notes</label><textarea name="text" placeholder="What changed in this session? Mixes, decisions, what to try next…">'+(e?esc(e.text||''):'')+'</textarea>'
++'<label>Photos</label><div class="thumbs" id="draft-images"></div>'
++'<label class="file-btn" for="entry-photos">＋ Add photos…</label><input type="file" id="entry-photos" accept="image/*" multiple hidden data-role="entry-photos">'
++'<div class="panel-foot">'+(e?'<button type="button" class="btn ghost danger-btn" data-action="delete-entry" data-id="'+e.id+'">Delete</button>':'')
++'<span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
++'<button class="btn primary">'+(e?'Save changes':'Save entry')+'</button></div></form></div>');
+renderDraftImages();renderDraftColors();
+var sel=layer.querySelector('#composer select[name=paintingId]');
+if(sel){sel.addEventListener('change',function(){
+if(sel.value==='__new__'){sel.value='';openWorkFromComposer();}
+});}
+layer.querySelector('#composer').addEventListener('submit',onComposerSubmit);
+}
+function openWorkFromComposer(){
+openPaintingForm(null,function(id){
+var s2=document.querySelector('#composer select[name=paintingId]');
+var p=getP(id);
+if(!s2||!p)return;
+var o=s2.querySelector('option[value="'+id+'"]');
+if(!o){o=document.createElement('option');o.value=id;o.textContent=pLabel(p);
+var nn=s2.querySelector('option[value="__new__"]');
+if(nn)s2.insertBefore(o,nn);else s2.appendChild(o);}
+s2.value=id;
+});
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="new-painting-from-composer"]');
+if(!t)return;
+e.stopImmediatePropagation();
+openWorkFromComposer();
+},true);
+/* Fix 3: rocket returns for speeds 8–10 */
+function syncSpeedIco(){
+var el=document.getElementById('vspeed-ico');if(!el)return;
+var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));
+var label=vSpeedIdx===0?'Stopped (tap to start)':'Speed '+vSpeedIdx+' of 10 · '+VSPEEDS[vSpeedIdx]+'×';
+if(el.textContent!==ic){
+if(el.animate){
+el.animate([{filter:'blur(0px)',transform:'scale(1)',opacity:.9},{filter:'blur(6px)',transform:'scale(.6)',opacity:0}],{duration:150,easing:'ease-in'}).onfinish=function(){
+el.textContent=ic;el.title=label;el.setAttribute('aria-label',label);
+el.animate([{filter:'blur(6px)',transform:'scale(1.3)',opacity:0},{filter:'blur(0px)',transform:'scale(1)',opacity:.9}],{duration:230,easing:'ease-out'});};
+}else{el.textContent=ic;el.title=label;el.setAttribute('aria-label',label);}
+}else{el.title=label;el.setAttribute('aria-label',label);}
+}
+</script>
 </body>
 </html>
