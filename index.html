@@ -4701,5 +4701,25 @@ if(!q)return es;
 return es.filter(e=>{const p=getP(e.paintingId);const hay=[e.text,e.stage,p?(p.title+' '+p.number):''].join(' ').toLowerCase();return hay.includes(q);});
 }
 </script>
+<script>
+/* Works page: tapping empty header space toggles light/dark (like Timeline) */
+document.addEventListener('click',function(e){
+if(typeof view==='undefined'||view.name!=='paintings')return;
+if(e.target.closest('.top')&&!e.target.closest('button, a, input, .menu, .tabs, .tab-viewer')){
+var dark=!document.body.classList.contains('dark');
+document.body.classList.toggle('dark',dark);
+try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+}
+},true);
+/* Guarantee the Edit buttons always open their forms (Work page + entry cards) */
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="edit-painting"],[data-action="edit-entry"]');
+if(!t)return;
+e.stopImmediatePropagation();
+if(t.dataset.action==='edit-painting')openPaintingForm(t.dataset.id);
+else openComposer(t.dataset.id);
+},true);
+</script>
 </body>
 </html>
