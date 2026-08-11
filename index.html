@@ -4734,5 +4734,30 @@ body.dark .tabs::before{
 background-image:repeating-linear-gradient(45deg, rgba(25,26,32,.16) 0 3px, rgba(25,26,32,0) 3px 7px);
 }
 </style>
+<script>
+/* Speed creature: repaired (rocket + exponential speeds + injection + sync) */
+var VSPEEDS=[0];for(var i=1;i<=10;i++){VSPEEDS.push(+(0.3*Math.pow(40,(i-1)/9)).toFixed(2));}
+function syncSpeedIco(){
+var el=document.getElementById('vspeed-ico');if(!el)return;
+var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));
+var label=vSpeedIdx===0?'Stopped (tap to start)':'Speed '+vSpeedIdx+' of 10';
+if(el.textContent!==ic){
+if(el.animate){
+el.animate([{filter:'blur(0px)',transform:'scale(1)',opacity:.9},{filter:'blur(6px)',transform:'scale(.6)',opacity:0}],{duration:150,easing:'ease-in'}).onfinish=function(){
+el.textContent=ic;el.title=label;el.setAttribute('aria-label',label);
+el.animate([{filter:'blur(6px)',transform:'scale(1.3)',opacity:0},{filter:'blur(0px)',transform:'scale(1)',opacity:.9}],{duration:230,easing:'ease-out'});};
+}else{el.textContent=ic;el.title=label;el.setAttribute('aria-label',label);}
+}else{el.title=label;el.setAttribute('aria-label',label);}
+}
+(function(){
+var _vhF=viewerHTML;
+viewerHTML=function(){var h=_vhF();
+if(h.indexOf('vspeed-ico')===-1){h=h.replace('>↻</button>','>↻</button><button id="vspeed-ico" type="button" title="Speed" aria-label="Current movement speed" style="margin-left:12px;font-size:15px;line-height:1;opacity:.9;border:0;background:transparent;cursor:pointer">🪨</button>');}
+return h;};
+var _dvF=drawViewer;
+drawViewer=function(){_dvF.apply(this,arguments);syncSpeedIco();};
+document.addEventListener('click',function(e){if(e.target.closest('#viewer-canvas'))syncSpeedIco();});
+})();
+</script>
 </body>
 </html>
