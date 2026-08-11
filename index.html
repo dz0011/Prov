@@ -4952,5 +4952,32 @@ function drawViewer(){
   if(typeof syncSpeedIco==='function')syncSpeedIco();
 }
 </script>
+<style>
+/* Widen the Viewer tap target: the ring around the button also navigates */
+.tab.tab-viewer{position:relative}
+.tab.tab-viewer::before{content:'';position:absolute;inset:-9px -12px;border-radius:999px}
+</style>
+<script>
+/* Edit buttons: capture + stop so exactly one form opens (supersedes the broken block) */
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="edit-painting"],[data-action="edit-entry"]');
+if(!t)return;
+e.stopImmediatePropagation();
+var m=document.getElementById('menu');if(m)m.classList.remove('open');
+if(t.dataset.action==='edit-painting')openPaintingForm(t.dataset.id);
+else openComposer(t.dataset.id);
+},true);
+/* Works page: empty header space (right of Provenance) toggles light/dark */
+document.addEventListener('click',function(e){
+if(typeof view==='undefined'||view.name!=='paintings')return;
+if(!e.target.closest('.top'))return;
+if(e.target.closest('button, a, input, .menu, .tabs, .tab-viewer'))return;
+var dark=!document.body.classList.contains('dark');
+document.body.classList.toggle('dark',dark);
+try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+if(typeof paintCurrent==='function'&&typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]===0)paintCurrent();
+},true);
+</script>
 </body>
 </html>
