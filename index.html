@@ -4330,5 +4330,179 @@ var n=b.nextElementSibling;
 if(n&&n.tagName==='P')n.textContent='*Test everything — saved on this device until you create an account.';
 })();
 </script>
+<style>
+/* ---- Numbers & titles: always identical size ---- */
+.pnum,.ptitle{font-size:18px}
+@media(max-width:640px){.pnum,.ptitle{font-size:15px}}
+/* ---- Dark mode: knob bubble at 15% of its old opacity ---- */
+body.dark .tabs::before{background:rgba(242,241,236,.15);box-shadow:none}
+body.dark .tabs .tab.active{color:#F2F1EC}
+/* ---- Sign-in: muted oceany title, muted clay Sign-in button, centered & no drag ---- */
+.auth-card .display .s1{color:#2E3A40;-webkit-text-fill-color:#2E3A40}
+.auth-card .display .s2{color:#3E545C;-webkit-text-fill-color:#3E545C}
+.auth-card .display .s3{color:#4E6A70;-webkit-text-fill-color:#4E6A70}
+.auth-card .display .s4{color:#5F8087;-webkit-text-fill-color:#5F8087}
+.auth-card .display .s5{color:#6F939B;-webkit-text-fill-color:#6F939B}
+body.dark .auth-card .display .s1{color:#E8EDEA;-webkit-text-fill-color:#E8EDEA}
+body.dark .auth-card .display .s2{color:#B9CDCB;-webkit-text-fill-color:#B9CDCB}
+body.dark .auth-card .display .s3{color:#93B1B2;-webkit-text-fill-color:#93B1B2}
+body.dark .auth-card .display .s4{color:#7C9CA3;-webkit-text-fill-color:#7C9CA3}
+body.dark .auth-card .display .s5{color:#6C8F9C;-webkit-text-fill-color:#6C8F9C}
+.auth-card .display::after{background:linear-gradient(90deg,rgba(108,142,160,.55),rgba(127,168,176,.6) 55%,rgba(167,196,200,.6));filter:blur(3px)}
+#auth-screen .btn.primary{background:#C4705A;box-shadow:0 2px 0 #9C5747}
+#auth-screen .btn.primary:hover{background:#CF7E66}
+html,body{overflow-x:hidden}
+#auth-screen{overflow:hidden}
+/* ---- New Entry panel: same tidy mobile formatting as New Work ---- */
+@media(max-width:520px){
+.rowflex{flex-wrap:wrap}
+.rowflex select{flex:1 1 100%}
+.rowflex .btn{flex:0 0 auto}
+#composer .panel-foot{flex-wrap:wrap}
+#composer .thumbs .thumb{width:96px;height:74px}
+}
+</style>
+<script>
+/* ---- Works sort: newest/oldest use last-worked-on date; three-way toggle ---- */
+function filteredPaintings(){
+let ps=[...state.paintings];
+if(view.wkDir==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(view.wkDir==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+const q=(view.wq||'').trim().toLowerCase();
+if(!q)return ps;
+return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));
+}
+function paintingsHTML(){
+if(!state.paintings.length)return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">0 in the catalog</p></div></div>'+emptyStudioHTML();
+const lbl=view.wkDir==='new'?'↓ Newest first':(view.wkDir==='old'?'↑ Oldest first':'№ By number');
+const sub=view.wkDir==='num'?'by number':(view.wkDir==='new'?'newest first':'oldest first');
+return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+state.paintings.length+' in the catalog · '+sub+'</p></div>'
++'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="wk-sort">'+lbl+'</button>'
++'<input id="wk-search" class="search search-sm" type="search" autocomplete="off" placeholder="Search works…" value="'+esc(view.wq||'')+'"></div>'
++'</div><div id="wk-grid">'+wkGridHTML(filteredPaintings())+'</div>';
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="wk-sort"]');if(!t)return;
+e.stopImmediatePropagation();
+view.wkDir=view.wkDir==='num'?'new':(view.wkDir==='new'?'old':'num');
+render();
+},true);
+/* ---- Timeline: always ordered by the entry's own date ---- */
+function filteredEntries(){
+let es=[...state.entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+if(view.tlDir==='asc')es.reverse();
+const q=(view.q||'').trim().toLowerCase();
+if(!q)return es;
+return es.filter(e=>{const p=getP(e.paintingId);const hay=[e.text,e.stage,p?(p.title+' '+p.number):''].join(' ').toLowerCase();return hay.includes(q);});
+}
+/* ---- Work page: drop Colors stat, "Days worked on" = distinct days with entries ---- */
+function paintingDetailHTML(id){
+const p=getP(id);if(!p){view.name='paintings';return paintingsHTML();}
+const es=entriesOf(p.id);
+const cols=uniqueColors(es);
+const imgs=es.flatMap(e=>(e.images||[]).map(src=>({src,date:e.date})));
+const first=es.length?es[0].date:null,last=es.length?es[es.length-1].date:null;
+const daysWorked=new Set(es.map(e=>dayKey(e.date))).size;
+return '<button class="backlink" data-action="goto" data-view="paintings">← All works</button>'
++'<div class="pd-head card"><div class="pd-num">'+(p.number?pad2(p.number):'')+'</div><div class="pd-main">'
++'<h1 class="display">'+esc(p.title)+'</h1>'
++'<p class="sub">'+(p.medium||'Medium —')+(p.size?' · '+esc(p.size):'')+' · started '+fmtShort(first||p.createdAt)+'</p>'
++'<div class="pd-stats"><span><b>'+es.length+'</b> '+plural('entry','entries',es.length)+'</span>'
++'<span><b>'+imgs.length+'</b> photos</span>'
++(es.length?'<span><b>'+daysWorked+'</b> '+plural('day','days',daysWorked)+' worked on</span>':'')
++'</div></div><div class="pd-actions">'
++'<button class="btn primary" data-action="new-entry" data-painting="'+p.id+'">+ Add entry</button>'
++'<button class="btn ghost" data-action="edit-painting" data-id="'+p.id+'">Edit</button>'
++'<button class="btn ghost" data-action="share-work" data-id="'+p.id+'">📤 Share</button>'
++'</div></div>'
++(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div></section>':'')
++'<section><h3 class="h3">Work log · newest first</h3>'
++(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">sessions logged yet.</div>')+'</section>';
+}
+/* ---- Viewer: gentler lights/darks, varied zooms, optional extra melt ---- */
+(function(){
+var _bs3=buildScene;
+buildScene=function(){
+var s=_bs3();
+s.works.forEach(function(w){w.patches.forEach(function(pa){pa.frags.forEach(function(fr){
+if(Math.random()<.6){fr.sw*=.55;fr.sh*=.55;}
+fr.al=Math.min(fr.al,.5);
+});});});
+return s;
+};
+var _pv3=paintViewer;
+paintViewer=function(x,W,H,s,t){
+_pv3(x,W,H,s,t);
+x.save();x.globalCompositeOperation='source-over';
+x.fillStyle=document.body.classList.contains('dark')?'rgba(25,26,32,.16)':'rgba(242,241,236,.16)';
+x.fillRect(0,0,W,H);
+if(document.body.classList.contains('viewer-melt')){
+var sc=W/1080;
+x.filter='blur('+(10*sc)+'px)';x.globalAlpha=.28;
+x.drawImage(x.canvas,0,0,W,H,3*sc,4*sc,W,H);
+x.drawImage(x.canvas,0,0,W,H,-4*sc,-3*sc,W,H);
+}
+x.restore();
+};
+})();
+/* ---- Gear menu: Extra melty blending + About ---- */
+(function(){
+var menu=document.getElementById('menu');
+if(menu){
+if(!menu.querySelector('[data-action="viewer-melt"]')){
+var m1=document.createElement('button');m1.dataset.action='viewer-melt';
+menu.insertBefore(m1,menu.querySelector('[data-action="sign-out"]'));
+}
+if(!menu.querySelector('[data-action="about"]')){
+var m2=document.createElement('button');m2.dataset.action='about';m2.innerHTML='ℹ️ About Provenance';
+menu.insertBefore(m2,menu.querySelector('[data-action="sign-out"]'));
+}
+}
+function meltLabel(){var on=document.body.classList.contains('viewer-melt');
+var b=document.querySelector('[data-action="viewer-melt"]');
+if(b)b.innerHTML=on?'🫠 Extra melty blending ✓':'🫠 Extra melty blending';}
+try{if(localStorage.getItem('provenance.melt')==='1')document.body.classList.add('viewer-melt');}catch(e){}
+meltLabel();
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="viewer-melt"]');
+if(t){
+document.body.classList.toggle('viewer-melt');
+try{localStorage.setItem('provenance.melt',document.body.classList.contains('viewer-melt')?'1':'0');}catch(e2){}
+meltLabel();
+document.getElementById('menu').classList.remove('open');
+if(typeof paintCurrent==='function')paintCurrent();
+return;
+}
+var a=e.target.closest('[data-action="about"]');
+if(a){
+document.getElementById('menu').classList.remove('open');
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
++'<div class="panel-head"><h2>About Provenance</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="etext">A quiet ledger for making — each work gathers its sessions, photos, and pigments into one living timeline, so your studio\u2019s story is never lost.</p>'
++'<p class="hint" style="margin-top:14px">© 2026</p>'
++'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div>'
++'</div></div>');
+}
+});
+})();
+/* ---- Sign-in: rename guest button ---- */
+(function(){
+var b=[].slice.call(document.querySelectorAll('#auth-screen button')).filter(function(x){return /try without an account/i.test(x.textContent);})[0];
+if(b)b.textContent='Try on Guest Mode';
+})();
+/* ---- Works page: header blank space toggles theme (single-fire) ---- */
+document.addEventListener('click',function(e){
+if(typeof view==='undefined'||view.name!=='paintings')return;
+if(!e.target.closest('.page-head'))return;
+if(e.target.closest('h1, p, .sub, .display, button, input, select, a, .menu, .search'))return;
+e.stopImmediatePropagation();
+var dark=!document.body.classList.contains('dark');
+document.body.classList.toggle('dark',dark);
+try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+},true);
+</script>
 </body>
 </html>
