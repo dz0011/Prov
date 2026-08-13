@@ -6416,5 +6416,73 @@ var t=e.target.closest('[data-action="tag-photo"]');if(!t)return;
 setTimeout(function(){closeModal();render();},500);
 },true);
 </script>
+<style>
+/* Timeline/Works: unselected fill = 20% of current strength; selected = 100% */
+.tab[data-view="timeline"],.tab[data-view="paintings"]{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),75%,55%,.045),
+hsla(calc(15 + var(--hue-shift,0)),80%,58%,.045) 45%,
+hsla(calc(45 + var(--hue-shift,0)),85%,52%,.045) 78%,
+hsla(calc(160 + var(--hue-shift,0)),65%,48%,.045))!important;
+}
+.tab[data-view="timeline"].active,.tab[data-view="paintings"].active{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),75%,55%,.22),
+hsla(calc(15 + var(--hue-shift,0)),80%,58%,.22) 45%,
+hsla(calc(45 + var(--hue-shift,0)),85%,52%,.22) 78%,
+hsla(calc(160 + var(--hue-shift,0)),65%,48%,.22))!important;
+}
+body.dark .tab[data-view="timeline"],body.dark .tab[data-view="paintings"]{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),80%,68%,.045),
+hsla(calc(15 + var(--hue-shift,0)),85%,68%,.045) 45%,
+hsla(calc(45 + var(--hue-shift,0)),90%,62%,.045) 78%,
+hsla(calc(160 + var(--hue-shift,0)),70%,60%,.045))!important;
+}
+body.dark .tab[data-view="timeline"].active,body.dark .tab[data-view="paintings"].active{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),80%,68%,.22),
+hsla(calc(15 + var(--hue-shift,0)),85%,68%,.22) 45%,
+hsla(calc(45 + var(--hue-shift,0)),90%,62%,.22) 78%,
+hsla(calc(160 + var(--hue-shift,0)),70%,60%,.22))!important;
+}
+</style>
+<script>
+/* Work log: toggle newest-first / oldest-first on each work page */
+function paintingDetailHTML(id){
+const p=getP(id);if(!p){view.name='paintings';return paintingsHTML();}
+const es=entriesOf(p.id);
+const imgs=es.flatMap(e=>(e.images||[]).map(src=>({src,date:e.date})));
+const first=es.length?es[0].date:null;
+const daysWorked=new Set(es.map(e=>dayKey(e.date))).size;
+const old=view.logDir==='old';
+const logEs=old?[...es]:[...es].reverse();
+return '<button class="backlink" data-action="goto" data-view="paintings">← All works</button>'
++'<div class="pd-head card"><div class="pd-num">'+(p.number?pad2(p.number):'')+'</div><div class="pd-main">'
++'<h1 class="display">'+esc(p.title)+'</h1>'
++'<p class="sub">'+(p.medium||'Medium —')+(p.size?' · '+esc(p.size):'')+' · started '+fmtShort(first||p.createdAt)+'</p>'
++'<div class="pd-stats"><span><b>'+es.length+'</b> '+plural('entry','entries',es.length)+'</span>'
++'<span><b>'+imgs.length+'</b> photos</span>'
++(es.length?'<span><b>'+daysWorked+'</b> '+plural('day','days',daysWorked)+' worked on</span>':'')
++'</div></div><div class="pd-actions">'
++'<button class="btn primary" data-action="new-entry" data-painting="'+p.id+'">+ Add entry</button>'
++'<button class="btn ghost" data-action="edit-painting" data-id="'+p.id+'">Edit</button>'
++'<button class="btn ghost" data-action="share-work" data-id="'+p.id+'">📤 Share</button>'
++'</div></div>'
++(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div></section>':'')
++'<section><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap">'
++'<h3 class="h3" style="margin:0">Work log · '+(old?'oldest first':'newest first')+'</h3>'
++(es.length?'<button class="btn ghost sort-btn" data-action="log-sort">'+(old?'↓ Newest first':'↑ Oldest first')+'</button>':'')
++'</div><div style="margin-top:14px">'
++(es.length?logEs.map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">sessions logged yet.</div>')
++'</div></section>';
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="log-sort"]');if(!t)return;
+e.stopImmediatePropagation();
+view.logDir=view.logDir==='old'?'new':'old';
+render();
+},true);
+</script>
 </body>
 </html>
