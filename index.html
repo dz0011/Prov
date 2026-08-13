@@ -7630,5 +7630,61 @@ view.wkDir=(d==='new')?'old':(d==='old')?'num':(d==='num')?'numdesc':'new';
 render();
 },true);
 </script>
+<style>
+@keyframes rabbitshake{
+0%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) rotate(0)}
+20%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) rotate(-7deg)}
+40%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) rotate(7deg)}
+60%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) rotate(-5deg)}
+80%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) rotate(4deg)}
+100%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) rotate(0)}
+}
+</style>
+<script>
+(function(){
+function findBunny(page){
+var ds=page.querySelectorAll('div');
+for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰')return ds[i];}
+return null;
+}
+/* Whenever the rabbit page opens: default LARGE bunny + clearer caption */
+var mo=new MutationObserver(function(muts){
+for(var i=0;i<muts.length;i++){
+var added=muts[i].addedNodes;
+for(var j=0;j<added.length;j++){
+var n=added[j];
+if(n.nodeType===1&&n.id==='rabbit-page'){
+var b=findBunny(n);
+if(b){b.style.setProperty('--rs','2.2');b.style.transform='translate(-50%,-50%) scale(2.2)';b.style.fontSize='64px';}
+var ds=n.querySelectorAll('div');
+for(var k=0;k<ds.length;k++){if((ds[k].textContent||'').indexOf('tap anywhere')!==-1){ds[k].textContent='tap the rabbit for a hello · tap anywhere else to go back';}}
+}
+}
+}
+});
+mo.observe(document.body,{childList:true});
+/* Tap bunny = smile + shake (repeatable); tap anywhere else = back to Viewer */
+document.addEventListener('click',function(e){
+var page=document.getElementById('rabbit-page');
+if(!page)return;
+e.stopPropagation();e.preventDefault();
+var rect=page.getBoundingClientRect();
+var cx=rect.left+rect.width/2, cy=rect.top+rect.height*0.56;
+var R=Math.min(rect.width,rect.height)*0.30;
+var dx=e.clientX-cx, dy=e.clientY-cy;
+if(Math.sqrt(dx*dx+dy*dy)<=R){
+var b=findBunny(page);
+if(b&&!b._busy){
+b._busy=1;
+b.style.animation='rabbitshake .7s ease';
+b.textContent='🐰';
+setTimeout(function(){b.textContent='🐇';b.style.animation='rabbithop 1.6s ease-in-out infinite';b._busy=0;},900);
+}
+}else{
+page.remove();
+}
+},true);
+})();
+</script>
 </body>
 </html>
