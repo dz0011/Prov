@@ -8490,3 +8490,98 @@ if(typeof syncSpeedIco==='function')syncSpeedIco();
 </script>
 </body>
 </html>
+<script>
+/* ===== MARK-PHOTO: ONE window, checkmark moves, closes promptly ===== */
+/* 1) Kill every legacy hold-to-mark system so only ONE sheet can ever open */
+window.addEventListener('pointerdown',function(e){
+var el=e.target&&e.target.closest?e.target.closest('.thumb,.film'):null;
+if(el&&!el.closest('.modal-layer'))e.stopPropagation();
+},true);
+/* 2) Single menu builder (Work / Other / Delete) */
+function mpNorm(en,src){var t=(en&&en.imgTags&&en.imgTags[src])||'';if(t==='painting')t='work';if(t==='palette')t='other';return t||'work';}
+function mpResolve(a,b){
+if(a&&typeof a==='object'&&a.en&&a.src)return a;
+var src=null,en=null;
+if(typeof a==='string'){src=a;}
+else if(a&&a.getAttribute){var img=(a.matches&&a.matches('img'))?a:a.querySelector('img');src=img?img.getAttribute('src'):null;}
+if(!src)return null;
+if(b)en=state.entries.find(function(x){return x.id===b;});
+if(!en&&a&&a.closest){var le=a.closest('[data-entry]');if(le)en=state.entries.find(function(x){return x.id===le.getAttribute('data-entry');});}
+if(!en){for(var i=0;i<state.entries.length;i++){if((state.entries[i].images||[]).indexOf(src)!==-1){en=state.entries[i];break;}}}
+return en?{en:en,src:src}:null;
+}
+function openMarkMenu(a,b){
+var r=mpResolve(a,b);if(!r)return false;
+if(document.querySelector('#modal-root .mark-menu'))return true; /* never stack */
+window.__markCtx=r;
+var cur=mpNorm(r.en,r.src);
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel mark-menu" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo9" data-tag="work" style="justify-content:flex-start">'+(cur==='work'?'✓&nbsp;':'&nbsp;&nbsp;')+'🖼 Work</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo9" data-tag="other" style="justify-content:flex-start">'+(cur==='other'?'✓&nbsp;':'&nbsp;&nbsp;')+'🎨 Other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo9" data-tag="delete" style="justify-content:flex-start">&nbsp;🗑 Delete</button>'
++'</div></div></div>');
+return true;
+}
+window.openTagMenu=function(a,b){return openMarkMenu(a,b);};
+window.openTag=function(a,b){return openMarkMenu(a,b);};
+window.openMarkMenu=openMarkMenu;
+/* 3) Choices: checkmark moves in place, then the window closes */
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo9"]');if(!t)return;
+e.stopImmediatePropagation();
+var r=window.__markCtx;if(!r||!r.en)return;
+var tag=t.dataset.tag;
+if(tag==='delete'){
+closeModal();
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel mark-menu" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Delete this photo?</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="etext" style="margin:4px 0 12px">It will be removed from this entry and from the whole app. This can\u2019t be undone.</p>'
++'<div style="display:flex;gap:8px;justify-content:flex-end">'
++'<button type="button" class="btn ghost" data-action="mp-del-no">Keep it</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="mp-del-yes">Delete photo</button>'
++'</div></div></div>');
+window.__delCtx=r;
+return;
+}
+var menu=t.closest('.mark-menu');
+if(menu){menu.querySelectorAll('[data-action="tag-photo9"]').forEach(function(bn){
+var on=bn.dataset.tag===tag;
+bn.innerHTML=(on?'✓&nbsp;':'&nbsp;&nbsp;')+(bn.dataset.tag==='work'?'🖼 Work':'🎨 Other');
+});}
+if(!r.en.imgTags)r.en.imgTags={};
+r.en.imgTags[r.src]=tag;
+setTimeout(function(){closeModal();if(typeof save==='function')save().then(function(){render();});else render();},250);
+},true);
+document.addEventListener('click',function(e){
+if(e.target.closest('[data-action="mp-del-no"]')){e.stopImmediatePropagation();closeModal();return;}
+var y=e.target.closest('[data-action="mp-del-yes"]');if(!y)return;
+e.stopImmediatePropagation();
+var r=window.__delCtx||window.__markCtx;if(!r||!r.en)return;
+r.en.images=(r.en.images||[]).filter(function(s){return s!==r.src;});
+if(r.en.imgTags)delete r.en.imgTags[r.src];
+if(r.en.cover===r.src)r.en.cover='';
+closeModal();
+if(typeof save==='function')save().then(function(){render();});else render();
+},true);
+/* 4) Filmstrip always excludes photos marked Other */
+(function(){
+if(typeof paintingDetailHTML!=='function')return;
+var _pd=paintingDetailHTML;
+paintingDetailHTML=function(id){
+var h=_pd(id);
+var tmp=document.createElement('div');tmp.innerHTML=h;
+tmp.querySelectorAll('.film').forEach(function(f){
+var img=f.querySelector('img');if(!img)return;
+var src=img.getAttribute('src'),en=null;
+for(var i=0;i<state.entries.length;i++){if((state.entries[i].images||[]).indexOf(src)!==-1){en=state.entries[i];break;}}
+if(en&&mpNorm(en,src)==='other')f.remove();
+});
+tmp.querySelectorAll('.film').forEach(function(f,i){f.setAttribute('data-idx',i);});
+return tmp.innerHTML;
+};
+})();
+</script>
+</body>
+</html>
