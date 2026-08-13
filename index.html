@@ -8304,5 +8304,97 @@ vRaf=requestAnimationFrame(loop);
 if(typeof syncSpeedIco==='function')syncSpeedIco();
 }
 </script>
+<script>
+/* ========== CONSOLIDATED FINAL: one mark menu + guaranteed Viewer ========== */
+window.addEventListener('pointerdown',function(e){
+var el=e.target&&e.target.closest?e.target.closest('.thumb,.film'):null;
+if(el&&!el.closest('.modal-layer'))e.stopPropagation();
+},true);
+function cpNorm(en,src){var t=(en&&en.imgTags&&en.imgTags[src])||'';if(t==='painting')t='work';if(t==='palette')t='other';return t||'work';}
+function cpResolve(a,b){
+if(a&&typeof a==='object'&&a.en&&a.src)return a;
+var src=null,en=null;
+if(typeof a==='string'){src=a;}
+else if(a&&a.getAttribute){var img=(a.matches&&a.matches('img'))?a:a.querySelector('img');src=img?img.getAttribute('src'):null;}
+if(!src)return null;
+if(b)en=state.entries.find(function(x){return x.id===b;});
+if(!en&&a&&a.closest){var le=a.closest('[data-entry]');if(le)en=state.entries.find(function(x){return x.id===le.getAttribute('data-entry');});}
+if(!en){for(var i=0;i<state.entries.length;i++){if((state.entries[i].images||[]).indexOf(src)!==-1){en=state.entries[i];break;}}}
+return en?{en:en,src:src}:null;
+}
+function cpOpen(a,b){
+var r=cpResolve(a,b);if(!r)return false;
+if(document.querySelector('#modal-root .cp-mark'))return true; /* never stack */
+window.__cpCtx=r;
+var cur=cpNorm(r.en,r.src);
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel cp-mark" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="cp-mark-btn" data-tag="work" style="justify-content:flex-start">'+(cur==='work'?'✓&nbsp;':'&nbsp;&nbsp;')+'🖼 Work</button>'
++'<button type="button" class="btn ghost" data-action="cp-mark-btn" data-tag="other" style="justify-content:flex-start">'+(cur==='other'?'✓&nbsp;':'&nbsp;&nbsp;')+'🎨 Other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="cp-mark-btn" data-tag="delete" style="justify-content:flex-start">&nbsp;🗑 Delete</button>'
++'</div></div></div>');
+return true;
+}
+window.openTagMenu=cpOpen;window.openTag=cpOpen;window.openMarkMenu=cpOpen;
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="cp-mark-btn"]');if(!t)return;
+e.stopImmediatePropagation();
+var r=window.__cpCtx;if(!r||!r.en)return;
+var tag=t.dataset.tag;
+if(tag==='delete'){
+closeModal();
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel cp-mark" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Delete this photo?</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="etext" style="margin:4px 0 12px">It will be removed from this entry and from the whole app.</p>'
++'<div style="display:flex;gap:8px;justify-content:flex-end">'
++'<button type="button" class="btn ghost" data-action="cp-del-no">Keep it</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="cp-del-yes">Delete photo</button>'
++'</div></div></div>');
+window.__cpDel=r;return;
+}
+if(!r.en.imgTags)r.en.imgTags={};
+r.en.imgTags[r.src]=tag;
+var menu=t.closest('.cp-mark');
+if(menu){menu.querySelectorAll('[data-action="cp-mark-btn"]').forEach(function(bn){
+if(bn.dataset.tag==='delete')return;
+var on=bn.dataset.tag===tag;
+bn.innerHTML=(on?'✓&nbsp;':'&nbsp;&nbsp;')+(bn.dataset.tag==='work'?'🖼 Work':' Other');});}
+setTimeout(function(){closeModal();if(typeof save==='function')save().then(function(){render();});else render();},220);
+},true);
+document.addEventListener('click',function(e){
+if(e.target.closest('[data-action="cp-del-no"]')){e.stopImmediatePropagation();closeModal();return;}
+var y=e.target.closest('[data-action="cp-del-yes"]');if(!y)return;
+e.stopImmediatePropagation();
+var r=window.__cpDel||window.__cpCtx;if(!r||!r.en)return;
+r.en.images=(r.en.images||[]).filter(function(s){return s!==r.src;});
+if(r.en.imgTags)delete r.en.imgTags[r.src];
+if(r.en.cover===r.src)r.en.cover='';
+closeModal();
+if(typeof save==='function')save().then(function(){render();});else render();
+},true);
+/* Viewer: always paint the blended visualization for signed-in users */
+function drawViewer(){
+var cv=document.getElementById('viewer-canvas');if(!cv)return;
+try{cancelAnimationFrame(vRaf);}catch(e){}
+cv.width=540;cv.height=675;
+var s=null;try{s=(typeof buildScene==='function')?buildScene():null;}catch(e){s=null;}
+if(!s||!((s.works&&s.works.length)||(s.marks&&s.marks.length))){try{s=(typeof museumScene==='function')?museumScene():null;}catch(e){}}
+window.vScene=s||{washes:[],marks:[],works:[],grain:[]};
+window.vT=0;
+var doPaint=function(){if(typeof vPaintScene==='function')vPaintScene(cv.getContext('2d'),cv.width,cv.height,window.vScene,window.vT||0);};
+doPaint();
+var seen={};
+(window.vScene.works||[]).forEach(function(w){(w.patches||[]).forEach(function(pa){
+if(!pa.src||seen[pa.src])return;seen[pa.src]=1;
+var im=new Image();im.onload=function(){pa.ready=im;doPaint();};im.src=pa.src;});});
+if(typeof VSPEEDS!=='undefined'&&typeof vSpeedIdx!=='undefined'&&VSPEEDS[vSpeedIdx]>0){
+var lp=function(){vRaf=requestAnimationFrame(lp);if(document.hidden)return;
+window.vT=(window.vT||0)+0.016*VSPEEDS[vSpeedIdx];doPaint();};
+vRaf=requestAnimationFrame(lp);
+}
+if(typeof syncSpeedIco==='function')syncSpeedIco();
+}
+</script>
 </body>
 </html>
