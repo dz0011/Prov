@@ -8218,3 +8218,22 @@ if(typeof syncSpeedIco==='function')syncSpeedIco();
 </script>
 </body>
 </html>
+<script>
+/* CLEANUP 1: stop the OLD pointer-hold from opening a second Mark-this-photo menu */
+window.addEventListener('pointerdown',function(e){
+if(e.target&&e.target.closest&&e.target.closest('.thumb,.film'))e.stopPropagation();
+},true);
+/* CLEANUP 2: restore "Back closes an open modal" (previous copy died inside a stray <style>) */
+(function(){
+var pushed=false;
+var _om=openModal;
+openModal=function(h){var w=_om(h);try{history.pushState({m:1},'');pushed=true;}catch(e){}return w;};
+var _cm=closeModal;
+closeModal=function(){var r=document.getElementById('modal-root');_cm();if(r&&!r.children.length)pushed=false;};
+window.addEventListener('popstate',function(e){
+if(pushed){pushed=false;_cm();e.stopImmediatePropagation();}
+},true);
+})();
+</script>
+</body>
+</html>
