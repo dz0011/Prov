@@ -6327,5 +6327,81 @@ view.wkDir=view.wkDir==='new'?'old':(view.wkDir==='old'?'num':(view.wkDir==='num
 render();
 },true);
 </script>
+<style>
+.tag-badge{position:absolute;top:4px;left:4px;font-size:12px;line-height:1;background:rgba(20,21,27,.75);border-radius:999px;padding:3px 5px;pointer-events:none}
+</style>
+<script>
+/* ---- Photo tags: default = Painting; changeable to Palette/other ---- */
+function getTag(src){return (state.imgTags&&state.imgTags[src])||'painting';}
+function setTag(src,tag){if(!state.imgTags)state.imgTags={};state.imgTags[src]=tag;save();}
+function openTagMenu(src){
+var cur=getTag(src);window._tagSrc=src;
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
++'<div class="panel-head"><h2>Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="sub" style="margin-bottom:12px">What is this photo of?</p>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="set-img-tag" data-tag="painting" style="justify-content:flex-start">'+(cur==='painting'?'✓ ':'')+'🖼 Painting</button>'
++'<button type="button" class="btn ghost" data-action="set-img-tag" data-tag="palette" style="justify-content:flex-start">'+(cur==='palette'?'✓ ':'')+'🎨 Palette / other</button>'
++'</div></div></div>');
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="set-img-tag"]');if(!t)return;
+setTag(window._tagSrc,t.dataset.tag);closeModal();render();
+});
+/* long-press (or right-click) a photo to open the mark menu */
+(function(){
+var holdTimer=null,suppress=false;
+document.addEventListener('touchstart',function(e){
+var img=e.target.closest('.thumb img,.film img');if(!img)return;
+var src=img.getAttribute('src');
+holdTimer=setTimeout(function(){suppress=true;if(navigator.vibrate)navigator.vibrate(10);openTagMenu(src);},450);
+},{passive:true});
+['touchend','touchmove','touchcancel'].forEach(function(t){
+document.addEventListener(t,function(){clearTimeout(holdTimer);},{passive:true});
+});
+document.addEventListener('contextmenu',function(e){
+var img=e.target.closest('.thumb img,.film img');
+if(img){e.preventDefault();openTagMenu(img.getAttribute('src'));}
+});
+document.addEventListener('click',function(e){
+if(suppress){suppress=false;e.preventDefault();e.stopPropagation();}
+},true);
+})();
+/* Filmstrip shows only photos tagged Painting (default) */
+var _pd=paintingDetailHTML;
+paintingDetailHTML=function(id){
+var html=_pd(id);
+var tmp=document.createElement('div');tmp.innerHTML=html;
+var films=tmp.querySelectorAll('.film');
+films.forEach(function(f){
+var img=f.querySelector('img');
+if(img&&getTag(img.getAttribute('src'))!=='painting')f.remove();
+});
+var keep=tmp.querySelectorAll('.film');
+keep.forEach(function(f,idx){f.setAttribute('data-idx',idx);});
+return tmp.innerHTML;
+};
+function openLightboxFromPainting(pid,idx){
+var p=getP(pid);if(!p)return;
+var all=entriesOf(pid).flatMap(function(e){return (e.images||[]).map(function(src){return{src:src,date:e.date};});});
+var filtered=all.filter(function(o){return getTag(o.src)==='painting';});
+var list=filtered.length?filtered:all;
+lbSet=list.map(function(o){return{src:o.src,cap:numTag(p.number)+' · '+fmtShort(o.date)};});
+showLB(idx);
+}
+/* 🎨 badge on palette photos in entry cards */
+var _ec=entryCardHTML;
+entryCardHTML=function(e,i){
+var html=_ec(e,i);
+var tmp=document.createElement('div');tmp.innerHTML=html;
+tmp.querySelectorAll('.thumb img').forEach(function(img){
+if(getTag(img.getAttribute('src'))!=='painting'){
+var b=document.createElement('span');b.className='tag-badge';b.textContent='🎨';
+img.parentNode.appendChild(b);
+}
+});
+return tmp.innerHTML;
+};
+</script>
 </body>
 </html>
