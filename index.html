@@ -5846,5 +5846,111 @@ else if(typeof toast==='function'){toast(/iphone|ipad|ipod/i.test(navigator.user
 });
 })();
 </script>
+<style>
+/* Unselected Timeline/Works tab: NO colorful background */
+.tab[data-view="timeline"]:not(.active),.tab[data-view="paintings"]:not(.active){
+background-image:none!important;background-color:transparent!important;
+}
+/* Palette badge on thumbnails */
+.tag-badge{position:absolute;left:5px;top:5px;z-index:2;font-size:12px;line-height:1;background:rgba(20,21,27,.78);border-radius:999px;padding:3px 5px;pointer-events:none}
+.thumb img,.film img{-webkit-touch-callout:none;user-select:none}
+</style>
+<script>
+/* ---- Photo tagging: hold a photo (or right-click) to mark painting vs palette ---- */
+function filmImages(pid){
+return entriesOf(pid).flatMap(function(en){return (en.images||[]).map(function(src){return {en:en,src:src,date:en.date};});})
+.filter(function(o){return ((o.en.imgTags||{})[o.src]||'painting')!=='palette';});
+}
+function openLightboxFromPainting(pid,idx){
+var list=filmImages(pid);var p=getP(pid);
+lbSet=list.map(function(o){return {src:o.src,cap:numTag(p?p.number:'?')+' · '+fmtShort(o.date)};});
+showLB(idx);
+}
+function entryCardHTML(e,i){
+const p=getP(e.paintingId)||{id:'',number:'?',title:'(deleted painting)'};
+const imgs=(e.images||[]).map((src,j)=>'<button class="thumb" data-action="lightbox" data-entry="'+e.id+'" data-idx="'+j+'"><img src="'+src+'" alt="" loading="lazy">'+(((e.imgTags||{})[src]==='palette')?'<span class="tag-badge">🎨</span>':'')+'</button>').join('');
+return '<article class="entry card" style="--i:'+Math.min(i,10)+'" data-action="open-entry" data-id="'+e.id+'" role="button" tabindex="0">'
++'<div class="entry-top">'
++'<button class="chip pchip" data-action="open-painting" data-id="'+p.id+'"><b>'+numTag(p.number)+'</b>'+(p.title&&p.title!=='Untitled'?'<span>'+esc(p.title)+'</span>':(p.number?'':'<span>Untitled work</span>'))+'</button>'
++'<span class="etime">'+fmtDateTime(e.date)+'</span>'
++'<span class="etools"><button class="icon-btn" data-action="share-entry" data-id="'+e.id+'" title="Share">📤</button>'
++'<button class="icon-btn" data-action="edit-entry" data-id="'+e.id+'" title="Edit">✎</button></span></div>'
++(e.text?'<p class="etext">'+esc(e.text)+'</p>':'')
++(imgs?'<div class="thumbs">'+imgs+'</div>':'')
++'</article>';
+}
+function paintingDetailHTML(id){
+const p=getP(id);if(!p){view.name='paintings';return paintingsHTML();}
+const es=entriesOf(p.id);
+const cols=uniqueColors(es);
+const imgs=filmImages(p.id);
+const allCount=es.reduce(function(n,e){return n+(e.images||[]).length;},0);
+const first=es.length?es[0].date:null,last=es.length?es[es.length-1].date:null;
+return '<button class="backlink" data-action="goto" data-view="paintings">← All works</button>'
++'<div class="pd-head card"><div class="pd-num">'+(p.number?pad2(p.number):'')+'</div><div class="pd-main">'
++'<h1 class="display">'+esc(p.title)+'</h1>'
++'<p class="sub">'+(p.medium||'Medium —')+(p.size?' · '+esc(p.size):'')+' · started '+fmtShort(first||p.createdAt)+'</p>'
++'<div class="pd-stats"><span><b>'+es.length+'</b> '+plural('entry','entries',es.length)+'</span>'
++'<span><b>'+imgs.length+'</b> of '+allCount+' photos shown</span>'
++(last&&first?'<span><b>'+(Math.max(1,Math.round((new Date(last)-new Date(first))/864e5))+1)+'</b> days active</span>':'')
++'</div><div class="pd-actions">'
++'<button class="btn primary" data-action="new-entry" data-painting="'+p.id+'">+ Add entry</button>'
++'<button class="btn ghost" data-action="edit-painting" data-id="'+p.id+'">Edit</button>'
++'<button class="btn ghost" data-action="share-work" data-id="'+p.id+'">📤 Share</button>'
++'</div></div>'
++(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div>'
++'<p class="hint" style="margin-top:8px">Tip: hold a photo (or right-click it) to mark it as the painting or the palette. Palette photos are hidden from this strip.</p></section>':'')
++'<section><h3 class="h3">Work log · newest first</h3>'
++(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">sessions logged yet.</div>')+'</section>';
+}
+function resolveTagTarget(el){
+if(el.classList.contains('film')){
+return filmImages(el.getAttribute('data-list'))[+el.getAttribute('data-idx')]||null;
+}
+var en=state.entries.find(function(x){return x.id===el.getAttribute('data-entry');});
+if(!en)return null;
+var src=(en.images||[])[+el.getAttribute('data-idx')];
+return src?{en:en,src:src}:null;
+}
+(function(){
+var lpTimer=null,suppress=false;
+document.addEventListener('click',function(e){if(suppress){suppress=false;e.preventDefault();e.stopPropagation();}},true);
+function targetOf(el){return el&&el.closest?el.closest('.thumb[data-entry],.film[data-list]'):null;}
+document.addEventListener('touchstart',function(e){
+var el=targetOf(e.target);if(!el)return;
+clearTimeout(lpTimer);
+lpTimer=setTimeout(function(){lpTimer=null;suppress=true;openTagMenu(el);},500);
+},{passive:true});
+['touchend','touchmove','touchcancel'].forEach(function(n){
+document.addEventListener(n,function(){clearTimeout(lpTimer);lpTimer=null;},{passive:true});
+});
+document.addEventListener('contextmenu',function(e){
+var el=targetOf(e.target);if(!el)return;
+e.preventDefault();openTagMenu(el);
+});
+window.openTagMenu=function(el){
+var r=resolveTagTarget(el);if(!r)return;
+window._tagPending=r;
+var cur=(r.en.imgTags&&r.en.imgTags[r.src])||'painting';
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="hint" style="margin:0 0 10px">Palette photos are hidden from the Progress filmstrip.</p>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo" data-tag="painting" style="justify-content:flex-start">'+(cur==='painting'?'✓ ':'')+'🖼\u00A0 This is the painting</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo" data-tag="palette" style="justify-content:flex-start">'+(cur==='palette'?'✓ ':'')+'🎨\u00A0 This is the palette</button>'
++'</div></div>');
+};
+document.addEventListener('click',function(e){
+var b=e.target.closest('[data-action="tag-photo"]');if(!b)return;
+e.stopImmediatePropagation();
+var r=window._tagPending;if(!r)return;
+if(!r.en.imgTags)r.en.imgTags={};
+r.en.imgTags[r.src]=b.dataset.tag;
+save().then(function(){closeModal();render();toast(b.dataset.tag==='palette'?'🎨 Marked as palette — hidden from the filmstrip':'🖼 Marked as the painting');});
+},true);
+})();
+</script>
+</body>
+</html>
 </body>
 </html>
