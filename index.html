@@ -7050,5 +7050,36 @@ window.scrollTo(0,0);
 });
 }
 </script>
+<style>
+/* + buttons: hidden until 2s after the page settles */
+body:not(.auth-screen-active):not(.on-viewer) .float-btn{
+opacity:0!important;pointer-events:none;transition:opacity .45s ease;
+}
+body.fabs-in:not(.auth-screen-active):not(.on-viewer) .float-btn{
+opacity:1!important;pointer-events:auto;
+}
+</style>
+<script>
+(function(){
+var t=null,lastKey=null;
+function allowed(){
+return typeof view!=='undefined'&&(view.name==='timeline'||view.name==='paintings'||view.name==='painting'||view.name==='entry');
+}
+function update(){
+var key=allowed()?(view.name+'|'+(view.paintingId||view.entryId||'')):null;
+if(key===lastKey)return;
+lastKey=key;
+clearTimeout(t);
+document.body.classList.remove('fabs-in');
+if(key){t=setTimeout(function(){document.body.classList.add('fabs-in');},2000);}
+}
+if(typeof render==='function'&&!render._fabDelay){
+var _r=render;
+render=function(){var r=_r.apply(this,arguments);update();return r;};
+render._fabDelay=1;
+}
+update();
+})();
+</script>
 </body>
 </html>
