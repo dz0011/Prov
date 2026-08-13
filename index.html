@@ -7413,5 +7413,36 @@ var m=document.getElementById('menu');if(m)m.classList.remove('open');
 openAboutGuide();
 },true);
 </script>
+<script>
+/* Never overwrite a full cloud journal with an empty local one */
+async function save(){
+if(isGuest()){try{localStorage.setItem('provenance.local',JSON.stringify(state));}catch(e){return false;}return true;}
+if(!db)return false;
+const{data:{user}}=await db.auth.getUser();
+if(!user)return false;
+const localCount=(state.paintings||[]).length+(state.entries||[]).length;
+if(localCount===0){
+const{data:cur}=await db.from('journals').select('data').eq('user_id',user.id).maybeSingle();
+if(cur&&cur.data&&(((cur.data.paintings||[]).length)+((cur.data.entries||[]).length))>0){
+toast('⚠ Save blocked — this device shows an empty journal. Reload or restore a backup first.');
+return false;
+}
+}
+const{error}=await db.from('journals').upsert({user_id:user.id,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+if(error){toast('⚠ Could not save — check your connection');return false;}
+return true;
+}
+/* Put manual backup/restore back in the gear menu */
+(function(){
+var m=document.getElementById('menu');if(!m)return;
+var so=m.querySelector('[data-action="sign-out"]');
+if(!m.querySelector('[data-action="export"]')){
+var b=document.createElement('button');b.dataset.action='export';b.innerHTML='⬇ Download backup (.json)';
+m.insertBefore(b,so);}
+if(!m.querySelector('[data-action="import-click"]')){
+var b2=document.createElement('button');b2.dataset.action='import-click';b2.innerHTML='⬆ Restore a backup';
+m.insertBefore(b2,so);}
+})();
+</script>
 </body>
 </html>
