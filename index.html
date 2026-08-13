@@ -5542,5 +5542,117 @@ else if(lum>0.86){x.save();x.globalCompositeOperation='source-over';x.fillStyle=
 </script>
 </body>
 </html>
+<style>
+/* Toggle: colorful on both, ring + full color on the selected one (same opacity) */
+.tab[data-view="timeline"],.tab[data-view="paintings"]{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),70%,60%,.32),
+hsla(calc(15 + var(--hue-shift,0)),75%,55%,.32) 45%,
+hsla(calc(45 + var(--hue-shift,0)),80%,50%,.32) 75%,
+hsla(calc(160 + var(--hue-shift,0)),60%,45%,.32))!important;
+opacity:.72;
+}
+.tabs .tab.active{opacity:1;box-shadow:0 0 0 2px rgba(25,26,32,.55),0 0 14px rgba(25,26,32,.25)!important}
+body.dark .tabs .tab.active{box-shadow:0 0 0 2px rgba(244,242,236,.7),0 0 14px rgba(244,242,236,.28)!important}
+/* FAB labels become real tappable children */
+.float-btn::before{content:none!important}
+.fab-label{position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);
+font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.08em;text-transform:uppercase;
+color:var(--ink-soft);white-space:nowrap;
+text-shadow:0 1px 0 var(--card),0 -1px 0 var(--card),1px 0 0 var(--card),-1px 0 0 var(--card),0 0 6px var(--card),0 0 12px var(--card)}
+/* Cover picker: darker border on the chosen cover */
+.cover-opt.sel{opacity:1;box-shadow:0 0 0 3px rgba(25,26,32,.5)!important}
+body.dark .cover-opt.sel{box-shadow:0 0 0 3px rgba(0,0,0,.75)!important}
+/* Install button: hidden until we choose to show it */
+#install-btn{display:none!important}
+body.show-install #install-btn{display:block!important}
+</style>
+<script>
+/* FAB labels as real tappable elements */
+(function(){
+function lab(b,txt){if(!b||b.querySelector('.fab-label'))return;var s=document.createElement('span');s.className='fab-label';s.textContent=txt;b.appendChild(s);}
+lab(document.getElementById('entry-fab'),'New entry');
+lab(document.getElementById('work-fab'),'New work');
+})();
+/* Restore New Work + Edit buttons (their old handlers died) */
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="new-painting"]');
+if(t){e.stopImmediatePropagation();var m=document.getElementById('menu');if(m)m.classList.remove('open');openPaintingForm();return;}
+var t2=e.target.closest('[data-action="edit-painting"],[data-action="edit-entry"]');
+if(t2){e.stopImmediatePropagation();var m2=document.getElementById('menu');if(m2)m2.classList.remove('open');
+if(t2.dataset.action==='edit-painting')openPaintingForm(t2.dataset.id);else openComposer(t2.dataset.id);}
+},true);
+/* Cover picker: click sets cover + darker border */
+var _opf=openPaintingForm;
+openPaintingForm=function(pid,onSaved){window._editingPainting=pid;return _opf(pid,onSaved);};
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="pick-cover"]');if(!t)return;
+e.stopImmediatePropagation();
+var p=getP(window._editingPainting);if(!p)return;
+p.cover=t.dataset.src;
+save().then(function(){
+document.querySelectorAll('[data-action="pick-cover"]').forEach(function(o){o.classList.toggle('sel',o.dataset.src===p.cover);});
+render();toast('Cover updated');
+});
+},true);
+/* Install button: pop up a couple seconds after load */
+(function(){
+function installed(){try{return JSON.parse(localStorage.getItem('provenance.install')||'{}').installed}catch(e){return false}}
+if(installed())return;
+setTimeout(function(){document.body.classList.add('show-install');},2500);
+})();
+window.addEventListener('appinstalled',function(){document.body.classList.remove('show-install');});
+/* Works sort: 4-way incl. number reversed (button uses wk-sort2 so old dead handler can't interfere) */
+function filteredPaintings(){
+let ps=[...state.paintings];
+if(view.wkDir==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(view.wkDir==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else if(view.wkDir==='numdesc')ps.sort((a,b)=>(b.number||0)-(a.number||0));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+const q=(view.wq||'').trim().toLowerCase();if(!q)return ps;
+return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));
+}
+function paintingsHTML(){
+if(!state.paintings.length)return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">0 in the catalog</p></div></div>'+emptyStudioHTML();
+const d=view.wkDir||'new';
+const lbl=d==='new'?'↓ Newest first':(d==='old'?'↑ Oldest first':(d==='num'?'№ Number ↑':'№ Number ↓'));
+const sub=d==='new'?'newest first':(d==='old'?'oldest first':(d==='num'?'by number':'by number, reversed'));
+return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+state.paintings.length+' in the catalog · '+sub+'</p></div>'
++'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="wk-sort2">'+lbl+'</button>'
++'<input id="wk-search" class="search search-sm" type="search" autocomplete="off" placeholder="Search works…" value="'+esc(view.wq||'')+'"></div>'
++'</div><div id="wk-grid">'+wkGridHTML(filteredPaintings())+'</div>';
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="wk-sort2"]');if(!t)return;
+e.stopImmediatePropagation();
+view.wkDir=view.wkDir==='new'?'old':(view.wkDir==='old'?'num':(view.wkDir==='num'?'numdesc':'new'));
+render();
+},true);
+/* Viewer: pull hex colors straight from your uploaded photos */
+(function(){
+var _dv3=drawViewer;
+drawViewer=function(){
+_dv3.apply(this,arguments);
+var cv=document.getElementById('viewer-canvas');if(!cv||!vScene)return;
+var tries=0;
+var iv=setInterval(function(){
+tries++;var changed=false;
+(vScene.works||[]).forEach(function(w){
+(w.patches||[]).forEach(function(pa){
+if(pa.ready&&!pa.analyzed){pa.analyzed=true;changed=true;
+try{analyze(pa.ready,w,vScene);}catch(e){}
+if(w.pal&&w.pal.length)w.nodes.forEach(function(nd,idx){nd.col=w.pal[idx%w.pal.length];});
+}
+});
+});
+if(changed&&typeof renderStatic==='function'){vStatic=renderStatic(vScene,cv.width,cv.height);paintCurrent();}
+if(tries>24)clearInterval(iv);
+},250);
+};
+})();
+</script>
+</body>
+</html>
 </body>
 </html>
