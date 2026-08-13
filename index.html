@@ -5952,5 +5952,154 @@ save().then(function(){closeModal();render();toast(b.dataset.tag==='palette'?'�
 </script>
 </body>
 </html>
+<style>
+#viewer-canvas{outline:none!important;-webkit-tap-highlight-color:rgba(128,128,128,.08)}
+#viewer-canvas:focus{outline:none!important;box-shadow:none!important}
+body.on-viewer .tab[data-view="timeline"],body.on-viewer .tab[data-view="paintings"]{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),70%,60%,.12),
+hsla(calc(15 + var(--hue-shift,0)),75%,55%,.12) 45%,
+hsla(calc(45 + var(--hue-shift,0)),80%,50%,.12) 75%,
+hsla(calc(160 + var(--hue-shift,0)),60%,45%,.12))!important;
+opacity:.85;
+}
+.pd-head .pd-num{font-size:clamp(30px,4.5vw,44px);line-height:1.05}
+</style>
+<script>
+/* ---- tone down photo fragments so the Viewer stays painterly, not blown out ---- */
+(function(){
+var _dv=drawViewer;
+drawViewer=function(){
+_dv.apply(this,arguments);
+if(window.vScene)(vScene.works||[]).forEach(function(w){(w.patches||[]).forEach(function(pa){(pa.frags||[]).forEach(function(fr){fr.al=Math.min(fr.al,.28);fr.dw=Math.min(fr.dw,.3);});});});
+if(typeof paintCurrent==='function')paintCurrent();
+};
+})();
+/* ---- filmstrip = only photos tagged painting (default) ---- */
+function filmImages(pid){
+var out=[];entriesOf(pid).forEach(function(e){(e.images||[]).forEach(function(src){
+if(((e.imgTags||{})[src]||'painting')!=='palette')out.push({en:e,src:src,date:e.date});
+});});
+return out;
+}
+/* ---- Work page: smaller number, no photos stat, Days worked on ---- */
+function paintingDetailHTML(id){
+const p=getP(id);if(!p){view.name='paintings';return paintingsHTML();}
+const es=entriesOf(p.id);
+const imgs=filmImages(p.id);
+const daysWorked=new Set(es.map(e=>dayKey(e.date))).size;
+const first=es.length?es[0].date:null;
+return '<button class="backlink" data-action="goto" data-view="paintings">← All works</button>'
++'<div class="pd-head card"><div class="pd-num">'+(p.number?pad2(p.number):'')+'</div><div class="pd-main">'
++'<h1 class="display">'+esc(p.title)+'</h1>'
++'<p class="sub">'+(p.medium||'Medium —')+(p.size?' · '+esc(p.size):'')+' · started '+fmtShort(first||p.createdAt)+'</p>'
++'<div class="pd-stats"><span><b>'+es.length+'</b> '+plural('entry','entries',es.length)+'</span>'
++(es.length?'<span><b>'+daysWorked+'</b> '+plural('day','days',daysWorked)+' worked on</span>':'')
++'</div><div class="pd-actions">'
++'<button class="btn primary" data-action="new-entry" data-painting="'+p.id+'">+ Add entry</button>'
++'<button class="btn ghost" data-action="edit-painting" data-id="'+p.id+'">Edit</button>'
++'<button class="btn ghost" data-action="share-work" data-id="'+p.id+'">📤 Share</button>'
++'</div></div></div>'
++(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div><p class="hint" style="margin-top:8px;text-align:center">Hold a photo to mark it painting / palette / delete.</p></section>':'')
++'<section><h3 class="h3">Work log · newest first</h3>'
++(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">sessions logged yet.</div>')+'</section>';
+}
+/* ---- entry cards without the little palette badge ---- */
+function entryCardHTML(e,i){
+const p=getP(e.paintingId)||{id:'',number:'?',title:'(deleted painting)'};
+const imgs=(e.images||[]).map((src,j)=>'<button class="thumb" data-action="lightbox" data-entry="'+e.id+'" data-idx="'+j+'"><img src="'+src+'" alt="" loading="lazy"></button>').join('');
+return '<article class="entry card" style="--i:'+Math.min(i,10)+'" data-action="open-entry" data-id="'+e.id+'" role="button" tabindex="0">'
++'<div class="entry-top">'
++'<button class="chip pchip" data-action="open-painting" data-id="'+p.id+'"><b>'+numTag(p.number)+'</b>'+(p.title&&p.title!=='Untitled'?'<span>'+esc(p.title)+'</span>':(p.number?'':'<span>Untitled work</span>'))+'</button>'
++'<span class="etime">'+fmtDateTime(e.date)+'</span>'
++'<span class="etools"><button class="icon-btn" data-action="share-entry" data-id="'+e.id+'" title="Share">📤</button>'
++'<button class="icon-btn" data-action="edit-entry" data-id="'+e.id+'" title="Edit">✎</button></span></div>'
++(e.text?'<p class="etext">'+esc(e.text)+'</p>':'')
++(imgs?'<div class="thumbs">'+imgs+'</div>':'')
++'</article>';
+}
+/* ---- hold-menu: painting / palette-other / delete, closes instantly ---- */
+function resolveTag(el){
+if(el.classList.contains('film')){var list=filmImages(el.getAttribute('data-list'));return list[+el.getAttribute('data-idx')]||null;}
+var en=state.entries.find(function(x){return x.id===el.getAttribute('data-entry');});
+if(!en)return null;var src=(en.images||[])[+el.getAttribute('data-idx')];return src?{en:en,src:src}:null;
+}
+function openTagMenu(el){
+var r=resolveTag(el);if(!r)return;window._tagPending=r;
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">This photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo2" data-tag="painting" style="justify-content:flex-start">🖼\u00A0 Painting (show in filmstrip)</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo2" data-tag="palette" style="justify-content:flex-start">🎨\u00A0 Palette / other (hide from filmstrip)</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo2" data-tag="delete" style="justify-content:flex-start">🗑\u00A0 Delete photo</button>'
++'</div></div></div>');
+}
+document.addEventListener('click',function(e){
+var b=e.target.closest('[data-action="tag-photo2"]');if(!b)return;
+e.stopImmediatePropagation();
+var r=window._tagPending;if(!r)return;
+if(b.dataset.tag==='delete'){r.en.images=r.en.images.filter(function(s){return s!==r.src;});}
+else{if(!r.en.imgTags)r.en.imgTags={};r.en.imgTags[r.src]=b.dataset.tag;}
+save().then(function(){closeModal();render();toast(b.dataset.tag==='delete'?'Photo removed':(b.dataset.tag==='palette'?'Marked palette / other':'Marked painting'));});
+},true);
+/* ---- back button steps through in-app pages, ending at Timeline ---- */
+(function(){
+var lastKey='',applying=false;
+var _r=render;
+render=function(){_r.apply(this,arguments);
+var key=JSON.stringify(view);
+if(key!==lastKey){lastKey=key;if(!applying){try{history.pushState({prov:1,key:key},'');}catch(e){}}}
+};
+window.addEventListener('popstate',function(e){
+applying=true;
+if(e.state&&e.state.prov&&e.state.key){try{view=JSON.parse(e.state.key);}catch(e2){view={name:'timeline',q:''};}}
+else{view={name:'timeline',q:''};}
+lastKey=JSON.stringify(view);
+_r();window.scrollTo(0,0);
+setTimeout(function(){applying=false;},0);
+});
+})();
+/* ---- sort: 4-way cycle, changes every tap ---- */
+function filteredPaintings(){
+let ps=[...state.paintings];
+if(view.wkDir==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(view.wkDir==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else if(view.wkDir==='numdesc')ps.sort((a,b)=>(b.number||0)-(a.number||0));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+const q=(view.wq||'').trim().toLowerCase();if(!q)return ps;
+return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));
+}
+function paintingsHTML(){
+if(!state.paintings.length)return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">0 in the catalog</p></div></div>'+emptyStudioHTML();
+const d=view.wkDir||'new';
+const lbl=d==='new'?'↓ Newest first':(d==='old'?'↑ Oldest first':(d==='num'?'№ By number':'№ By number (rev)'));
+const sub=d==='new'?'newest first':(d==='old'?'oldest first':(d==='num'?'by number':'by number (reverse)'));
+return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+state.paintings.length+' in the catalog · '+sub+'</p></div>'
++'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="wk-sort4">'+lbl+'</button>'
++'<input id="wk-search" class="search search-sm" type="search" autocomplete="off" placeholder="Search works…" value="'+esc(view.wq||'')+'"></div>'
++'</div><div id="wk-grid">'+wkGridHTML(filteredPaintings())+'</div>';
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="wk-sort4"]');if(!t)return;
+e.stopImmediatePropagation();
+view.wkDir=view.wkDir==='new'?'old':(view.wkDir==='old'?'num':(view.wkDir==='num'?'numdesc':'new'));
+render();
+},true);
+/* ---- Install popup: 3s after load, every 3 pages, returns 24h after ✕ ---- */
+(function(){
+var KEY='provenance.install';
+function installed(){try{if((JSON.parse(localStorage.getItem(KEY)||'{}')).installed)return true;}catch(e){return false}
+if(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)return true;if(navigator.standalone)return true;return false;}
+function dismissed(){try{var t=+localStorage.getItem(KEY+'.dismissedAt')||0;return (Date.now()-t)<86400000;}catch(e){return false}}
+function show(){if(installed()||dismissed())return;document.body.classList.add('show-install');}
+if(!installed()&&!dismissed())setTimeout(show,3000);
+var pages=0;var _r=render;
+render=function(){var r=_r.apply(this,arguments);pages++;if(pages%3===0)show();return r;};
+window.addEventListener('appinstalled',function(){try{var st=JSON.parse(localStorage.getItem(KEY)||'{}');st.installed=true;localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}document.body.classList.remove('show-install');});
+})();
+</script>
+</body>
+</html>
 </body>
 </html>
