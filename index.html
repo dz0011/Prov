@@ -6586,5 +6586,41 @@ return '<button class="backlink" data-action="goto" data-view="paintings">← Al
 +(es.length?[...es].reverse().map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">sessions logged yet.</div>')+'</section>';
 }
 </script>
+<style>
+/* Viewer tab: light colorful fill when it's the selected page — subtle, not intense */
+.tab.tab-viewer.active{
+background-image:linear-gradient(120deg,
+hsla(calc(205 + var(--hue-shift,0)),60%,60%,.16),
+hsla(calc(18 + var(--hue-shift,0)),60%,55%,.16) 30%,
+hsla(calc(152 + var(--hue-shift,0)),50%,45%,.16) 62%,
+hsla(calc(205 + var(--hue-shift,0)),60%,60%,.16))!important;
+-webkit-background-clip:border-box!important;
+background-clip:border-box!important;
+color:var(--ink)!important;
+-webkit-text-fill-color:var(--ink)!important;
+}
+body.dark .tab.tab-viewer.active{
+color:#F2F1EC!important;
+-webkit-text-fill-color:#F2F1EC!important;
+background-image:linear-gradient(120deg,
+hsla(calc(205 + var(--hue-shift,0)),60%,68%,.16),
+hsla(calc(18 + var(--hue-shift,0)),60%,62%,.16) 30%,
+hsla(calc(152 + var(--hue-shift,0)),50%,55%,.16) 62%,
+hsla(calc(205 + var(--hue-shift,0)),60%,68%,.16))!important;
+}
+</style>
+<script>
+/* Work pages: show only "days worked on" — drop entries & photos counters */
+(function(){
+var _pd=paintingDetailHTML;
+paintingDetailHTML=function(id){
+var h=_pd(id);
+h=h.replace(/<span><b>\d+<\/b> (entry|entries)<\/span>/,'');
+h=h.replace(/<span><b>\d+<\/b> photos?<\/span>/,'');
+h=h.replace('<div class="pd-stats"></div>','');
+return h;
+};
+})();
+</script>
 </body>
 </html>
