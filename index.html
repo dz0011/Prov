@@ -7162,5 +7162,167 @@ if(typeof render==='function')render();
 },60);
 });
 </script>
+<style>
+.lb-btn{background:transparent!important;border:0!important;box-shadow:none!important;color:transparent!important}
+.lb-btn:active{background:rgba(255,255,255,.08)!important}
+@keyframes rabbithop{0%,100%{transform:translate(-50%,-50%) scale(var(--rs)) translateY(0)}50%{transform:translate(-50%,-50%) scale(var(--rs)) translateY(-14px)}}
+</style>
+<script>
+/* ---- Fix first-tap on "Newest first": normalize wkDir so first tap goes to Oldest ---- */
+if(typeof view!=='undefined'&&!view.wkDir)view.wkDir='new';
+if(typeof render==='function'&&!render._wkNorm){var _rW=render;render=function(){if(!view.wkDir)view.wkDir='new';return _rW.apply(this,arguments);};render._wkNorm=1;}
+/* ---- Viewer subtitle rewording ---- */
+(function(){var _vs=viewerHTML;viewerHTML=function(){return _vs().replace('arranged anew every refresh','new with every refresh');};})();
+/* ---- Photo tags: Work (default) / Other / Delete ---- */
+function normTag(en,src){var t=(en.imgTags&&en.imgTags[src])||'work';if(t==='painting')t='work';if(t==='palette')t='other';return t;}
+function resolveTagTarget(el){
+var img=el.matches&&el.matches('img')?el:el.querySelector('img');
+var src=img?img.getAttribute('src'):null;if(!src)return null;
+var le=el.closest('[data-entry]');
+if(le){var en=state.entries.find(function(x){return x.id===le.getAttribute('data-entry');});return en?{en:en,src:src}:null;}
+var lf=el.closest('[data-list]');
+if(lf){var es2=entriesOf(lf.getAttribute('data-list'));for(var i=0;i<es2.length;i++){if((es2[i].images||[]).indexOf(src)!==-1)return{en:es2[i],src:src};}return null;}
+return null;
+}
+function workFilm(p){var list=[];entriesOf(p.id).forEach(function(e){(e.images||[]).forEach(function(src){if(normTag(e,src)==='work')list.push({src:src,date:e.date});});});return list;}
+function openTagMenu(el){
+var r=resolveTagTarget(el);if(!r)return;
+window.__tagCtx=r;
+var cur=normTag(r.en,r.src);
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
++'<div class="panel-head"><h2>Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo3" data-tag="work" style="justify-content:flex-start">'+(cur==='work'?'✓&nbsp;':'&nbsp;&nbsp;')+'🖼 Work</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo3" data-tag="other" style="justify-content:flex-start">'+(cur==='other'?'✓&nbsp;':'&nbsp;&nbsp;')+'🎨 Other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo3" data-tag="delete" style="justify-content:flex-start">🗑 Delete</button>'
++'</div></div></div>');
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo3"]');if(!t)return;
+e.stopImmediatePropagation();
+var r=window.__tagCtx;if(!r)return;
+if(t.dataset.tag==='delete'){r.en.images=(r.en.images||[]).filter(function(s){return s!==r.src;});if(r.en.imgTags)delete r.en.imgTags[r.src];}
+else{if(!r.en.imgTags)r.en.imgTags={};r.en.imgTags[r.src]=t.dataset.tag;}
+closeModal();
+save().then(function(){render();});
+},true);
+function openLightboxFromPainting(pid,idx){var p=getP(pid);if(!p)return;
+lbSet=workFilm(p).map(function(o){return{src:o.src,cap:numTag(p.number)+' · '+fmtShort(o.date)};});showLB(idx);}
+/* ---- Work page: filmstrip shows only "Work" photos ---- */
+function paintingDetailHTML(id){
+const p=getP(id);if(!p){view.name='paintings';return paintingsHTML();}
+const es=entriesOf(p.id);
+const imgs=workFilm(p);
+const first=es.length?es[0].date:null;
+const daysWorked=new Set(es.map(e=>dayKey(e.date))).size;
+const old=view.logDir==='old';
+const logEs=old?[...es]:[...es].reverse();
+return '<button class="backlink" data-action="goto" data-view="paintings">← All works</button>'
++'<div class="pd-head card"><div class="pd-num">'+(p.number?pad2(p.number):'')+'</div><div class="pd-main">'
++'<h1 class="display">'+esc(p.title)+'</h1>'
++'<p class="sub">'+(p.medium||'Medium —')+(p.size?' · '+esc(p.size):'')+' · started '+fmtShort(first||p.createdAt)+'</p>'
++'<div class="pd-stats"><span><b>'+es.length+'</b> '+plural('entry','entries',es.length)+'</span>'
++(es.length?'<span><b>'+daysWorked+'</b> '+plural('day','days',daysWorked)+' worked on</span>':'')
++'</div></div><div class="pd-actions">'
++'<button class="btn primary" data-action="new-entry" data-painting="'+p.id+'">+ Add entry</button>'
++'<button class="btn ghost" data-action="edit-painting" data-id="'+p.id+'">Edit</button>'
++'<button class="btn ghost" data-action="share-work" data-id="'+p.id+'">📤 Share</button>'
++'</div></div>'
++(imgs.length?'<section><h3 class="h3">Progress filmstrip</h3><div class="filmstrip">'+imgs.map((im,i)=>'<button class="film" data-action="lightbox-list" data-list="'+p.id+'" data-idx="'+i+'"><img src="'+im.src+'" loading="lazy"><span>'+fmtShort(im.date)+'</span></button>').join('')+'</div><p class="hint" style="margin-top:8px;text-align:center">Hold a photo to mark it Work / Other / Delete.</p></section>':'')
++'<section><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3 class="h3" style="margin:30px 0 12px">Work log · '+(old?'oldest first':'newest first')+'</h3>'
++(es.length?'<button class="btn ghost sort-btn" data-action="log-sort">'+(old?'↓ Newest first':'↑ Oldest first')+'</button>':'')
++'</div>'
++(es.length?logEs.map((e,i)=>entryCardHTML(e,i)).join(''):'<div class="empty small">sessions logged yet.</div>')+'</section>';
+}
+/* ---- Search: match titles, notes, medium, size, palette names ---- */
+function filteredEntries(){
+let es=[...state.entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+if(view.tlDir==='asc')es.reverse();
+const q=(view.q||'').trim().toLowerCase();if(!q)return es;
+return es.filter(e=>{const p=getP(e.paintingId);
+const hay=[e.text,e.stage,(p?(p.title||'')+' '+numTag(p.number):''),(p?(p.medium||''):''),(p?(p.size||''):''),(e.colors||[]).map(c=>c.name).join(' ')].join(' ').toLowerCase();
+return q.split(/\s+/).every(t=>hay.includes(t));});
+}
+function filteredPaintings(){
+let ps=[...state.paintings];
+const d=view.wkDir||'new';
+if(d==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(d==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else if(d==='numdesc')ps.sort((a,b)=>(b.number||0)-(a.number||0));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+const q=(view.wq||'').trim().toLowerCase();if(!q)return ps;
+return ps.filter(p=>{const es=entriesOf(p.id);
+const hay=[p.title,numTag(p.number),p.medium,p.size,es.map(e=>e.text).join(' ')].join(' ').toLowerCase();
+return q.split(/\s+/).every(t=>hay.includes(t));});
+}
+document.addEventListener('input',function(e){
+if(e.target.id==='tl-search'){view.q=e.target.value;var l=document.getElementById('tl-list');if(l)l.innerHTML=timelineListHTML(filteredEntries());}
+else if(e.target.id==='wk-search'){view.wq=e.target.value;var g=document.getElementById('wk-grid');if(g)g.innerHTML=wkGridHTML(filteredPaintings());}
+});
+/* ---- Share = PDF (entry, or a work's entries in current order) ---- */
+function printHTML(html,title){
+var pv=document.getElementById('print-view');if(!pv)return;
+pv.innerHTML=html;pv.style.display='block';pv.style.position='fixed';pv.style.left='0';pv.style.top='0';pv.style.width='100%';pv.style.height='100%';pv.style.overflow='auto';pv.style.background='white';pv.style.zIndex='9999';
+document.title='Provenance - '+title;
+setTimeout(function(){window.print();toast('💡 Choose "Save as PDF" as the destination');},300);
+}
+function shareEntryPDF(id){
+var e=state.entries.find(function(x){return x.id===id;});if(!e)return;
+var p=getP(e.paintingId);
+printHTML('<section style="padding:10px">'
++'<div class="book-cover-meta">Provenance — shared entry</div>'
++(p?'<div class="book-pnum">'+(p.number?pad2(p.number):'')+'</div><h1 class="book-ptitle">'+esc(p.title)+'</h1>':'')
++'<div class="book-pmeta">'+fmtDateTime(e.date)+(e.stage?' · '+esc(e.stage):'')+'</div>'
++(e.text?'<p class="book-entry-text">'+esc(e.text)+'</p>':'')
++((e.images||[]).length?'<div class="book-filmgrid">'+e.images.map(function(s){return '<figure class="book-film"><img src="'+s+'"></figure>';}).join('')+'</div>':'')
++((e.colors||[]).length?'<div class="book-section-label">Palette</div><div>'+(e.colors||[]).map(function(c){return '<span class="book-chip"><span class="book-dab" style="--c:'+esc(c.hex)+'"></span>'+esc(c.name||c.hex)+'</span>';}).join('')+'</div>':'')
++'</section>','Entry');
+}
+function shareWorkPDF(pid){
+var p=getP(pid);if(!p)return;
+var es=entriesOf(pid);var old=view.logDir==='old';var list=old?[...es]:[...es].reverse();
+printHTML('<section style="padding:10px">'
++'<div class="book-cover-meta">Provenance — work log</div>'
++'<div class="book-pnum">'+(p.number?pad2(p.number):'')+'</div><h1 class="book-ptitle">'+esc(p.title)+'</h1>'
++'<div class="book-pmeta">'+(p.medium||'')+(p.size?' · '+esc(p.size):'')+' · '+es.length+' '+plural('entry','entries',es.length)+'</div>'
++list.map(function(e){return '<div class="book-entry"><div class="book-entry-head"><span>'+fmtDateTime(e.date)+'</span></div>'+(e.text?'<p class="book-entry-text">'+esc(e.text)+'</p>':'')+((e.images||[]).length?'<div class="book-filmgrid">'+e.images.map(function(s){return '<figure class="book-film"><img src="'+s+'"></figure>';}).join('')+'</div>':'')+'</div>';}).join('')
++'</section>',pLabel(p));
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="share-entry"]');
+if(t){e.stopPropagation();e.preventDefault();shareEntryPDF(t.dataset.id);return;}
+var w=e.target.closest('[data-action="share-work"]');
+if(w){e.stopPropagation();e.preventDefault();shareWorkPDF(w.dataset.id);}
+},true);
+/* ---- Hold the bunny (high speeds) → rabbit-in-a-field page ---- */
+(function(){
+var holdT=null,suppress=false;
+function rabbitIcon(){var el=document.getElementById('vspeed-ico');return el&&(el.textContent==='🐇'||el.textContent==='🚀');}
+function openRabbit(){
+var scale=(1.6+Math.random()*2.2).toFixed(2);
+var o=document.createElement('div');o.id='rabbit-page';
+o.style.cssText='position:fixed;inset:0;z-index:300;overflow:hidden;cursor:pointer;background:linear-gradient(#8EC9E8 0%,#BFE3F2 46%,#DFF3D8 62%,#79B45C 62%,#4E8A3C 100%)';
+var grass='';for(var i=0;i<26;i++){grass+='<span style="position:absolute;bottom:'+(2+Math.random()*30)+'%;left:'+(Math.random()*96)+'%;font-size:'+(14+Math.random()*16)+'px">'+(Math.random()<.5?'🌿':'🌾')+'</span>';}
+var flowers='';for(var j=0;j<10;j++){flowers+='<span style="position:absolute;bottom:'+(4+Math.random()*26)+'%;left:'+(Math.random()*94)+'%;font-size:'+(12+Math.random()*10)+'px">'+(Math.random()<.5?'🌼':'🌸')+'</span>';}
+o.innerHTML='<div style="position:absolute;top:7%;left:10%;width:70px;height:70px;border-radius:50%;background:#FFE9A8;box-shadow:0 0 60px 30px rgba(255,233,168,.55)"></div>'
++'<div style="position:absolute;top:12%;right:12%;font-size:46px;opacity:.9">☁️</div>'
++'<div style="position:absolute;top:24%;left:22%;font-size:34px;opacity:.8">☁️</div>'
++grass+flowers
++'<div style="position:absolute;left:50%;top:56%;--rs:'+scale+';transform:translate(-50%,-50%) scale('+scale+');font-size:60px;animation:rabbithop 1.6s ease-in-out infinite">🐇</div>'
++'<div style="position:absolute;bottom:3%;left:0;right:0;text-align:center;color:#2E5A24;font:600 14px \'Space Grotesk\',sans-serif">a rabbit having a good time · tap anywhere to go back</div>';
+document.body.appendChild(o);
+o.addEventListener('click',function(){o.remove();});
+}
+document.addEventListener('touchstart',function(e){
+if(!e.target.closest('#vspeed-ico')||!rabbitIcon())return;
+clearTimeout(holdT);
+holdT=setTimeout(function(){suppress=true;openRabbit();},500);
+},{passive:true});
+['touchend','touchmove','touchcancel'].forEach(function(n){document.addEventListener(n,function(){clearTimeout(holdT);},{passive:true});});
+document.addEventListener('click',function(e){
+if(e.target.closest('#vspeed-ico')&&suppress){suppress=false;e.stopPropagation();e.preventDefault();}
+},true);
+})();
+</script>
 </body>
 </html>
