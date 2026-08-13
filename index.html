@@ -7027,5 +7027,28 @@ if(r.error){toast('Could not load your journal');return;}
 state=(r.data&&r.data.data)?r.data.data:{paintings:[],entries:[]};
 }
 </script>
+<style>
+/* Guest & signed-in Viewer share the exact same fitted frame on mobile */
+#view .vframe{width:min(100%,620px);margin:0 auto;box-sizing:border-box}
+#view .vframe #viewer-canvas{width:100%;height:auto;aspect-ratio:4/5;display:block}
+#view{overflow-x:hidden}
+@media(max-width:640px){
+#view .vframe{width:100%;padding:10px}
+#view .vframe + div{margin-top:12px}
+}
+</style>
+<script>
+/* Any sign-in always lands on the Timeline, newest first */
+if(typeof db!=='undefined'&&db&&db.auth){
+db.auth.onAuthStateChange(function(event,session){
+if(event==='SIGNED_IN'&&session){
+view={name:'timeline',q:'',tlDir:'desc',wq:'',wkDir:(view&&view.wkDir)||'new'};
+try{sessionStorage.setItem('provenance.view',JSON.stringify(view));}catch(e){}
+if(typeof render==='function')render();
+window.scrollTo(0,0);
+}
+});
+}
+</script>
 </body>
 </html>
