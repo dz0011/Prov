@@ -6888,5 +6888,93 @@ view.wkDir=(d==='new')?'old':(d==='old')?'num':(d==='num')?'numdesc':'new';
 render();
 },true);
 </script>
+</style>
+<script>
+/* ---- Guest Mode Viewer: guarantee a lively, clearly-visible painting ---- */
+(function(){
+/* Boost the empty-studio scene so it's never faint/black in either theme */
+if(typeof museumScene==='function'){
+var _ms=museumScene;
+museumScene=function(){
+var s=_ms();
+(s.washes||[]).forEach(function(w){w.al=Math.min(.34,(w.al||.1)*2.2);w.fr=Math.min(.6,(w.fr||.3)*1.3);});
+(s.works||[]).forEach(function(w){(w.nodes||[]).forEach(function(n){n.r=(n.r||.02)*1.6;});});
+(s.marks||[]).forEach(function(m){m.al=Math.min(.5,(m.al||.2)*1.6);});
+return s;
+};
+}
+/* Safety net: if the normal draw ever fails, still paint *something* */
+var _dvG=drawViewer;
+drawViewer=function(){
+var ok=true;
+try{_dvG.apply(this,arguments);}catch(err){ok=false;}
+var cv=document.getElementById('viewer-canvas');
+if(!ok&&cv&&typeof buildScene==='function'){
+try{
+vScene=buildScene();
+if(typeof renderStatic==='function')vStatic=renderStatic(vScene,cv.width,cv.height);
+if(typeof paintCurrent==='function')paintCurrent();
+}catch(e2){}
+}
+/* one guaranteed repaint shortly after open (covers guests & first paint) */
+setTimeout(function(){if(typeof paintCurrent==='function')paintCurrent();},250);
+};
+})();
+</script>
+<style>
+/* Dark mode: brighten the SELECTED tab's colorful fill a touch (unselected unchanged) */
+body.dark .tab[data-view="timeline"].active,
+body.dark .tab[data-view="paintings"].active{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),85%,72%,.32),
+hsla(calc(15 + var(--hue-shift,0)),90%,70%,.32) 45%,
+hsla(calc(45 + var(--hue-shift,0)),95%,64%,.32) 78%,
+hsla(calc(160 + var(--hue-shift,0)),75%,62%,.32))!important;
+}
+</style>
+<style>
+#viewer-canvas{aspect-ratio:4/5;min-height:320px}
+</style>
+<script>
+/* Guest / empty Viewer: always show a visible frame + a painted museum wall */
+(function(){
+var _vhG=viewerHTML;
+viewerHTML=function(){
+if(state.paintings.length)return _vhG();
+var woodH=22+Math.random()*14,woodS=38+Math.random()*18,woodL=26+Math.random()*14;
+var th=10+Math.round(Math.random()*8);
+var liner=Math.random()<.5?'#F3EFE4':'#E9E4D6';
+var grainA=(6+Math.random()*5).toFixed(1);
+var wood='linear-gradient('+(120+Math.round(Math.random()*60))+'deg,hsl('+woodH.toFixed(0)+','+woodS.toFixed(0)+'%,'+(woodL+8).toFixed(0)+'%),hsl('+(woodH+6).toFixed(0)+','+(woodS-6).toFixed(0)+'%,'+woodL.toFixed(0)+'%) 45%,hsl('+(woodH-4).toFixed(0)+','+woodS.toFixed(0)+'%,'+(woodL+5).toFixed(0)+'%) 75%,hsl('+(woodH+3).toFixed(0)+','+(woodS-4).toFixed(0)+'%,'+(woodL-3).toFixed(0)+'%))';
+var grain='repeating-linear-gradient('+(88+Math.round(Math.random()*8))+'deg, rgba(20,10,0,.10) 0 1.5px, rgba(255,240,220,.05) 1.5px 2.5px, transparent 2.5px '+grainA+'px)';
+return '<div class="page-head"><div><h1 class="display">Viewer</h1>'
++'<p class="sub" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">An original view of your oeuvre — visualized anew every refresh.</p></div></div>'
++'<div class="vframe" style="border-radius:6px;padding:'+th+'px;background-image:'+grain+','+wood+';box-shadow:0 12px 34px -12px rgba(15,10,5,.5), inset 0 2px 3px rgba(255,235,200,.28), inset 0 -3px 6px rgba(20,10,0,.45), inset 0 0 0 1px rgba(30,15,5,.4)">'
++'<canvas id="viewer-canvas" aria-label="Living visualization — tap to change the movement speed"></canvas></div>'
++'<div style="display:flex;justify-content:center;align-items:center;margin-top:14px"><button class="btn ghost" data-action="viewer-remix" aria-label="Refresh this view" title="Refresh this view" style="border-radius:999px;padding:10px 26px;font-size:15px;line-height:1">↻</button></div>'
++'<p class="hint" style="margin-top:10px;text-align:center">Today\u2019s wall is a living homage after public-domain masterworks \u2014 log your first work and it becomes entirely yours.</p>';
+};
+function canvasBlank(cv){try{var d=cv.getContext('2d').getImageData(0,0,8,8).data;for(var i=3;i<d.length;i+=4){if(d[i]>10)return false;}return true;}catch(e){return false;}}
+function guestPaint(cv){
+var W=cv.width=540,H=cv.height=675,x=cv.getContext('2d');
+var dark=document.body.classList.contains('dark');
+x.fillStyle=dark?'#191A20':'#F2F1EC';x.fillRect(0,0,W,H);
+var s=(typeof museumScene==='function')?museumScene():null;if(!s)return;
+(s.washes||[]).forEach(function(L){var gx=L.fx*W,gy=L.fy*H,gr=L.fr*H;var g=x.createRadialGradient(gx,gy,0,gx,gy,gr);g.addColorStop(0,'hsla('+L.h+',45%,'+(dark?52:58)+'%,'+Math.min(.5,L.al*2)+')');g.addColorStop(1,'hsla('+L.h+',45%,60%,0)');x.fillStyle=g;x.fillRect(0,0,W,H);});
+x.lineCap='round';
+(s.marks||[]).forEach(function(M){var mx=M.fx*W,my=M.fy*H,ln=M.len*H,ca=Math.cos(M.a),sa=Math.sin(M.a);x.strokeStyle=M.col;x.globalAlpha=Math.min(.6,M.al*1.6);x.lineWidth=M.w;x.beginPath();x.moveTo(mx-ca*ln/2,my-sa*ln/2);if(M.t==='stroke')x.quadraticCurveTo(mx+sa*ln*.2,my-ca*ln*.2,mx+ca*ln/2,my+sa*ln/2);else x.lineTo(mx+ca*ln/2,my+sa*ln/2);x.stroke();x.globalAlpha=1;});
+(s.works||[]).forEach(function(w){(w.nodes||[]).forEach(function(nd){var px=nd.fx*W,py=nd.fy*H,r=nd.r*W*1.5;x.fillStyle=nd.col;x.globalAlpha=.5;x.beginPath();x.arc(px,py,r,0,7);x.fill();x.globalAlpha=1;});});
+}
+var _dvG=drawViewer;
+drawViewer=function(){
+try{_dvG.apply(this,arguments);}catch(e){}
+if(!state.paintings.length){
+setTimeout(function(){var cv=document.getElementById('viewer-canvas');if(cv&&canvasBlank(cv))guestPaint(cv);},350);
+}
+};
+})();
+</script>
+</body>
+</html>
 </body>
 </html>
