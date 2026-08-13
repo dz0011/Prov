@@ -7081,5 +7081,26 @@ render._fabDelay=1;
 update();
 })();
 </script>
+<script>
+/* Platform-aware install instructions (fixes desktop Chrome wording) */
+(function(){
+var _t=window.toast;
+if(!_t||_t._plat)return;
+window.toast=function(msg){
+if(typeof msg==='string'&&(msg.indexOf('Add to Home Screen')!==-1||msg.indexOf('Add to Home screen')!==-1||msg.indexOf('Install app')!==-1)){
+var ua=navigator.userAgent;
+if(/iphone|ipad|ipod/i.test(ua)){
+msg='Safari: tap Share, then "Add to Home Screen"';
+}else if(/android/i.test(ua)){
+msg='Chrome menu ⋮ → "Add to Home screen" / "Install app"';
+}else{
+msg='Chrome: click the install icon in the address bar, or ⋮ menu → "Install Provenance…" (or "Cast, save, and share" → "Install page as app…")';
+}
+}
+return _t(msg);
+};
+window.toast._plat=1;
+})();
+</script>
 </body>
 </html>
