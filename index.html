@@ -7595,7 +7595,40 @@ var m=document.getElementById('menu');if(m)m.classList.remove('open');
 openAboutGuide();
 },true);
 </script>
-</body>
-</html>
+<script>
+/* FINAL Works sort: number sorts hide unnumbered works */
+function filteredPaintings(){
+let ps=[...state.paintings];
+const d=view.wkDir||'new';
+if(d==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(d==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else if(d==='numdesc')ps.sort((a,b)=>(b.number||0)-(a.number||0));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+if(d==='num'||d==='numdesc')ps=ps.filter(p=>p.number);
+const q=(view.wq||'').trim().toLowerCase();
+if(!q)return ps;
+return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));
+}
+function paintingsHTML(){
+if(!state.paintings.length)return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">0 in the catalog</p></div></div>'+emptyStudioHTML();
+const d=view.wkDir||'new';
+const list=filteredPaintings();
+const lbl=d==='new'?'↓ Newest first':(d==='old'?'↑ Oldest first':(d==='num'?'By number':'By number (reversed)'));
+const sub=d==='new'?'newest first':(d==='old'?'oldest first':(d==='num'?'by number':'by number (reversed)'));
+const count=(d==='num'||d==='numdesc')?list.length:state.paintings.length;
+return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+count+' in the catalog · '+sub+'</p></div>'
++'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="wk-sort5">'+lbl+'</button>'
++'<input id="wk-search" class="search search-sm" type="search" autocomplete="off" placeholder="Search works…" value="'+esc(view.wq||'')+'"></div>'
++'</div><div id="wk-grid">'+wkGridHTML(list)+'</div>';
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="wk-sort5"]');if(!t)return;
+e.stopImmediatePropagation();
+const d=view.wkDir||'new';
+view.wkDir=(d==='new')?'old':(d==='old')?'num':(d==='num')?'numdesc':'new';
+render();
+},true);
+</script>
 </body>
 </html>
