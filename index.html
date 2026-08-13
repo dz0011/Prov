@@ -27,7 +27,7 @@ body{margin:0;font-family:'Space Grotesk',system-ui,sans-serif;color:var(--ink);
     radial-gradient(900px 500px at 92% -80px, rgba(39,51,201,.07), transparent 60%),
     radial-gradient(800px 520px at -120px 30%, rgba(222,74,31,.06), transparent 60%),
     radial-gradient(700px 500px at 85% 105%, rgba(227,155,24,.08), transparent 60%);
-  background-attachment:fixed;}
+  background-attachment:scroll;}
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.6;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");}
 body.locked{overflow:hidden}
@@ -1413,7 +1413,7 @@ body{
     radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),50%,45%,.13), transparent 60%),
     radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),35%,28%,.13), transparent 60%),
     radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.6), transparent 60%);
-  background-attachment:fixed;
+  background-attachment:scroll;
 }
 .top{
   background-color:var(--paper);
@@ -1638,7 +1638,7 @@ body,.top{
     radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),50%,45%,.13), transparent 60%),
     radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),35%,28%,.13), transparent 60%),
     radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.6), transparent 60%);
-  background-attachment:fixed;
+  background-attachment:scroll;
 }
 .top{box-shadow:none}
 /* ---- Seamless header → body blend (dark) ---- */
@@ -1649,7 +1649,7 @@ body.dark,body.dark .top{
     radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),55%,52%,.13), transparent 60%),
     radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),40%,42%,.14), transparent 60%),
     radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.05), transparent 60%);
-  background-attachment:fixed;
+  background-attachment:scroll;
   box-shadow:none;
 }
 </style>
@@ -1844,7 +1844,7 @@ function drawViewer(){
     radial-gradient(800px 520px at -120px 30%, hsla(calc(18 + var(--hue-shift,0)),50%,45%,.13), transparent 60%),
     radial-gradient(700px 500px at 85% 105%, hsla(calc(152 + var(--hue-shift,0)),35%,28%,.13), transparent 60%),
     radial-gradient(620px 420px at 12% -70px, hsla(0,0%,100%,.6), transparent 60%);
-  background-attachment:fixed;
+  background-attachment:scroll;
   -webkit-mask-image:linear-gradient(to bottom,transparent,black 30%,black 70%,transparent);
   mask-image:linear-gradient(to bottom,transparent,black 30%,black 70%,transparent);
 }
@@ -2469,7 +2469,7 @@ body.app-ready .float-btn{animation:fabIn .7s ease .55s both}
 .top::after{
   content:''!important;
   position:absolute;left:0;right:0;top:100%;height:46px;pointer-events:none;
-  -webkit-backdrop-filter:blur(9px) saturate(1.05);backdrop-filter:blur(9px) saturate(1.05);
+-webkit-backdrop-filter:none;backdrop-filter:none;
   background-image:
     linear-gradient(to bottom, var(--paper) 0, var(--paper) 8px, rgba(242,241,236,0) 100%),
     radial-gradient(900px 500px at 92% -80px, hsla(calc(205 + var(--hue-shift,0)),45%,60%,.16), transparent 60%),
@@ -4978,7 +4978,7 @@ try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
 var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
 if(typeof paintCurrent==='function'&&typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]===0)paintCurrent();
 },true);
-</style>
+</script>
 <style>
 /* Let the Install button appear even while the app shell is hidden (sign-in / guest) */
 #app-shell[style*="none"] ~ #install-btn{display:block!important}
