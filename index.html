@@ -6776,5 +6776,86 @@ if(t.dataset.action==='edit-painting')openPaintingForm(t.dataset.id);
 else openComposer(t.dataset.id);
 },true);
 </script>
+<style>
+/* Calm toggle: no sliding knob — fill opacity shows the selection */
+.tabs::before{display:none!important}
+.tab[data-view="timeline"],.tab[data-view="paintings"]{
+opacity:1!important;
+-webkit-background-clip:border-box!important;background-clip:border-box!important;
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),70%,60%,.06),
+hsla(calc(15 + var(--hue-shift,0)),75%,55%,.06) 45%,
+hsla(calc(45 + var(--hue-shift,0)),80%,50%,.06) 75%,
+hsla(calc(160 + var(--hue-shift,0)),60%,45%,.06))!important;
+color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;
+}
+body.dark .tab[data-view="timeline"],body.dark .tab[data-view="paintings"]{
+color:#F2F1EC!important;-webkit-text-fill-color:#F2F1EC!important;
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),80%,68%,.06),
+hsla(calc(15 + var(--hue-shift,0)),85%,68%,.06) 45%,
+hsla(calc(45 + var(--hue-shift,0)),90%,62%,.06) 75%,
+hsla(calc(160 + var(--hue-shift,0)),70%,60%,.06))!important;
+}
+.tab[data-view="timeline"].active,.tab[data-view="paintings"].active{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),70%,60%,.22),
+hsla(calc(15 + var(--hue-shift,0)),75%,55%,.22) 45%,
+hsla(calc(45 + var(--hue-shift,0)),80%,50%,.22) 75%,
+hsla(calc(160 + var(--hue-shift,0)),60%,45%,.22))!important;
+}
+body.dark .tab[data-view="timeline"].active,body.dark .tab[data-view="paintings"].active{
+background-image:linear-gradient(100deg,
+hsla(calc(215 + var(--hue-shift,0)),80%,68%,.22),
+hsla(calc(15 + var(--hue-shift,0)),85%,68%,.22) 45%,
+hsla(calc(45 + var(--hue-shift,0)),90%,62%,.22) 75%,
+hsla(calc(160 + var(--hue-shift,0)),70%,60%,.22))!important;
+}
+</style>
+<script>
+/* Colorful default scene so the Viewer is alive before any art is added */
+function defaultScene(){
+var rnd=mulberry32((Math.random()*1e9)>>>0);
+var s={washes:[],marks:[],works:[],grain:[],blend:rnd()<.5?'multiply':'screen',vig:.06+rnd()*.16};
+var pals=[
+['#6E8FAC','#A7C4C8','#7FA88B','#C9B6D8','#E4CFA9'],
+['#1F3B73','#2C4F9E','#E8C34A','#8E9E5B','#20294F'],
+['#274B8F','#3C7DA6','#7FB2D9','#EDE6D6','#20294F'],
+['#D8402A','#F2B621','#2733C9','#F6F4EE','#23211E']];
+var pos=[[.28,.3],[.72,.28],[.3,.72],[.7,.7]];
+for(var m=0;m<4;m++){
+var pal=pals[m];
+s.washes.push({h:(parseInt(pal[0].slice(1),16))%360,fx:pos[m][0],fy:pos[m][1],fr:.3+rnd()*.2,sp:.03+rnd()*.03,ph:rnd()*6.28,amp:.02+rnd()*.02,al:.10+rnd()*.06});
+var w={pal:pal,shape:['daub','patch','smear'][(rnd()*3)|0],hasColor:true,cx:pos[m][0],cy:pos[m][1],nodes:[],ctrl:[],patches:[]};
+var n=5+((rnd()*3)|0);
+for(var k=0;k<n;k++){
+var node={fx:pos[m][0]+(rnd()-.5)*.34,fy:pos[m][1]+(rnd()-.5)*.3,r:.016+rnd()*.03,col:pal[(rnd()*pal.length)|0],rot0:(rnd()-.5)*1.4,rots:(rnd()-.5)*.05,verts:[]};
+for(var v=0;v<10;v++)node.verts.push(.7+rnd()*.55);
+w.nodes.push(node);
+if(k>0)w.ctrl.push({dx:(rnd()-.5)*.1,dy:(rnd()-.5)*.1});
+}
+s.works.push(w);
+}
+for(var i=0;i<140;i++)s.grain.push({fx:rnd(),fy:rnd(),r:.5+rnd()*2,a:.025+rnd()*.05,light:rnd()<.5});
+return s;
+}
+var _bsD=buildScene;
+buildScene=function(){return state.paintings.length?_bsD():defaultScene();};
+/* Empty-state Viewer: clean canvas + friendly explanation, no "wall is waiting" line */
+var _vhD=viewerHTML;
+viewerHTML=function(){
+if(!state.paintings.length){
+return '<div class="page-head"><div><h1 class="display">Viewer</h1>'
++'<p class="sub" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">A living visualization of your studio log.</p></div></div>'
++'<div class="vframe" style="border-radius:6px;padding:10px"><canvas id="viewer-canvas" style="width:100%;display:block;border-radius:8px;cursor:pointer" aria-label="Living visualization — tap to change the movement speed"></canvas></div>'
++'<div style="display:flex;justify-content:center;align-items:center;margin-top:14px">'
++'<button class="btn ghost" data-action="viewer-remix" aria-label="Refresh this view" title="Refresh this view" style="border-radius:999px;padding:10px 26px;font-size:15px;line-height:1">↻</button></div>'
++'<p class="hint" style="margin-top:10px;text-align:center">A living preview of color and movement. Once you add your first work, the Viewer composes itself from YOUR photos and palette.</p>';
+}
+return _vhD();
+};
+</script>
+</body>
+</html>
 </body>
 </html>
