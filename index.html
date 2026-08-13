@@ -6616,64 +6616,6 @@ return h;
 </script>
 </script>
 <script>
-/* Hold-to-mark photo: checkmark on the current mark, prompt close, delete kept */
-(function(){
-function tags(){state.imgTags=state.imgTags||{};return state.imgTags;}
-function resolve(el){
-var img=el.matches('img')?el:el.querySelector('img');
-var s=img?img.getAttribute('src'):null;
-if(!s)return null;
-var le=el.closest('[data-entry]');
-if(le){return{en:state.entries.find(function(x){return x.id===le.getAttribute('data-entry');}),src:s};}
-var lf=el.closest('[data-list]');
-if(lf){var flat=[];entriesOf(lf.getAttribute('data-list')).forEach(function(en){(en.images||[]).forEach(function(x){flat.push({en:en,src:x});});});
-return flat.find(function(o){return o.src===s;})||null;}
-return null;
-}
-function openTag(r){
-var cur=tags()[r.src]||'painting';
-openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
-+'<div class="panel-head"><h2>Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
-+'<div style="display:flex;flex-direction:column;gap:8px">'
-+'<button type="button" class="btn ghost" data-action="tag-photo" data-tag="painting" style="justify-content:flex-start">'+(cur==='painting'?'✓&nbsp;':'\u00A0\u00A0')+'🖼 Painting</button>'
-+'<button type="button" class="btn ghost" data-action="tag-photo" data-tag="palette" style="justify-content:flex-start">'+(cur==='palette'?'✓&nbsp;':'\u00A0\u00A0')+'🎨 Palette / other</button>'
-+'<button type="button" class="btn ghost danger-btn" data-action="tag-photo" data-tag="delete" style="justify-content:flex-start">🗑 Delete photo</button>'
-+'</div></div></div>');
-window.__tagR=r;
-}
-if(!window.__holdMarkBound){
-window.__holdMarkBound=1;
-var holdT=null;
-document.addEventListener('pointerdown',function(e){
-var el=e.target.closest('.thumb, .film');
-if(!el||el.closest('.modal-layer'))return;
-var r=resolve(el);if(!r||!r.en)return;
-clearTimeout(holdT);
-holdT=setTimeout(function(){openTag(r);},450);
-},{passive:true});
-['pointerup','pointercancel','touchend','touchcancel','touchmove'].forEach(function(t){
-document.addEventListener(t,function(){clearTimeout(holdT);},{passive:true});
-});
-}
-/* handle selection at capture so it always wins, then close immediately */
-document.addEventListener('click',function(e){
-var t=e.target.closest('[data-action="tag-photo"]');if(!t)return;
-e.stopImmediatePropagation();
-var r=window.__tagR;if(!r||!r.en)return;
-if(t.dataset.tag==='delete'){
-r.en.images=(r.en.images||[]).filter(function(x){return x!==r.src;});
-delete tags()[r.src];
-}else{
-tags()[r.src]=t.dataset.tag;
-}
-closeModal();
-if(typeof save==='function'){save().then(function(){if(typeof render==='function')render();});}
-else if(typeof render==='function')render();
-},true);
-})();
-</script>
-<script>
-/* ==== Unified hold-to-mark menu: 3 options, checkmark on current, default Painting ==== */
 function tagGet(en,src){return (en&&en.imgTags&&en.imgTags[src])||'painting';}
 function findEntryForSrc(src){
 for(var i=0;i<state.entries.length;i++){var e=state.entries[i];if((e.images||[]).indexOf(src)!==-1)return e;}
@@ -8235,5 +8177,36 @@ if(pushed){pushed=false;_cm();e.stopImmediatePropagation();}
 },true);
 })();
 </script>
+<script>
+/* Viewer: use the paintery painter that reads YOUR uploaded photos */
+if(typeof paintViewer==='function'){
+paintCurrent=function(){
+var cv=document.getElementById('viewer-canvas');if(!cv||!window.vScene)return;
+paintViewer(cv.getContext('2d'),cv.width,cv.height,vScene,vT||0);
+if(vSnap){var p=(performance.now()-vFadeStart)/vFadeDur;
+if(p>=1){vSnap=null;}else{var x=cv.getContext('2d');x.save();x.globalAlpha=Math.pow(1-p,1.35);x.drawImage(vSnap,0,0);x.restore();}}
+};
+}
+/* First open after install → sign-in page, not guest */
+(function(){
+var KEEP='prov.guest.keep';
+document.addEventListener('click',function(e){
+if(e.target.closest&&e.target.closest('#guest-btn')){try{sessionStorage.setItem(KEEP,'1');}catch(e2){}}
+},true);
+var had=false,keep=false;
+try{had=localStorage.getItem('provenance.guest')==='1';}catch(e){}
+try{keep=sessionStorage.getItem(KEEP)==='1';}catch(e){}
+if(had&&!keep){
+try{localStorage.removeItem('provenance.guest');}catch(e){}
+state={paintings:[],entries:[]};
+var shell=document.getElementById('app-shell');if(shell)shell.style.display='none';
+var auth=document.getElementById('auth-screen');if(auth)auth.style.display='flex';
+document.body.classList.add('auth-screen-active');
+document.body.classList.remove('app-ready');
+}
+})();
+</script>
+</body>
+</html>
 </body>
 </html>
