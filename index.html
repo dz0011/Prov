@@ -7688,3 +7688,74 @@ page.remove();
 </script>
 </body>
 </html>
+<style>
+/* No text-selection / copy bubble inside pop-up menus */
+.modal-layer{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.modal-layer input,.modal-layer textarea{-webkit-user-select:text;user-select:text}
+/* + buttons wait for the page content on every refresh */
+body:not(.auth-screen-active):not(.on-viewer):not(.fabs-in) .float-btn{opacity:0!important;pointer-events:none;transition:opacity .45s ease}
+</style>
+<script>
+/* + Entry / + Work appear after the rest of the page, each render */
+if(typeof render==='function'&&!render._fabDelay){
+var _rf=render;
+render=function(){var r=_rf.apply(this,arguments);
+document.body.classList.remove('fabs-in');
+clearTimeout(render._fabT);
+render._fabT=setTimeout(function(){document.body.classList.add('fabs-in');},700);
+return r;};
+render._fabDelay=1;
+}
+/* One authoritative photo-tag menu: correct checkmark, no selection glitches */
+function normTag(en,src){var t=(en&&en.imgTags&&en.imgTags[src])||'';if(t==='painting')t='work';if(t==='palette')t='other';return t||'work';}
+function resolveTagTarget(el){
+var img=el.matches&&el.matches('img')?el:el.querySelector('img');
+var src=img?img.getAttribute('src'):null;if(!src)return null;
+var le=el.closest('[data-entry]');
+if(le){var en=state.entries.find(function(x){return x.id===le.getAttribute('data-entry');});return en?{en:en,src:src}:null;}
+var lf=el.closest('[data-list]');
+if(lf){var es=entriesOf(lf.getAttribute('data-list'));for(var i=0;i<es.length;i++){if((es[i].images||[]).indexOf(src)!==-1)return{en:es[i],src:src};}return null;}
+return null;
+}
+function openTagMenu(el){
+var r=resolveTagTarget(el);if(!r)return;
+window.__tagCtx=r;
+var cur=normTag(r.en,r.src);
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
++'<div class="panel-head"><h2>Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo4" data-tag="work" style="justify-content:flex-start">'+(cur==='work'?'✓&nbsp;':'&nbsp;&nbsp;')+'🖼 Work</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo4" data-tag="other" style="justify-content:flex-start">'+(cur==='other'?'✓&nbsp;':'&nbsp;&nbsp;')+'🎨 Other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo4" data-tag="delete" style="justify-content:flex-start">🗑 Delete</button>'
++'</div></div></div>');
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo4"]');if(!t)return;
+e.stopImmediatePropagation();
+var r=window.__tagCtx;if(!r)return;
+if(t.dataset.tag==='delete'){r.en.images=(r.en.images||[]).filter(function(s){return s!==r.src;});if(r.en.imgTags)delete r.en.imgTags[r.src];}
+else{if(!r.en.imgTags)r.en.imgTags={};r.en.imgTags[r.src]=(t.dataset.tag==='other'?'palette':'painting');}
+closeModal();
+if(typeof save==='function')save().then(function(){render();});
+},true);
+/* Bunny field: brand-new random flowers & grass every time it opens */
+(function(){
+var FLOW=['🌼','🌸','🌺','🌻','🌷','🌹','💮','🪻'];
+var GRAS=['🌿','🌾','☘️','🍃'];
+function reseed(page){
+var spans=page.querySelectorAll('span');
+for(var i=0;i<spans.length;i++)spans[i].parentNode.removeChild(spans[i]);
+var html='';
+for(var i=0;i<22;i++){html+='<span style="position:absolute;bottom:'+(2+Math.random()*30)+'%;left:'+(Math.random()*96)+'%;font-size:'+(14+Math.random()*16)+'px">'+GRAS[(Math.random()*GRAS.length)|0]+'</span>';}
+for(var j=0;j<14;j++){html+='<span style="position:absolute;bottom:'+(4+Math.random()*28)+'%;left:'+(Math.random()*94)+'%;font-size:'+(12+Math.random()*12)+'px">'+FLOW[(Math.random()*FLOW.length)|0]+'</span>';}
+page.insertAdjacentHTML('beforeend',html);
+}
+var mo=new MutationObserver(function(muts){
+for(var i=0;i<muts.length;i++){var added=muts[i].addedNodes;
+for(var j=0;j<added.length;j++){var n=added[j];if(n.nodeType===1&&n.id==='rabbit-page')reseed(n);}}
+});
+mo.observe(document.body,{childList:true});
+})();
+</script>
+</body>
+</html>
