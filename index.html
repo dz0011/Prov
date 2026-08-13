@@ -7443,6 +7443,90 @@ if(!m.querySelector('[data-action="import-click"]')){
 var b2=document.createElement('button');b2.dataset.action='import-click';b2.innerHTML='⬆ Restore a backup';
 m.insertBefore(b2,so);}
 })();
+<style>
+@keyframes rabbitshake{
+0%{transform:translate(-50%,-50%) scale(var(--rs)) rotate(0)}
+20%{transform:translate(-50%,-50%) scale(var(--rs)) rotate(-7deg)}
+40%{transform:translate(-50%,-50%) scale(var(--rs)) rotate(7deg)}
+60%{transform:translate(-50%,-50%) scale(var(--rs)) rotate(-5deg)}
+80%{transform:translate(-50%,-50%) scale(var(--rs)) rotate(4deg)}
+100%{transform:translate(-50%,-50%) scale(var(--rs)) rotate(0)}
+}
+</style>
+<script>
+/* Backup buttons: middle of the gear menu (after Report a bug) */
+(function(){
+var m=document.getElementById('menu');if(!m)return;
+var exp=m.querySelector('[data-action="export"]');
+var imp=m.querySelector('[data-action="import-click"]');
+var anchor=m.querySelector('[data-action="report-issue"]')||m.querySelector('[data-action="copy-docs-menu"]')||m.querySelector('[data-action="studio-book"]')||m.querySelector('[data-action="sign-out"]');
+if(!exp){exp=document.createElement('button');exp.dataset.action='export';exp.innerHTML='⬇ Download backup (.json)';}
+if(!imp){imp=document.createElement('button');imp.dataset.action='import-click';imp.innerHTML='⬆ Restore a backup';}
+if(anchor){anchor.insertAdjacentElement('afterend',imp);anchor.insertAdjacentElement('afterend',exp);}
+})();
+/* About: now FOUR swipeable pages; page 4 = your data is safe + backup buttons */
+function openAboutGuide(){
+var w=openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:560px">'
++'<div class="panel-head"><h2>About Provenance</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div id="about-swipe" style="overflow:hidden;touch-action:pan-y">'
++'<div id="about-track" style="display:flex;transition:transform .3s ease;align-items:stretch">'
++'<div style="min-width:100%;padding:2px 2px 6px"><h3 class="h3" style="margin:4px 0 10px">1 · Your art journal</h3>'
++'<p class="etext" style="margin:0 0 10px">Provenance is a quiet ledger for making. Catalog each work, then log sessions as it develops — notes, progress photos, and the exact colors on your palette.</p>'
++'<p class="etext" style="margin:0">Everything lands on your <b>Timeline</b>, grouped by day, while <b>Works</b> keeps one card per piece with its own page, filmstrip and work log.</p></div>'
++'<div style="min-width:100%;padding:2px 2px 6px"><h3 class="h3" style="margin:4px 0 10px">2 · Getting around</h3>'
++'<p class="etext" style="margin:0 0 10px"><b>+ New Work</b> catalogs a piece; <b>+ New Entry</b> logs a session. Hold any photo to mark it <b>Work</b>, <b>Other</b>, or delete it — only Work photos appear in the Progress filmstrip.</p>'
++'<p class="etext" style="margin:0">Sort and search from either page, tap a work card for its page, and use the ⚙ menu for theme, exports and this guide.</p></div>'
++'<div style="min-width:100%;padding:2px 2px 6px"><h3 class="h3" style="margin:4px 0 10px">3 · The Viewer</h3>'
++'<p class="etext" style="margin:0">The <b>Viewer</b> composes a living visualization from your photos and palettes — tap it to cycle its movement, ↻ for a brand-new arrangement.</p></div>'
++'<div style="min-width:100%;padding:2px 2px 6px"><h3 class="h3" style="margin:4px 0 10px">4 · Your data is safe</h3>'
++'<p class="etext" style="margin:0 0 10px">Everything you log is saved automatically the moment you save — to the cloud when signed in, or to this device in Guest Mode. A previous copy is kept, so an accidental overwrite can be recovered.</p>'
++'<p class="etext" style="margin:0 0 12px">You can also keep your own copy anytime:</p>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="export" style="justify-content:flex-start">⬇ Download backup (.json)</button>'
++'<button type="button" class="btn ghost" data-action="import-click" style="justify-content:flex-start">⬆ Restore a backup</button>'
++'</div></div>'
++'</div></div>'
++'<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px">'
++'<button type="button" class="icon-btn" id="about-prev" aria-label="Previous">‹</button>'
++'<span id="about-dots" style="display:flex;gap:6px"></span>'
++'<button type="button" class="icon-btn" id="about-next" aria-label="Next">›</button>'
++'</div>'
++'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div>'
++'</div></div>');
+var N=4,idx=0,track=w.querySelector('#about-track'),dots=w.querySelector('#about-dots');
+for(var i=0;i<N;i++){var d=document.createElement('span');d.style.cssText='width:8px;height:8px;border-radius:50%;background:'+(i===0?'var(--ink)':'rgba(128,128,128,.4)');dots.appendChild(d);}
+function go(i){idx=Math.max(0,Math.min(N-1,i));track.style.transform='translateX(-'+(idx*100)+'%)';
+for(var k=0;k<N;k++)dots.children[k].style.background=(k===idx?'var(--ink)':'rgba(128,128,128,.4)');}
+go(0);
+for(var j=0;j<dots.children.length;j++)(function(dot,i){dot.addEventListener('click',function(){go(i);});})(dots.children[j],j);
+w.querySelector('#about-prev').addEventListener('click',function(){go(idx-1);});
+w.querySelector('#about-next').addEventListener('click',function(){go(idx+1);});
+var sx=null,sw=w.querySelector('#about-swipe');
+sw.addEventListener('touchstart',function(e){sx=e.changedTouches[0].clientX;},{passive:true});
+sw.addEventListener('touchend',function(e){if(sx===null)return;var dx=e.changedTouches[0].clientX-sx;sx=null;if(dx<-40)go(idx+1);else if(dx>40)go(idx-1);},{passive:true});
+}
+/* Bunny: invisible circle → smile + wiggle; outside → back to Viewer */
+(function(){
+document.addEventListener('click',function(e){
+var page=e.target.closest('#rabbit-page');
+if(!page)return;
+e.stopPropagation();e.preventDefault();
+var rect=page.getBoundingClientRect();
+var cx=rect.left+rect.width/2, cy=rect.top+rect.height*0.56;
+var R=Math.min(rect.width,rect.height)*0.30;
+var dx=e.clientX-cx, dy=e.clientY-cy;
+if(Math.sqrt(dx*dx+dy*dy)<=R){
+var b=null,ds=page.querySelectorAll('div');
+for(var i=0;i<ds.length;i++){var tx=(ds[i].textContent||'').trim();if(tx==='🐇'||tx==='🐰'){b=ds[i];break;}}
+if(b&&!b._busy){b._busy=1;
+b.style.animation='rabbitshake .7s ease';
+b.textContent='🐰';
+setTimeout(function(){b.textContent='🐇';b.style.animation='rabbithop 1.6s ease-in-out infinite';b._busy=0;},900);}
+}else{
+page.remove();
+}
+},true);
+})();
 </script>
 </body>
 </html>
