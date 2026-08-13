@@ -6680,5 +6680,101 @@ else if(typeof render==='function')render();
 },true);
 })();
 </script>
+<script>
+/* ==== Unified hold-to-mark menu: 3 options, checkmark on current, default Painting ==== */
+function tagGet(en,src){return (en&&en.imgTags&&en.imgTags[src])||'painting';}
+function findEntryForSrc(src){
+for(var i=0;i<state.entries.length;i++){var e=state.entries[i];if((e.images||[]).indexOf(src)!==-1)return e;}
+return null;
+}
+function openTagMenu(src,entryId){
+var en=entryId?state.entries.find(function(x){return x.id===entryId;}):null;
+if(!en)en=findEntryForSrc(src);
+if(!en)return false;
+window.__tagCtx={en:en,src:src};
+var cur=tagGet(en,src);
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
++'<div class="panel-head"><h2>Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo3" data-tag="painting" style="justify-content:flex-start">'+(cur==='painting'?'✓ ':'')+'🖼\u00A0 Painting</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo3" data-tag="palette" style="justify-content:flex-start">'+(cur==='palette'?'✓ ':'')+'🎨\u00A0 Palette / other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo3" data-tag="delete" style="justify-content:flex-start">🗑\u00A0 Delete photo</button>'
++'</div></div></div>');
+return true;
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo3"]');if(!t)return;
+e.stopImmediatePropagation();
+var ctx=window.__tagCtx;if(!ctx)return;
+var tag=t.dataset.tag;
+if(tag==='delete'){
+ctx.en.images=(ctx.en.images||[]).filter(function(s){return s!==ctx.src;});
+if(ctx.en.imgTags)delete ctx.en.imgTags[ctx.src];
+}else{
+if(!ctx.en.imgTags)ctx.en.imgTags={};
+ctx.en.imgTags[ctx.src]=tag;
+}
+closeModal();
+if(typeof save==='function'){save().then(function(){render();});}else{render();}
+},true);
+/* Hold detection on window-capture so the OLDER hold-handlers never see the gesture */
+(function(){
+var timer=null,swallow=false;
+function photoFrom(e){
+var el=e.target&&e.target.closest?e.target.closest('.thumb,.film'):null;
+if(!el)return null;
+var img=el.matches&&el.matches('img')?el:el.querySelector('img');
+if(!img)return null;
+return {src:img.getAttribute('src'),entryId:el.getAttribute?el.getAttribute('data-entry'):null};
+}
+window.addEventListener('touchstart',function(e){
+var p=photoFrom(e);if(!p)return;
+e.stopPropagation();
+clearTimeout(timer);
+timer=setTimeout(function(){if(openTagMenu(p.src,p.entryId)){swallow=true;if(navigator.vibrate)navigator.vibrate(10);}},450);
+},true);
+['touchend','touchmove','touchcancel'].forEach(function(n){
+window.addEventListener(n,function(){clearTimeout(timer);},true);
+});
+window.addEventListener('contextmenu',function(e){
+var p=photoFrom(e);if(!p)return;
+e.preventDefault();e.stopPropagation();
+openTagMenu(p.src,p.entryId);
+},true);
+/* swallow the tap that follows a hold so the lightbox doesn't open over the menu */
+window.addEventListener('click',function(e){
+if(swallow){swallow=false;e.stopPropagation();e.preventDefault();}
+},true);
+})();
+</script>
+<style>
+/* Viewer pill: light colorful fill ONLY when selected */
+.tab.tab-viewer.active{
+background-image:linear-gradient(120deg,
+hsla(calc(205 + var(--hue-shift,0)),60%,60%,.18),
+hsla(calc(18 + var(--hue-shift,0)),60%,55%,.18) 30%,
+hsla(calc(152 + var(--hue-shift,0)),50%,45%,.18) 62%,
+hsla(calc(205 + var(--hue-shift,0)),60%,60%,.18))!important;
+-webkit-background-clip:border-box!important;background-clip:border-box!important;
+color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;
+}
+body.dark .tab.tab-viewer.active{color:#F2F1EC!important;-webkit-text-fill-color:#F2F1EC!important}
+/* A couple of tappable slivers around the Viewer pill */
+.tab.tab-viewer{position:relative}
+.tab.tab-viewer::before{content:'';position:absolute;inset:-8px -12px;border-radius:999px}
+/* Work page: hide entries & photos stats */
+.pd-stats .stat-entries,.pd-stats .stat-photos{display:none}
+</style>
+<script>
+/* Guarantee Edit always opens its form */
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="edit-painting"],[data-action="edit-entry"]');
+if(!t)return;
+e.stopImmediatePropagation();
+var m=document.getElementById('menu');if(m)m.classList.remove('open');
+if(t.dataset.action==='edit-painting')openPaintingForm(t.dataset.id);
+else openComposer(t.dataset.id);
+},true);
+</script>
 </body>
 </html>
