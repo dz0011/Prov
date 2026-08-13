@@ -6403,5 +6403,18 @@ img.parentNode.appendChild(b);
 return tmp.innerHTML;
 };
 </script>
+<style>
+/* ---- Lightbox arrows: almost twice as big ---- */
+.lb-btn{width:84px;height:84px;font-size:30px;border-radius:50%}
+.lb-prev{left:14px;top:50%;transform:translateY(-50%)}
+.lb-next{right:14px;top:50%;transform:translateY(-50%)}
+</style>
+<script>
+/* ---- Close the Mark-this-photo window ~0.5s after a selection (don't wait on save) ---- */
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo"]');if(!t)return;
+setTimeout(function(){closeModal();render();},500);
+},true);
+</script>
 </body>
 </html>
