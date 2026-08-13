@@ -5654,5 +5654,136 @@ if(tries>24)clearInterval(iv);
 </script>
 </body>
 </html>
+<style>
+/* Hide the old ✕-less install pill; we use our own pop-up */
+#install-btn{display:none!important}
+#install-pop{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));z-index:140;pointer-events:none;opacity:0;transform:translateY(24px);transition:opacity .35s ease,transform .35s ease}
+#install-pop.show{opacity:1;transform:translateY(0);pointer-events:auto}
+#install-pop .ip-card{position:relative;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 12px 32px -12px rgba(20,18,12,.4);max-width:430px;width:100%}
+#install-pop .ip-ico{font-size:22px}
+#install-pop .ip-txt{flex:1;display:flex;flex-direction:column;line-height:1.2;text-align:left}
+#install-pop .ip-txt b{font-size:14px;color:var(--ink)}
+#install-pop .ip-txt span{font-size:12px;color:var(--ink-soft)}
+#install-go{border:0;border-radius:10px;background:var(--verm);color:#FFF7F2;font:600 13px 'Space Grotesk',sans-serif;padding:8px 12px;cursor:pointer}
+#install-x{position:absolute;top:-9px;right:-9px;width:26px;height:26px;border-radius:50%;border:0;background:var(--ink);color:#F4F2EC;font-size:13px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer}
+body.dark #install-pop .ip-card{background:#2A2B33}
+body.dark #install-x{background:#3A3B44}
+/* Toggle: untapped side gets almost no graphic effect */
+.tabs .tab:not(.active){background-image:none!important;box-shadow:none!important;opacity:.45}
+.tabs .tab.active{opacity:1}
+</style>
+<script>
+/* ============ Install pop-up: installed-aware, 24h dismissal, always has ✕ ============ */
+(function(){
+var KEY='provenance.install';
+function installed(){
+try{if((JSON.parse(localStorage.getItem(KEY)||'{}')).installed)return true;}catch(e){}
+if(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)return true;
+if(window.navigator.standalone)return true;
+return false;
+}
+function dismissedRecently(){
+try{var t=+localStorage.getItem(KEY+'.dismissedAt')||0;return (Date.now()-t)<86400000;}catch(e){return false;}
+}
+var pop=document.createElement('div');pop.id='install-pop';
+pop.innerHTML='<div class="ip-card"><button id="install-x" aria-label="Dismiss install prompt">✕</button>'
++'<span class="ip-ico">📥</span><span class="ip-txt"><b>Install Provenance</b><span>Keep your studio one tap away.</span></span>'
++'<button id="install-go">Install</button></div>';
+document.body.appendChild(pop);
+var ip=null;
+function hide(){pop.classList.remove('show');}
+function maybeShow(){if(installed()||dismissedRecently())return;pop.classList.add('show');}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ip=e;},true);
+window.addEventListener('appinstalled',function(){
+try{var st=JSON.parse(localStorage.getItem(KEY)||'{}');st.installed=true;localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}
+hide();
+});
+pop.querySelector('#install-x').addEventListener('click',function(e){
+e.stopPropagation();
+try{localStorage.setItem(KEY+'.dismissedAt',String(Date.now()));}catch(e){}
+hide();
+});
+pop.querySelector('#install-go').addEventListener('click',function(e){
+e.stopPropagation();
+if(ip){ip.prompt();ip.userChoice.then(function(){ip=null;hide();});}
+else if(typeof toast==='function'){toast(/iphone|ipad|ipod/i.test(navigator.userAgent)?'Tap Share, then "Add to Home Screen"':'Browser menu → "Add to Home screen"');}
+});
+setTimeout(maybeShow,2500);
+})();
+/* ============ Viewer: tie visuals to YOUR uploaded images ============ */
+function sampleImage(im){
+var c=document.createElement('canvas');c.width=10;c.height=10;
+var x=c.getContext('2d');x.drawImage(im,0,0,10,10);
+var d=x.getImageData(0,0,10,10).data;var o={hues:[],hexes:[]};
+for(var i=0;i<d.length;i+=4){
+var r=d[i],g=d[i+1],b=d[i+2];
+var mx=Math.max(r,g,b),mn=Math.min(r,g,b);var s=mx===0?0:(mx-mn)/mx;
+if(s>0.18){
+var h=0;var dlt=mx-mn;
+if(mx===r)h=((g-b)/dlt+(g<b?6:0))*60;else if(mx===g)h=((b-r)/dlt+2)*60;else h=((r-g)/dlt+4)*60;
+o.hues.push(h);o.hexes.push('#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join(''));
+}
+}
+return o;
+}
+var _bs0=buildScene;
+buildScene=function(){
+var s=_bs0();
+var hues=window.__imgHues,hexes=window.__imgHexes;
+if(hues&&hues.length){
+s.washes=s.washes.slice(0,5);
+s.washes.forEach(function(L,i){L.h=hues[i%hues.length];L.al=Math.min(.16,L.al+.05);});
+(s.marks||[]).forEach(function(M,i){if(hexes&&hexes.length)M.col=hexes[i%hexes.length];});
+}
+if(hexes&&hexes.length){
+s.works.forEach(function(w){w.nodes.forEach(function(nd,i){nd.col=hexes[i%hexes.length];});});
+}
+return s;
+};
+var _dv0=drawViewer;
+drawViewer=function(){
+var srcs=[];
+state.paintings.forEach(function(p){entriesOf(p.id).forEach(function(e){(e.images||[]).forEach(function(s2){if(srcs.length<6)srcs.push(s2);});});});
+if(!srcs.length){window.__imgHues=null;window.__imgHexes=null;_dv0();return;}
+var pending=srcs.length,hues=[],hexes=[];
+function done(){window.__imgHues=hues;window.__imgHexes=hexes;_dv0();}
+srcs.forEach(function(s2){
+var im=new Image();
+im.onload=function(){var o=sampleImage(im);hues=hues.concat(o.hues);hexes=hexes.concat(o.hexes);if(--pending===0)done();};
+im.onerror=function(){if(--pending===0)done();};
+im.src=s2;
+});
+};
+/* ============ Works sort: one authoritative sort + label + handler ============ */
+function filteredPaintings(){
+let ps=[...state.paintings];
+const d=view.wkDir||'new';
+if(d==='new')ps.sort((a,b)=>new Date(lastActivity(b))-new Date(lastActivity(a)));
+else if(d==='old')ps.sort((a,b)=>new Date(lastActivity(a))-new Date(lastActivity(b)));
+else if(d==='numdesc')ps.sort((a,b)=>(b.number||0)-(a.number||0));
+else ps.sort((a,b)=>(a.number||0)-(b.number||0));
+const q=(view.wq||'').trim().toLowerCase();if(!q)return ps;
+return ps.filter(p=>[p.title,String(p.number||''),p.medium,p.size].join(' ').toLowerCase().includes(q));
+}
+function paintingsHTML(){
+if(!state.paintings.length)return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">0 in the catalog</p></div></div>'+emptyStudioHTML();
+const d=view.wkDir||'new';
+const lbl=d==='new'?'↓ Newest first':(d==='old'?'↑ Oldest first':(d==='num'?'№ Number ↑':'№ Number ↓'));
+const sub=d==='new'?'newest first':(d==='old'?'oldest first':(d==='num'?'by number':'by number, reversed'));
+return '<div class="page-head"><div><h1 class="display">Works</h1><p class="sub">'+state.paintings.length+' in the catalog · '+sub+'</p></div>'
++'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
++'<button class="btn ghost sort-btn" data-action="wk-sort3">'+lbl+'</button>'
++'<input id="wk-search" class="search search-sm" type="search" autocomplete="off" placeholder="Search works…" value="'+esc(view.wq||'')+'"></div>'
++'</div><div id="wk-grid">'+wkGridHTML(filteredPaintings())+'</div>';
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="wk-sort3"]');if(!t)return;
+e.stopImmediatePropagation();
+view.wkDir=view.wkDir==='new'?'old':(view.wkDir==='old'?'num':(view.wkDir==='num'?'numdesc':'new'));
+render();
+},true);
+</script>
+</body>
+</html>
 </body>
 </html>
