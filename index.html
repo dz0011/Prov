@@ -8136,3 +8136,41 @@ if(typeof save==='function')save().then(function(){render();});else render();
 </script>
 </body>
 </html>
+<script>
+/* 1) Kill the legacy pointer-hold so only ONE "Mark this photo" window opens */
+window.addEventListener('pointerdown',function(e){
+var el=e.target&&e.target.closest?e.target.closest('.thumb,.film'):null;
+if(el&&!el.closest('.modal-layer'))e.stopPropagation();
+},true);
+
+/* 2) Restore yesterday's signed-in Viewer (wood frame + exploded-photo collage) */
+function paintCurrent(){
+var cv=document.getElementById('viewer-canvas');if(!cv||!vScene)return;
+if(typeof paintViewer==='function')paintViewer(cv.getContext('2d'),cv.width,cv.height,vScene,vT||0);
+if(vSnap){var p=(performance.now()-vFadeStart)/vFadeDur;
+if(p>=1){vSnap=null;}else{var x=cv.getContext('2d');x.save();x.globalAlpha=Math.pow(1-p,1.35);x.drawImage(vSnap,0,0);x.restore();}}
+}
+function drawViewer(){
+var cv=document.getElementById('viewer-canvas');
+try{cancelAnimationFrame(vRaf);}catch(e){}
+try{cancelAnimationFrame(vFadeRaf);}catch(e){}
+if(!cv){vScene=null;return;}
+var snap=null;
+if(vScene&&cv.width>0){snap=document.createElement('canvas');snap.width=cv.width;snap.height=cv.height;snap.getContext('2d').drawImage(cv,0,0);}
+cv.width=720;cv.height=900;
+vScene=(typeof buildScene==='function')?buildScene():null;
+if(!vScene)vScene={washes:[],marks:[],works:[],grain:[]};
+var seen={};
+(vScene.works||[]).forEach(function(w){(w.patches||[]).forEach(function(pa){
+if(!pa.src||seen[pa.src])return;seen[pa.src]=1;
+var im=new Image();im.onload=function(){pa.ready=im;try{if(typeof analyze==='function')analyze(im,w,vScene);}catch(e){}
+if(typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]===0)paintCurrent();};im.src=pa.src;});});
+vT=0;vLast=0;vPrev=performance.now();
+if(snap){vSnap=snap;vFadeStart=performance.now();}
+if(typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]>0){vRaf=requestAnimationFrame(vLoop);}
+else{paintCurrent();if(vSnap&&typeof fadeLoop==='function')fadeLoop();}
+if(typeof syncSpeedIco==='function')syncSpeedIco();
+}
+</script>
+</body>
+</html>
