@@ -7324,5 +7324,31 @@ if(e.target.closest('#vspeed-ico')&&suppress){suppress=false;e.stopPropagation()
 },true);
 })();
 </script>
+<script>
+/* Works page: tap any empty background to toggle light/dark (like Timeline/Viewer) */
+document.addEventListener('click',function(e){
+if(typeof view==='undefined'||view.name!=='paintings')return;
+if(e.target.closest('button, a, input, select, textarea, label, .menu, .pcard, .thumb, .top, .tabs, .tab-viewer, .etools, .empty, h1, p, .sub, .display, .search'))return;
+var dark=!document.body.classList.contains('dark');
+document.body.classList.toggle('dark',dark);
+try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+},true);
+/* Work page: stats row shows ONLY "days worked on" */
+(function(){
+var _pd=paintingDetailHTML;
+paintingDetailHTML=function(id){
+var h=_pd(id);
+var p=getP(id);
+if(p){
+var es=entriesOf(p.id);
+var dw=new Set(es.map(function(e){return dayKey(e.date);})).size;
+var stats=es.length?'<span><b>'+dw+'</b> '+plural('day','days',dw)+' worked on</span>':'';
+h=h.replace(/<div class="pd-stats">[\s\S]*?<\/div>/,'<div class="pd-stats">'+stats+'</div>');
+}
+return h;
+};
+})();
+</script>
 </body>
 </html>
