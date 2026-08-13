@@ -3796,7 +3796,6 @@ h=h.replace('</canvas></div>','</canvas><span id="vspeed-ico" style="position:ab
 return h;
 };
 })();
-}
 </script>
 <style>
 /* ---- Speed creature: frosted halo + soft shadow ---- */
@@ -3830,6 +3829,7 @@ drawViewer=function(){_dv5.apply(this,arguments);syncSpeedIco();};
 document.addEventListener('click',function(e){
 if(e.target.closest('#viewer-canvas'))syncSpeedIco();
 });
+})();
 </script>
 <style>
 /* ---- Tabs: translucent frosted track + bold, very readable labels ---- */
@@ -3915,7 +3915,7 @@ return h;
 };
 document.addEventListener('click',function(e){
 if(e.target.closest('.museum-note'))e.stopImmediatePropagation();
-}
+},true);
 </script>
 <style>
 /* ---- Gear pinned to the TOP-right of the header on all pages ---- */
@@ -4068,7 +4068,7 @@ pushSentinel();
 }
 });
 pushSentinel();
-}
+})();
 </script>
 <style>
 /* ---- Dark mode: keep the sign-in title & logo bright and colorful ---- */
@@ -4247,8 +4247,8 @@ openModal('<div class="overlay" data-action="overlay-close"><div class="panel">'
 +'<p class="sub" style="margin-bottom:12px">A living visualization of your studio log.</p>'
 +'<p class="etext">• Every visit composes an ever-shifting visualization from your works — their photos, palettes and history. No two are alike.</p>'
 +'<p class="etext">• Before anything is logged, the Viewer shows gentle visualizations after public-domain masterworks so the wall is never empty; your own material takes over with your first work.</p>'
-+'<p class="etext">• Tap the visualization to cycle its movement
-+'<p class="etext">• ↻ composes a brand-new visualization </p>'
++'<p class="etext">• Tap the visualization to cycle its movement.</p>'
++'<p class="etext">• ↻ composes a brand-new visualization.</p>'
 +'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div>'
 +'</div></div>');
 },true);
@@ -4296,7 +4296,7 @@ ov.style.opacity='0';
 setTimeout(function(){busy=false;},1500);
 },1000);
 });
-}
+})();
 </script>
 <style>
 /* ---- Viewer pill: a little more breathing room from Works ---- */
@@ -4510,7 +4510,7 @@ document.addEventListener('click',function(e){if(e.target.closest('#viewer-canva
 })();
 function syncSpeedIco(){
 var el=document.getElementById('vspeed-ico');if(!el)return;
-var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':'');
+var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));
 var label=vSpeedIdx===0?'Stopped (tap to start)':'Speed '+vSpeedIdx+' of 10';
 if(el.textContent!==ic){el.textContent=ic;}
 el.title=label;el.setAttribute('aria-label',label);
@@ -4565,8 +4565,7 @@ html,body{overflow-x:hidden}#auth-screen{overflow:hidden}
 .auth-card .display .s1{color:#2E3A40}.auth-card .display .s2{color:#3E545C}.auth-card .display .s3{color:#4E6A70}.auth-card .display .s4{color:#5F8087}.auth-card .display .s5{color:#6F939B}
 body.dark .auth-card .display .s1{color:#E8EDEA}body.dark .auth-card .display .s2{color:#B9CDCB}body.dark .auth-card .display .s3{color:#93B1B2}body.dark .auth-card .display .s4{color:#7C9CA3}body.dark .auth-card .display .s5{color:#6C8F9C}
 #auth-screen .btn.primary{background:#C4705A;box-shadow:0 2px 0 #9C5747}
-}
-</script>
+</style>
 <style>
 /* Hide any leftover artist-caption under the empty Viewer */
 .museum-note{display:none!important}
@@ -4834,7 +4833,7 @@ cleanPaint(cv.getContext('2d'),cv.width,cv.height,vScene,vT);
 if(vSnap){var p=(performance.now()-vFadeStart)/vFadeDur;
 if(p>=1){vSnap=null;}else{var x=cv.getContext('2d');x.save();x.globalAlpha=Math.pow(1-p,1.35);x.drawImage(vSnap,0,0);x.restore();}}
 }
-</style>
+</script>
 <script>
 /* ==== PERFORMANCE: cheap Viewer renderer (no per-frame blur filters) ==== */
 var vStatic=null;
@@ -7756,6 +7755,69 @@ for(var j=0;j<added.length;j++){var n=added[j];if(n.nodeType===1&&n.id==='rabbit
 });
 mo.observe(document.body,{childList:true});
 })();
+<script>
+/* ==== FINAL hold-to-mark: Work / Other / Delete ==== */
+function normTag(en,src){var t=(en&&en.imgTags&&en.imgTags[src])||'';if(t==='painting')t='work';if(t==='palette')t='other';return t||'work';}
+function findEntryForSrc(src){for(var i=0;i<state.entries.length;i++){var e=state.entries[i];if((e.images||[]).indexOf(src)!==-1)return e;}return null;}
+function filmImages(pid){var out=[];entriesOf(pid).forEach(function(e){(e.images||[]).forEach(function(src){if(normTag(e,src)!=='other')out.push({en:e,src:src,date:e.date});});});return out;}
+function workFilm(p){return filmImages(p.id);}
+function resolveTagAny(a,b){
+if(a&&a.en&&a.src)return a;
+if(typeof a==='string'){var en=b?state.entries.find(function(x){return x.id===b;}):null;if(!en)en=findEntryForSrc(a);return en?{en:en,src:a}:null;}
+var el=a;
+if(el&&el.closest){
+var img=(el.matches&&el.matches('img'))?el:el.querySelector('img');
+var src=img?img.getAttribute('src'):null;if(!src)return null;
+var le=el.closest('[data-entry]');
+if(le){var e2=state.entries.find(function(x){return x.id===le.getAttribute('data-entry');});return e2?{en:e2,src:src}:null;}
+var e3=findEntryForSrc(src);return e3?{en:e3,src:src}:null;
+}
+return null;
+}
+function openTagMenu(a,b){
+var r=resolveTagAny(a,b);if(!r)return;
+window.__tagCtx=r;
+var cur=normTag(r.en,r.src);
+closeModal();
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:360px">'
++'<div class="panel-head"><h2>Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo5" data-tag="work" style="justify-content:flex-start">'+(cur==='work'?'✓&nbsp;':'&nbsp;&nbsp;')+'🖼 Work</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo5" data-tag="other" style="justify-content:flex-start">'+(cur==='other'?'✓&nbsp;':'&nbsp;&nbsp;')+'🎨 Other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo5" data-tag="delete" style="justify-content:flex-start">🗑 Delete</button>'
++'</div></div></div>');
+}
+function openLightboxFromPainting(pid,idx){var p=getP(pid);if(!p)return;var list=filmImages(pid);lbSet=list.map(function(o){return{src:o.src,cap:numTag(p.number)+' · '+fmtShort(o.date)};});showLB(idx);}
+/* Filmstrip always excludes "Other" photos, includes everything else */
+(function(){
+var _pd=paintingDetailHTML;
+paintingDetailHTML=function(id){
+var h=_pd(id);var p=getP(id);if(!p)return h;
+var tmp=document.createElement('div');tmp.innerHTML=h;
+tmp.querySelectorAll('.film').forEach(function(f){
+var img=f.querySelector('img');
+if(img){var e=findEntryForSrc(img.getAttribute('src'));if(e&&normTag(e,img.getAttribute('src'))==='other')f.remove();}
+});
+tmp.querySelectorAll('.film').forEach(function(f,i){f.setAttribute('data-idx',i);});
+return tmp.innerHTML;
+};
+})();
+/* Handle the three choices */
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo5"]');if(!t)return;
+e.stopImmediatePropagation();
+var r=window.__tagCtx;if(!r||!r.en)return;
+if(t.dataset.tag==='delete'){
+r.en.images=(r.en.images||[]).filter(function(s){return s!==r.src;});
+if(r.en.imgTags)delete r.en.imgTags[r.src];
+if(r.en.cover===r.src)r.en.cover='';
+}else{
+if(!r.en.imgTags)r.en.imgTags={};
+r.en.imgTags[r.src]=t.dataset.tag;
+}
+closeModal();
+if(typeof save==='function')save().then(function(){render();});else render();
+},true);
 </script>
 </body>
 </html>
