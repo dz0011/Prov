@@ -7997,5 +7997,142 @@ if(changed&&typeof save==='function')save().then(function(){render();});
 if(typeof render==='function'&&!render._tagMig){var _r=render;render=function(){var r=_r.apply(this,arguments);migrate();return r;};render._tagMig=1;}
 })();
 </script>
+<script>
+/* ================= FINAL self-contained Viewer renderer ================= */
+function vPaintScene(x,W,H,s,t){
+var dark=document.body.classList.contains('dark');
+var hs=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hue-shift'))||0;
+function hsl(h,ss,l,a){return 'hsla('+(((h+hs)%360+360)%360)+','+ss+'%,'+l+'%,'+a+')';}
+function hexA(hex,a){var h=String(hex).replace('#','');if(h.length===3)h=h.split('').map(function(c){return c+c;}).join('');var n=parseInt(h,16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+x.globalCompositeOperation='source-over';
+x.fillStyle=dark?'#191A20':'#F2F1EC';x.fillRect(0,0,W,H);
+x.globalCompositeOperation=dark?'screen':'multiply';
+(s.washes||[]).forEach(function(L){
+var gx=(L.fx+Math.sin(t*(L.sp||.03)+(L.ph||0))*(L.amp||.03))*W,gy=(L.fy+Math.cos(t*(L.sp||.03)*.8+(L.ph||0))*(L.amp||.03))*H,gr=(L.fr||.3)*H;
+var g=x.createRadialGradient(gx,gy,0,gx,gy,gr);
+g.addColorStop(0,hsl(L.h,42,dark?52:56,Math.min(.4,(L.al||.1)*1.5)));g.addColorStop(1,hsl(L.h,42,60,0));
+x.fillStyle=g;x.fillRect(0,0,W,H);});
+x.lineCap='round';
+(s.marks||[]).forEach(function(M){
+var mx=M.fx*W,my=M.fy*H,ln=(M.len||.05)*H,ca=Math.cos(M.a||0),sa=Math.sin(M.a||0);
+x.strokeStyle=hexA(M.col||'#8B877C',Math.min(.6,(M.al||.2)*1.4));x.lineWidth=M.w||4;
+x.beginPath();x.moveTo(mx-ca*ln/2,my-sa*ln/2);
+if(M.t==='stroke')x.quadraticCurveTo(mx+sa*ln*.2,my-ca*ln*.2,mx+ca*ln/2,my+sa*ln/2);else x.lineTo(mx+ca*ln/2,my+sa*ln/2);
+x.stroke();});
+(s.blocks||[]).forEach(function(b){x.globalAlpha=b.al||.5;x.fillStyle=b.col||'#888';x.fillRect(b.fx*W,b.fy*H,b.fw*W,b.fh*H);x.globalAlpha=1;});
+(s.works||[]).forEach(function(wk){
+if(wk.hasColor===false)return;
+var pts=(wk.nodes||[]).map(function(nd,idx){return[(nd.fx+Math.sin(t*.08+idx*1.7)*.008)*W,(nd.fy+Math.cos(t*.07+idx*2.3)*.008)*H];});
+if(pts.length>1){x.strokeStyle=hexA((wk.pal&&wk.pal[0])||'#8B877C',.14);x.lineWidth=6;x.beginPath();
+pts.forEach(function(pt,idx){if(idx===0)x.moveTo(pt[0],pt[1]);else{var pv=pts[idx-1],ct=(wk.ctrl||[])[idx-1]||{dx:0,dy:0};x.quadraticCurveTo((pv[0]+pt[0])/2+ct.dx*W,(pv[1]+pt[1])/2+ct.dy*H,pt[0],pt[1]);}});x.stroke();}
+(wk.patches||[]).forEach(function(pa){
+if(!pa.ready)return;var iw=pa.ready.width||4,ih=pa.ready.height||3;
+(pa.frags||[]).forEach(function(fr){
+var dw=(fr.dw||.15)*W,dh=dw*(fr.rh||1);
+x.save();x.translate((pa.fx+(fr.ox||0))*W,(pa.fy+(fr.oy||0))*H);x.rotate((pa.rot||0)*.3+(fr.rot||0));
+x.globalAlpha=Math.min(.6,fr.al||.3);
+x.drawImage(pa.ready,(fr.sx||0)*iw,(fr.sy||0)*ih,Math.max(1,(fr.sw||.3)*iw),Math.max(1,(fr.sh||.3)*ih),-dw/2,-dh/2,dw,dh);
+x.restore();});});
+(wk.nodes||[]).forEach(function(nd,idx){
+var pt=pts[idx],r=(nd.r||.02)*W;
+x.save();x.translate(pt[0],pt[1]);x.rotate((nd.rot0||0)+t*(nd.rots||0));
+x.fillStyle=hexA(nd.col||'#8B877C',.55);x.beginPath();x.moveTo(r,0);
+var verts=(nd.verts&&nd.verts.length)?nd.verts:[1,1,1,1,1,1,1];
+for(var v=0;v<verts.length;v++){var va=(v+1)/verts.length*6.283,vr=r*verts[v];x.lineTo(Math.cos(va)*vr,Math.sin(va)*vr);}
+x.closePath();x.fill();x.restore();});});
+x.globalCompositeOperation='source-over';
+(s.grain||[]).forEach(function(g3){
+x.fillStyle=g3.light?(dark?'rgba(244,242,236,'+g3.a+')':'rgba(255,255,255,'+g3.a+')'):(dark?'rgba(0,0,0,'+g3.a+')':'rgba(25,26,32,'+g3.a+')');
+x.beginPath();x.arc(g3.fx*W,g3.fy*H,g3.r*(W/1080),0,7);x.fill();});
+var vg=x.createRadialGradient(W/2,H/2,H/3,W/2,H/2,H*.8);
+vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,dark?'rgba(0,0,0,.22)':'rgba(20,18,12,.10)');
+x.fillStyle=vg;x.fillRect(0,0,W,H);
+}
+function paintCurrent(){var cv=document.getElementById('viewer-canvas');if(!cv||!window.vScene)return;vPaintScene(cv.getContext('2d'),cv.width,cv.height,vScene,vT||0);}
+function vLoopFinal(now){vRaf=requestAnimationFrame(vLoopFinal);if(document.hidden)return;
+if(!document.getElementById('viewer-canvas')){cancelAnimationFrame(vRaf);return;}
+if(now-vLast>41){var dt=Math.min(.1,(now-vPrev)/1000);vPrev=now;vT+=dt*((typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx])||1);paintCurrent();vLast=now;}}
+function drawViewer(){
+var cv=document.getElementById('viewer-canvas');
+try{cancelAnimationFrame(vRaf);}catch(e){}
+if(!cv){window.vScene=null;return;}
+cv.width=540;cv.height=675;
+var s=null;
+try{s=(typeof buildScene==='function')?buildScene():null;}catch(e){s=null;}
+if(!s){try{s=(typeof museumScene==='function')?museumScene():null;}catch(e){}}
+if(!s){try{s=(typeof defaultScene==='function')?defaultScene():null;}catch(e){}}
+window.vScene=s||{washes:[],marks:[],works:[],grain:[]};
+vT=0;vLast=0;vPrev=performance.now();
+var seen={};
+(vScene.works||[]).forEach(function(w){(w.patches||[]).forEach(function(pa){
+if(!pa.src||seen[pa.src])return;seen[pa.src]=1;
+var im=new Image();im.onload=function(){pa.ready=im;if(!(typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]>0))paintCurrent();};im.src=pa.src;});});
+if(typeof VSPEEDS!=='undefined'&&VSPEEDS[vSpeedIdx]>0){vRaf=requestAnimationFrame(vLoopFinal);}else{paintCurrent();}
+if(typeof syncSpeedIco==='function')syncSpeedIco();
+}
+/* ================= FINAL Mark-this-photo (single implementation) ================= */
+function markNorm(en,src){var t=(en&&en.imgTags&&en.imgTags[src])||'work';if(t==='painting')t='work';if(t==='palette')t='other';return t;}
+function markResolve(a,b){
+if(a&&typeof a==='object'&&a.en&&a.src)return a;
+var src=null,en=null;
+if(typeof a==='string'){src=a;}
+else if(a&&a.getAttribute){var img=(a.matches&&a.matches('img'))?a:a.querySelector('img');src=img?img.getAttribute('src'):null;}
+if(!src)return null;
+if(b)en=state.entries.find(function(x){return x.id===b;});
+if(!en&&a&&a.closest){var le=a.closest('[data-entry]');if(le)en=state.entries.find(function(x){return x.id===le.getAttribute('data-entry');});}
+if(!en){for(var i=0;i<state.entries.length;i++){if((state.entries[i].images||[]).indexOf(src)!==-1){en=state.entries[i];break;}}}
+return en?{en:en,src:src}:null;
+}
+function openMarkMenu(a,b){
+var r=markResolve(a,b);if(!r)return false;
+if(document.querySelector('#modal-root .mark-menu'))return true;
+window.__markCtx=r;
+var cur=markNorm(r.en,r.src);
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel mark-menu" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo7" data-tag="work" style="justify-content:flex-start">'+(cur==='work'?'✓&nbsp;':'&nbsp;&nbsp;')+'🖼 Work</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo7" data-tag="other" style="justify-content:flex-start">'+(cur==='other'?'✓&nbsp;':'&nbsp;&nbsp;')+'🎨 Other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo7" data-tag="delete" style="justify-content:flex-start">&nbsp;🗑 Delete</button>'
++'</div></div></div>');
+return true;
+}
+window.openTagMenu=function(a,b){return openMarkMenu(a,b);};
+window.openTag=function(a,b){return openMarkMenu(a,b);};
+window.openMarkMenu=openMarkMenu;
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo7"]');if(!t)return;
+e.stopImmediatePropagation();
+var r=window.__markCtx;if(!r||!r.en)return;
+var tag=t.dataset.tag;
+if(tag==='delete'){
+closeModal();
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel mark-menu" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Delete this photo?</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="etext" style="margin:4px 0 12px">It will be removed from this entry and from the whole app. This can\u2019t be undone.</p>'
++'<div style="display:flex;gap:8px;justify-content:flex-end">'
++'<button type="button" class="btn ghost" data-action="mark-del-no">Keep it</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="mark-del-yes">Delete photo</button>'
++'</div></div></div>');
+return;
+}
+if(!r.en.imgTags)r.en.imgTags={};
+r.en.imgTags[r.src]=tag;
+closeModal();
+if(typeof save==='function')save().then(function(){render();});else render();
+},true);
+document.addEventListener('click',function(e){
+var no=e.target.closest('[data-action="mark-del-no"]');
+var yes=e.target.closest('[data-action="mark-del-yes"]');
+if(no){e.stopImmediatePropagation();closeModal();return;}
+if(!yes)return;
+e.stopImmediatePropagation();
+var r=window.__markCtx;if(!r||!r.en)return;
+r.en.images=(r.en.images||[]).filter(function(s){return s!==r.src;});
+if(r.en.imgTags)delete r.en.imgTags[r.src];
+closeModal();
+if(typeof save==='function')save().then(function(){render();});else render();
+},true);
+</script>
 </body>
 </html>
