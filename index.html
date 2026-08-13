@@ -7940,5 +7940,62 @@ window.addEventListener('popstate',function(e){
 if(modalPushed){modalPushed=false;closeModal();e.stopImmediatePropagation();}
 },true);
 </script>
+<script>
+/* ==== ONE authoritative Mark-this-photo system ==== */
+function normTag(en,src){var t=(en&&en.imgTags&&en.imgTags[src])||'work';if(t==='painting')t='work';if(t==='palette')t='other';return t;}
+function findEntryForSrc(src){for(var i=0;i<state.entries.length;i++){var e=state.entries[i];if((e.images||[]).indexOf(src)!==-1)return e;}return null;}
+function openMarkMenu(a,b){
+var r=null;
+if(a&&typeof a==='object'&&a.en&&a.src)r=a;
+else if(typeof a==='string'){var en=b?state.entries.find(function(x){return x.id===b;}):null;if(!en)en=findEntryForSrc(a);if(en)r={en:en,src:a};}
+else if(a&&typeof resolveTagTarget==='function'){r=resolveTagTarget(a);}
+if(!r||!r.en)return false;
+if(document.querySelector('#modal-root .mark-menu'))return true; /* already open: don't stack */
+window.__markCtx=r;
+var cur=normTag(r.en,r.src);
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel mark-menu" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo5" data-tag="work" style="justify-content:flex-start">'+(cur==='work'?'✓&nbsp;':'&nbsp;&nbsp;')+'🖼 Work</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo5" data-tag="other" style="justify-content:flex-start">'+(cur==='other'?'✓&nbsp;':'&nbsp;&nbsp;')+'🎨 Other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo5" data-tag="delete" style="justify-content:flex-start">🗑 Delete</button>'
++'</div></div></div>');
+return true;
+}
+window.openTagMenu=openMarkMenu;window.openTag=openMarkMenu;
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo5"]');if(!t)return;
+e.stopImmediatePropagation();
+var r=window.__markCtx;if(!r||!r.en)return;
+if(t.dataset.tag==='delete'){
+r.en.images=(r.en.images||[]).filter(function(s){return s!==r.src;});
+if(r.en.imgTags)delete r.en.imgTags[r.src];
+}else{
+if(!r.en.imgTags)r.en.imgTags={};
+r.en.imgTags[r.src]=t.dataset.tag;
+}
+closeModal();
+if(typeof save==='function')save().then(function(){render();});else render();
+},true);
+/* Filmstrip shows ONLY Work photos */
+function filmImages(pid){var out=[];entriesOf(pid).forEach(function(e){(e.images||[]).forEach(function(src){if(normTag(e,src)==='work')out.push({en:e,src:src,date:e.date});});});return out;}
+function workFilm(p){return filmImages(p.id);}
+function openLightboxFromPainting(pid,idx){var p=getP(pid);if(!p)return;var list=filmImages(pid);lbSet=list.map(function(o){return{src:o.src,cap:numTag(p.number)+' · '+fmtShort(o.date)};});showLB(idx);}
+/* One-time revert: every existing photo goes back to "Work" for every user */
+(function(){
+var done=false;
+function migrate(){
+if(done)return;
+try{if(localStorage.getItem('provenance.tagRevert2')){done=true;return;}}catch(e){}
+if(!state.entries.length)return;
+done=true;
+var changed=false;
+state.entries.forEach(function(e){if(e.imgTags){delete e.imgTags;changed=true;}});
+try{localStorage.setItem('provenance.tagRevert2','1');}catch(e){}
+if(changed&&typeof save==='function')save().then(function(){render();});
+}
+if(typeof render==='function'&&!render._tagMig){var _r=render;render=function(){var r=_r.apply(this,arguments);migrate();return r;};render._tagMig=1;}
+})();
+</script>
 </body>
 </html>
