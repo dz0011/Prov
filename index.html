@@ -7135,5 +7135,32 @@ view.wkDir=(d==='new')?'old':(d==='old')?'num':(d==='num')?'numdesc':'new';
 render();
 },true);
 </script>
+<script>
+/* ==== Guest/empty Viewer: ALWAYS render the living canvas, never the empty card ==== */
+(function(){
+var _vhG=viewerHTML;
+viewerHTML=function(){
+var h=_vhG();
+if(!state.paintings.length&&h.indexOf('viewer-canvas')===-1){
+var frame='<div class="vframe" style="border-radius:6px;padding:10px;background:linear-gradient(120deg,#8a5a2b,#6e451d 55%,#7d4f24);box-shadow:0 12px 34px -12px rgba(15,10,5,.5), inset 0 2px 3px rgba(255,235,200,.28), inset 0 -3px 6px rgba(20,10,0,.45)">'
++'<canvas id="viewer-canvas" style="width:100%;display:block;border-radius:2px;border:5px solid #F3EFE4;box-shadow:0 0 0 1px rgba(20,10,0,.35)" aria-label="Living visualization — tap to change the movement speed"></canvas></div>'
++'<div style="display:flex;justify-content:center;align-items:center;margin-top:14px">'
++'<button class="btn ghost" data-action="viewer-remix" aria-label="Refresh this view" title="Refresh this view" style="border-radius:999px;padding:10px 26px;font-size:15px;line-height:1">↻</button></div>'
++'<p class="hint" style="margin-top:10px;text-align:center">Your wall is waiting — log a work and it becomes yours.</p>';
+h=h.replace(/<div class="empty small">[\s\S]*?<\/div>/,frame);
+if(h.indexOf('viewer-canvas')===-1)h+=frame;
+}
+return h;
+};
+})();
+/* Safety net: after load, if we're on the Viewer but the canvas is missing, re-render once */
+window.addEventListener('load',function(){
+setTimeout(function(){
+if(typeof view!=='undefined'&&view.name==='viewer'&&!document.getElementById('viewer-canvas')){
+if(typeof render==='function')render();
+}
+},60);
+});
+</script>
 </body>
 </html>
