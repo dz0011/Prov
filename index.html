@@ -6788,8 +6788,9 @@ return '<div class="page-head"><div><h1 class="display">Viewer</h1>'
 }
 return _vhD();
 };
+</script>
 <script>
-/* Works sort: one tap = one step; number sorts hide unnumbered works; no № symbol */
+/* Works sort: one tap = one step
 function filteredPaintings(){
 let ps=[...state.paintings];
 const d=view.wkDir||'new';
@@ -7689,6 +7690,7 @@ for(var j=0;j<added.length;j++){var n=added[j];if(n.nodeType===1&&n.id==='rabbit
 });
 mo.observe(document.body,{childList:true});
 })();
+</script>
 <script>
 /* ==== FINAL hold-to-mark: Work / Other / Delete ==== */
 function normTag(en,src){var t=(en&&en.imgTags&&en.imgTags[src])||'';if(t==='painting')t='work';if(t==='palette')t='other';return t||'work';}
@@ -8669,6 +8671,60 @@ vRaf=requestAnimationFrame(loop);
 }
 if(typeof syncSpeedIco==='function')syncSpeedIco();
 }
+</script>
+</body>
+</html>
+<script>
+/* ===== FIX 1: first tap always registers (clear the leftover "swallow" flag) ===== */
+(function(){
+  var _om=window.openMarkMenu;
+  if(typeof _om!=='function')return;
+  window.openMarkMenu=function(a,b){
+    var r=_om(a,b);
+    /* fire a harmless synthetic click so the pending swallow-flag is consumed;
+       the user's very next (first) real tap then always registers */
+    setTimeout(function(){try{window.dispatchEvent(new MouseEvent('click',{bubbles:false,cancelable:true}));}catch(e){}},150);
+    return r;
+  };
+  window.openTagMenu=window.openMarkMenu;window.openTag=window.openMarkMenu;
+})();
+
+/* ===== FIX 2: Progress filmstrip hides photos marked "Other" ===== */
+(function(){
+  if(typeof paintingDetailHTML!=='function')return;
+  var _pd=paintingDetailHTML;
+  paintingDetailHTML=function(id){
+    var h=_pd(id);var p=getP(id);if(!p)return h;
+    var tmp=document.createElement('div');tmp.innerHTML=h;var changed=false;
+    tmp.querySelectorAll('.film').forEach(function(f){
+      var img=f.querySelector('img');if(!img)return;
+      var src=img.getAttribute('src'),en=null;
+      for(var i=0;i<state.entries.length;i++){if((state.entries[i].images||[]).indexOf(src)!==-1){en=state.entries[i];break;}}
+      var t=(en&&en.imgTags&&en.imgTags[src])||'work';
+      if(t==='other'){f.remove();changed=true;}
+    });
+    if(changed){tmp.querySelectorAll('.film').forEach(function(f,i){f.setAttribute('data-idx',i);});}
+    return tmp.innerHTML;
+  };
+})();
+
+/* ===== FIX 3: + buttons never appear before the page content ===== */
+(function(){
+  var css=document.createElement('style');
+  css.textContent='body:not(.fabs-ok) .float-btn{opacity:0!important;pointer-events:none!important}';
+  document.head.appendChild(css);
+  function reveal(){setTimeout(function(){document.body.classList.add('fabs-ok');},300);}
+  if(document.readyState==='complete')reveal();else window.addEventListener('load',reveal);
+})();
+
+/* ===== FIX 4: quicker, more seamless refresh (render only visible cards + keep scroll) ===== */
+(function(){
+  var css=document.createElement('style');
+  css.textContent='.entry,.pcard{content-visibility:auto;contain-intrinsic-size:1px 320px}';
+  document.head.appendChild(css);
+  window.addEventListener('beforeunload',function(){try{sessionStorage.setItem('provenance.scroll',String(window.scrollY));}catch(e){}});
+  window.addEventListener('load',function(){var y=parseInt(sessionStorage.getItem('provenance.scroll')||'0',10);if(y>0)setTimeout(function(){window.scrollTo(0,y);},120);});
+})();
 </script>
 </body>
 </html>
