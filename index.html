@@ -5783,7 +5783,68 @@ view.wkDir=view.wkDir==='new'?'old':(view.wkDir==='old'?'num':(view.wkDir==='num
 render();
 },true);
 </script>
-</body>
-</html>
+<style>
+/* One install prompt only — hide every legacy install UI */
+#install-btn,#install-pop,#install-pill{display:none!important}
+#install-uni{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(24px);opacity:0;pointer-events:none;transition:opacity .35s ease,transform .35s ease;z-index:100;max-width:min(430px,92vw)}
+#install-uni.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+#install-uni .iu-card{position:relative;display:flex;align-items:center;gap:12px;background:var(--card,#FCFBF7);border:1px solid var(--line,#DAD6CA);border-radius:16px;padding:12px 14px;box-shadow:0 12px 32px -12px rgba(20,18,12,.45)}
+body.dark #install-uni .iu-card{background:#2A2B33;border-color:#3A3B44;box-shadow:0 12px 32px -12px rgba(0,0,0,.6)}
+#install-uni .iu-ico{font-size:22px;flex:none}
+#install-uni .iu-txt{display:flex;flex-direction:column;line-height:1.25;text-align:left}
+#install-uni .iu-txt b{font:600 14px 'Space Grotesk',sans-serif;color:var(--ink,#191A20)}
+body.dark #install-uni .iu-txt b{color:#F2F1EC}
+#install-uni .iu-txt span{font-size:12px;color:var(--ink-soft,#4A4B54)}
+body.dark #install-uni .iu-txt span{color:#B9B7AE}
+#install-uni .iu-go{flex:none;border:0;border-radius:12px;background:var(--verm,#DE4A1F);color:#FFF7F2;font:600 13px 'Space Grotesk',sans-serif;padding:9px 14px;cursor:pointer}
+#install-uni .iu-x{position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;border:0;background:var(--ink,#191A20);color:#F4F2EC;font-size:12px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+body.dark #install-uni .iu-x{background:#3A3B44}
+</style>
+<script>
+(function(){
+/* Remove every legacy install prompt so only ONE can ever exist */
+['install-btn','install-pop','install-pill'].forEach(function(id){var n=document.getElementById(id);if(n&&n.parentNode)n.parentNode.removeChild(n);});
+document.body.classList.remove('show-install');
+if(document.getElementById('install-uni'))return;
+var KEY='provenance.install';
+function installed(){
+try{var st=JSON.parse(localStorage.getItem(KEY)||'{}');if(st.installed)return true;}catch(e){}
+try{if(localStorage.getItem('provenance.installed')==='1')return true;}catch(e){}
+if(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)return true;
+if(window.navigator.standalone)return true;
+return false;
+}
+function dismissedRecently(){
+try{var t=+localStorage.getItem(KEY+'.dismissedAt')||0;return (Date.now()-t)<86400000;}catch(e){return false;}
+}
+var box=document.createElement('div');box.id='install-uni';
+box.innerHTML='<div class="iu-card"><button type="button" class="iu-x" aria-label="Dismiss install prompt">✕</button>'
++'<span class="iu-ico">📥</span>'
++'<span class="iu-txt"><b>Install Provenance</b><span>Keep your studio one tap away.</span></span>'
++'<button type="button" class="iu-go">Install</button></div>';
+document.body.appendChild(box);
+var deferred=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;},true);
+window.addEventListener('appinstalled',function(){
+try{var st=JSON.parse(localStorage.getItem(KEY)||'{}');st.installed=true;localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}
+hide();
+});
+function hide(){box.classList.remove('show');}
+function show(){if(installed()||dismissedRecently())return;box.classList.add('show');}
+/* Only ever appear 3+ seconds AFTER a page load — never immediately */
+function schedule(){setTimeout(show,3000);}
+if(document.readyState==='complete')schedule();else window.addEventListener('load',schedule);
+box.querySelector('.iu-x').addEventListener('click',function(e){
+e.stopPropagation();
+try{localStorage.setItem(KEY+'.dismissedAt',String(Date.now()));}catch(e){}
+hide();
+});
+box.querySelector('.iu-go').addEventListener('click',function(e){
+e.stopPropagation();
+if(deferred){deferred.prompt();deferred.userChoice.then(function(){deferred=null;hide();});}
+else if(typeof toast==='function'){toast(/iphone|ipad|ipod/i.test(navigator.userAgent)?'Tap Share, then "Add to Home Screen"':'Browser menu → "Add to Home screen"');hide();}
+});
+})();
+</script>
 </body>
 </html>
