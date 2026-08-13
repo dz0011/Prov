@@ -6484,5 +6484,53 @@ view.logDir=view.logDir==='old'?'new':'old';
 render();
 },true);
 </script>
+<script>
+/* ===== 1) Hide the "Hold a photo…" hint once you've marked 3+ photos ===== */
+function holdMarkCount(){try{return parseInt(localStorage.getItem('provenance.markCount')||'0',10)||0;}catch(e){return 0;}}
+function hideHoldHint(){
+if(holdMarkCount()>3){
+document.querySelectorAll('.hint').forEach(function(el){
+if(/hold a photo/i.test(el.textContent||''))el.style.display='none';
+});
+}
+}
+/* Count palette/other + delete markings (runs before the tag handler) */
+window.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo"]');if(!t)return;
+if(t.dataset.tag==='palette'||t.dataset.tag==='delete'){
+try{localStorage.setItem('provenance.markCount',String(holdMarkCount()+1));}catch(e){}
+hideHoldHint();
+}
+},true);
+if(typeof render==='function'&&!render._hintWrapped){
+var _rH=render;
+render=function(){var r=_rH.apply(this,arguments);hideHoldHint();return r;};
+render._hintWrapped=1;
+}
+hideHoldHint();
+/* ===== 2) Make "Save changes" feel instant (optimistic, background sync) ===== */
+var cachedUserId=null;
+var _saveTimer=null;
+var _isGuestFn=(typeof isGuest==='function')?isGuest:function(){return false;};
+function scheduleUpsert(uid){
+clearTimeout(_saveTimer);
+_saveTimer=setTimeout(function(){
+db.from('journals').upsert({user_id:uid,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'})
+.then(function(r){if(r&&r.error)toast('⚠ Could not save — check your connection');});
+},300);
+}
+if(typeof db!=='undefined'&&db&&db.auth&&db.auth.onAuthStateChange){
+db.auth.onAuthStateChange(function(ev,ses){if(ses&&ses.user)cachedUserId=ses.user.id;else cachedUserId=null;});
+}
+save=function(){
+if(_isGuestFn()){try{localStorage.setItem('provenance.local',JSON.stringify(state));}catch(e){}return Promise.resolve(true);}
+if(!db)return Promise.resolve(false);
+if(cachedUserId){scheduleUpsert(cachedUserId);return Promise.resolve(true);}
+return db.auth.getUser().then(function(r){
+if(r.data&&r.data.user){cachedUserId=r.data.user.id;scheduleUpsert(cachedUserId);return true;}
+return false;
+});
+};
+</script>
 </body>
 </html>
