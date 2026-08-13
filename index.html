@@ -7818,6 +7818,94 @@ r.en.imgTags[r.src]=t.dataset.tag;
 closeModal();
 if(typeof save==='function')save().then(function(){render();});else render();
 },true);
+<style>
+/* Sign-in / empty-state logo: use the updated muted-blue mark in BOTH themes */
+.auth-card .dabs,body.dark .auth-card .dabs,.empty>.dabs,body.dark .empty>.dabs{
+background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 64'%3E%3Cpath d='M8 50 Q34 56 60 52' stroke='%23A98F72' stroke-width='2.5' fill='none' opacity='.6'/%3E%3Cg filter='url(%23b)' transform='skewX(-6)'%3E%3Crect x='10' y='18' width='58' height='11' fill='%236C8EA0'/%3E%3Crect x='16' y='31' width='58' height='11' fill='%23A7C4C8'/%3E%3Crect x='8' y='44' width='46' height='8' fill='%23E0D5C0'/%3E%3C/g%3E%3Cfilter id='b'%3E%3CfeGaussianBlur stdDeviation='2.2'/%3E%3C/filter%3E%3Cpath d='M10 12 C32 3 56 9 80 6 C56 15 32 13 10 12 Z' fill='%233E4C55'/%3E%3Cpath d='M60 30 c6 -6 14 -4 16 2 c2 6 -6 10 -11 8 c-6 -2 -8 -6 -5 -10 z' fill='%23FBFAF7' stroke='%235E7078' stroke-width='1.6' opacity='.9'/%3E%3Cg stroke='%233E4C55' stroke-width='2.2' stroke-linecap='round' opacity='.45' fill='none'%3E%3Cpath d='M70 46 h18'/%3E%3Cpath d='M70 51 h13'/%3E%3Cpath d='M70 56 h16'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;
+}
+</style>
+<script>
+/* ---- Browser back while a modal (Edit/New/etc.) is open: close the modal, stay on the page ---- */
+(function(){
+var savedView=null;
+var _om=openModal;
+openModal=function(html){
+try{savedView=JSON.parse(JSON.stringify(view||{name:'timeline'}));}catch(e){savedView={name:'timeline'};}
+var w=_om(html);
+try{history.replaceState({m:0},'');history.pushState({m:1},'');}catch(e){}
+return w;
+};
+var _cm=closeModal;
+closeModal=function(){
+var r=document.getElementById('modal-root');
+var had=r&&r.lastElementChild;
+_cm();
+if(had){try{history.replaceState({pv:view},'');}catch(e){}}
+};
+window.addEventListener('popstate',function(e){
+var r=document.getElementById('modal-root');
+if(r&&r.lastElementChild){
+_cm();
+try{history.replaceState({pv:view},'');}catch(e2){}
+if(savedView){try{view=JSON.parse(JSON.stringify(savedView));}catch(e3){}}
+render();
+}
+});
+})();
+/* ---- Mark-this-photo: Work / Other / Delete, checkmark left, closes promptly ---- */
+function normTag(en,src){var t=(en&&en.imgTags&&en.imgTags[src])||'work';if(t==='painting')t='work';if(t==='palette')t='other';return t;}
+function resolveTagAny(a,b){
+if(typeof a==='string'){
+var en=b?state.entries.find(function(x){return x.id===b;}):null;
+if(!en){for(var i=0;i<state.entries.length;i++){if((state.entries[i].images||[]).indexOf(a)!==-1){en=state.entries[i];break;}}}
+return en?{en:en,src:a}:null;
+}
+var el=a;if(!el)return null;
+var img=(el.matches&&el.matches('img'))?el:el.querySelector('img');
+var src=img?img.getAttribute('src'):null;if(!src)return null;
+var le=el.closest('[data-entry]');
+if(le){var e2=state.entries.find(function(x){return x.id===le.getAttribute('data-entry');});return e2?{en:e2,src:src}:null;}
+for(var i=0;i<state.entries.length;i++){if((state.entries[i].images||[]).indexOf(src)!==-1)return{en:state.entries[i],src:src};}
+return null;
+}
+function openTagMenu(a,b){
+var r=resolveTagAny(a,b);if(!r)return;
+window.__tagCtx=r;
+var cur=normTag(r.en,r.src);
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Mark this photo</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="tag-photo5" data-tag="work" style="justify-content:flex-start">'+(cur==='work'?'✓&nbsp;':'\u00A0\u00A0')+'🖼 Work</button>'
++'<button type="button" class="btn ghost" data-action="tag-photo5" data-tag="other" style="justify-content:flex-start">'+(cur==='other'?'✓&nbsp;':'\u00A0\u00A0')+'🎨 Other</button>'
++'<button type="button" class="btn ghost danger-btn" data-action="tag-photo5" data-tag="delete" style="justify-content:flex-start">\u00A0🗑 Delete</button>'
++'</div></div></div>');
+}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="tag-photo5"]');if(!t)return;
+e.stopImmediatePropagation();
+var r=window.__tagCtx;if(!r)return;
+if(t.dataset.tag==='delete'){r.en.images=(r.en.images||[]).filter(function(s){return s!==r.src;});if(r.en.imgTags)delete r.en.imgTags[r.src];}
+else{if(!r.en.imgTags)r.en.imgTags={};r.en.imgTags[r.src]=t.dataset.tag;}
+closeModal();
+if(typeof save==='function')save().then(function(){render();});else render();
+},true);
+function filmImages(pid){var out=[];entriesOf(pid).forEach(function(e){(e.images||[]).forEach(function(src){if(normTag(e,src)!=='other')out.push({en:e,src:src,date:e.date});});});return out;}
+/* ---- Viewer: rebuild the static layer if it's missing so the canvas never shows bare wood ---- */
+var _pcY=paintCurrent;
+paintCurrent=function(){
+var cv=document.getElementById('viewer-canvas');
+if(cv&&window.vScene&&!window.vStatic&&typeof renderStatic==='function')vStatic=renderStatic(vScene,cv.width,cv.height);
+_pcY.apply(this,arguments);
+};
+var _dvY=drawViewer;
+drawViewer=function(){
+_dvY.apply(this,arguments);
+var cv=document.getElementById('viewer-canvas');
+if(cv&&window.vScene&&!window.vStatic&&typeof renderStatic==='function'){
+vStatic=renderStatic(vScene,cv.width,cv.height);
+if(typeof paintCurrent==='function')paintCurrent();
+}
+};
 </script>
 </body>
 </html>
