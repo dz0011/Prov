@@ -1,2 +1,6 @@
 /* Provenance custom styles — new styling goes here, not in index.html */
 #pig-detail .btn{padding:8px 12px;font-size:13px}
+#view .vframe + div{gap:16px}
+#pin-view{order:-1}
+#poster-view{order:1}
+#pin-view,#poster-view{width:40px;height:36px;padding:0;font-size:15px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center}
