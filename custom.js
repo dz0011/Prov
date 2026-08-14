@@ -778,3 +778,119 @@ var cv=document.getElementById('viewer-canvas');if(!cv||!window.__poScene)return
 photoOnlyPaint(cv.getContext('2d'),cv.width,cv.height,window.__poScene,window.vT||0);
 };
 })();
+/* ===== 1) Empty body space on Timeline/Works toggles theme ===== */
+document.addEventListener('click',function(e){
+if(typeof view==='undefined')return;
+if(view.name!=='timeline'&&view.name!=='paintings')return;
+if(e.target.closest('.top,.page-head,button,a,input,select,textarea,label,.menu,.menu-wrap,.entry,.pcard,.thumb,.film,.etools,.empty,.search,.tabs,.tab,.chip,.pchip,.pcover,.pinfo,.float-btn,.fab'))return;
+var dark=!document.body.classList.contains('dark');
+document.body.classList.toggle('dark',dark);
+try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+},true);
+/* ===== 2) Install menu text always "Install as App"; popup note text ===== */
+(function(){
+function fix(){var m=document.getElementById('menu');if(m)m.querySelectorAll('button').forEach(function(bn){var t=(bn.textContent||'');if(/install/i.test(t)&&!/studio book/i.test(t))bn.innerHTML='📥 Install as App';});
+var b=document.querySelector('#install-uni .iu-txt b');if(b)b.textContent='Install as App';
+var n=document.querySelector('#install-uni .iu-note');if(n)n.textContent='Install may take up to 30 sec.';}
+document.addEventListener('click',function(e){if(e.target.closest('[data-action="menu-toggle"]'))setTimeout(fix,0);},true);
+var uni=document.getElementById('install-uni');if(uni)new MutationObserver(fix).observe(uni,{attributes:true,attributeFilter:['class']});
+fix();
+})();
+/* ===== 3) Perf: thumbnail tier (timeline scrolls light; full photo only in lightbox) ===== */
+(function(){
+if(typeof fileToDataURL!=='function')return;
+var map={};
+function makeThumb(full){return new Promise(function(res){var img=new Image();img.onload=function(){var m=320,sc=Math.min(1,m/Math.max(img.width,img.height));var c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*sc));c.height=Math.max(1,Math.round(img.height*sc));c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.6));};img.onerror=function(){res(full);};img.src=full;});}
+var _f=fileToDataURL;
+fileToDataURL=function(file){return _f(file).then(function(full){return makeThumb(full).then(function(th){map[full]=th;return full;});});};
+var _ec=entryCardHTML;
+entryCardHTML=function(e,i){var html=_ec(e,i);
+var tmp=document.createElement('div');tmp.innerHTML=html;
+var imgs=tmp.querySelectorAll('.thumb img');
+(e.images||[]).forEach(function(src,idx){var th=(e.thumbs&&e.thumbs[idx])||map[src];if(th&&imgs[idx])imgs[idx].src=th;if(imgs[idx])imgs[idx].decoding='async';});
+return tmp.innerHTML;};
+var _sv=save;
+save=function(){(state.entries||[]).forEach(function(e){(e.images||[]).forEach(function(src,idx){if(map[src]){if(!e.thumbs)e.thumbs=[];e.thumbs[idx]=map[src];}});});return _sv.apply(this,arguments);};
+})();
+/* ===== 4) Rabbit: rename sun/clouds so only the new handlers run ===== */
+function findBunny(page){var ds=page.querySelectorAll('div');for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰')return ds[i];}return null;}
+function renameRabbit(page){
+page.querySelectorAll('.rb-sun,.rb-sun2').forEach(function(x){x.className='rb-sun3';});
+page.querySelectorAll('.rb-cloud,.rb-cloud2').forEach(function(x){x.className='rb-cloud3';});
+}
+var _rmo=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var a=muts[i].addedNodes;for(var j=0;j<a.length;j++){var n=a[j];if(n.nodeType===1&&n.id==='rabbit-page')renameRabbit(n);}}});
+_rmo.observe(document.body,{childList:true});
+var _cur=document.getElementById('rabbit-page');if(_cur)renameRabbit(_cur);
+/* ===== Sun: 10% of the time return from the FRONT ===== */
+window.addEventListener('click',function(e){
+var page=document.getElementById('rabbit-page');if(!page)return;
+if(page._soaring){e.stopImmediatePropagation();e.preventDefault();return;}
+var sun=e.target.closest?e.target.closest('.rb-sun3'):null;if(!sun)return;
+e.stopImmediatePropagation();e.preventDefault();
+var b=findBunny(page);if(!b)return;
+page._soaring=1;try{b.getAnimations().forEach(function(a){a.cancel();});}catch(err){}
+b.style.animation='none';b.style.zIndex=9;
+var pr=page.getBoundingClientRect(),sr=sun.getBoundingClientRect();
+var sx=(sr.left+sr.width/2-pr.left)/pr.width*100, sy=(sr.top+sr.height/2-pr.top)/pr.height*100;
+var s=(sx>50?1:-1),flip=(s===1?-1:1);
+var up=b.animate([
+{left:'50%',top:'56%',opacity:1,transform:'translate(-50%,-50%) scale(2.2) scaleX('+flip+')'},
+{left:sx+'%',top:(sy+6)+'%',opacity:1,transform:'translate(-50%,-50%) scale(1.1) scaleX('+flip+')',offset:.7},
+{left:sx+'%',top:sy+'%',opacity:0,transform:'translate(-50%,-50%) scale(.12) scaleX('+flip+')',offset:1}
+],{duration:1100,easing:'ease-in'});
+up.onfinish=function(){
+sun.animate([{transform:'scale(1)'},{transform:'scale(1.3)'},{transform:'scale(1)'}],{duration:600,easing:'ease-out'});
+setTimeout(function(){
+var back;
+if(Math.random()<0.1){ /* come out of the front of the screen */
+back=b.animate([
+{left:'50%',top:'56%',opacity:0,transform:'translate(-50%,-50%) scale(.2)'},
+{left:'50%',top:'52%',opacity:1,transform:'translate(-50%,-50%) scale(1.2)',offset:.5},
+{left:'50%',top:'56%',opacity:1,transform:'translate(-50%,-50%) scale(2.2)',offset:1}
+],{duration:1500,easing:'ease-out'});
+}else{
+var fromLeft=Math.random()<.5;
+back=b.animate([
+{left:fromLeft?'-14%':'114%',top:'56%',opacity:1,transform:'translate(-50%,-50%) scale(2.2)'},
+{left:'50%',top:'56%',opacity:1,transform:'translate(-50%,-50%) scale(2.2)',offset:1}
+],{duration:1400,easing:'ease-in-out'});
+}
+back.onfinish=function(){b.style.animation='rabbithop 1.6s ease-in-out infinite';b.style.zIndex='';b.style.opacity='';page._soaring=0;};
+},1000);
+};
+},true);
+/* ===== Cloud bite: mouth lands exactly on the bitten chunk ===== */
+window.addEventListener('click',function(e){
+var page=document.getElementById('rabbit-page');if(!page)return;
+if(page._soaring){e.stopImmediatePropagation();e.preventDefault();return;}
+var cl=e.target.closest?e.target.closest('.rb-cloud3'):null;if(!cl)return;
+e.stopImmediatePropagation();e.preventDefault();
+var b=findBunny(page);if(!b)return;
+var chunks=cl.querySelectorAll('.rb-chunk:not(.gone)');if(!chunks.length)return;
+var chunk=chunks[chunks.length-1];
+page._soaring=1;try{b.getAnimations().forEach(function(a){a.cancel();});}catch(err){}
+b.style.animation='none';b.style.zIndex=9;
+var pr=page.getBoundingClientRect(),cr=chunk.getBoundingClientRect();
+var chX=cr.left+cr.width/2-pr.left, chY=cr.top+cr.height/2-pr.top;
+var W=141,H=141;
+var s=(chX>pr.width/2?1:-1),flip=(s===1?-1:1);
+var mouthX=s*0.35*W, mouthY=0.10*H;
+var cx=Math.max(W/2,Math.min(pr.width-W/2,chX-mouthX));
+var cy=Math.max(H/2,Math.min(pr.height-H/2,chY-mouthY));
+var cxp=cx/pr.width*100, cyp=cy/pr.height*100;
+var up=b.animate([
+{left:'50%',top:'56%',transform:'translate(-50%,-50%) scale(2.2) scaleX('+flip+')'},
+{left:'50%',top:'60%',transform:'translate(-50%,-50%) scale(1.8) scaleX('+flip+')',offset:.12},
+{left:cxp+'%',top:cyp+'%',transform:'translate(-50%,-50%) scale(1.5) scaleX('+flip+')',offset:.55},
+{left:cxp+'%',top:cyp+'%',transform:'translate(-50%,-50%) scale(1.6) scaleX('+flip+') rotate('+(flip*-8)+'deg)',offset:.66},
+{left:cxp+'%',top:cyp+'%',transform:'translate(-50%,-50%) scale(1.5) scaleX('+flip+') rotate('+(flip*6)+'deg)',offset:.76},
+{left:'50%',top:'56%',transform:'translate(-50%,-50%) scale(2.2) scaleX('+flip+')',offset:1}
+],{duration:2300,easing:'ease-in-out'});
+setTimeout(function(){
+chunk.classList.add('gone');
+cl.animate([{transform:'translate(0,0)'},{transform:'translate(-5px,2px)'},{transform:'translate(4px,-1px)'},{transform:'translate(0,0)'}],{duration:500});
+if(cl.querySelectorAll('.rb-chunk:not(.gone)').length===0)setTimeout(function(){cl.remove();},400);
+},1300);
+up.onfinish=function(){b.style.animation='rabbithop 1.6s ease-in-out infinite';b.style.zIndex='';page._soaring=0;};
+},true);
