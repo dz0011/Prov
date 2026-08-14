@@ -86,3 +86,47 @@ return _t.apply(this,arguments);
 };
 })();
 </script>
+/* ============ SHARE MENU: PDF via Email/Signal, photo via Instagram, Save PDF ============ */
+(function(){
+function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=function(){rej();};document.head.appendChild(s);});}
+function ensurePdfLib(){return window.html2pdf?Promise.resolve():loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');}
+function docHTML(kind,id){
+var h='<div style="font-family:Georgia,serif;color:#222;background:#fff;padding:6px">';
+if(kind==='work'){var p=getP(id);if(!p)return '<p>Missing work</p>';var es=entriesOf(id);
+h+='<h1 style="font-size:26px;margin:0 0 2px">'+(p.number?String(p.number).padStart(2,'0')+' — ':'')+esc(p.title)+'</h1>'
++'<p style="margin:0 0 12px;color:#666;font-size:12px">'+esc(p.medium||'')+(p.started?' · started '+esc(p.started):'')+' · Provenance art journal</p>';
+es.forEach(function(e){h+='<div style="margin:0 0 14px;border-top:1px solid #ddd;padding-top:10px"><p style="margin:0 0 6px;font-size:12px;color:#666">'+fmtDateTime(e.date)+'</p>'+(e.text?'<p style="margin:0 0 8px;font-size:14px">'+esc(e.text)+'</p>':'')+((e.images||[]).map(function(s){return '<img src="'+s+'" style="max-width:100%;border-radius:6px;margin:0 6px 6px 0">';}).join(''))+'</div>';});
+}else{var e=state.entries.find(function(x){return x.id===id;});if(!e)return '<p>Missing entry</p>';var p2=getP(e.paintingId);
+h+='<h1 style="font-size:22px;margin:0 0 2px">Provenance — shared entry</h1><p style="margin:0 0 10px;color:#666;font-size:12px">'+(p2?(p2.number?String(p2.number).padStart(2,'0')+' — ':'')+esc(p2.title)+' · ':'')+fmtDateTime(e.date)+'</p>'+(e.text?'<p style="font-size:14px;margin:0 0 8px">'+esc(e.text)+'</p>':'')+((e.images||[]).map(function(s){return '<img src="'+s+'" style="max-width:100%;border-radius:6px;margin:0 6px 6px 0">';}).join(''));}
+return h+'</div>';
+}
+function makePDF(kind,id){toast('Building PDF…');
+return ensurePdfLib().then(function(){
+var wrap=document.createElement('div');wrap.innerHTML=docHTML(kind,id);document.body.appendChild(wrap);
+var opt={margin:[8,8,10,8],filename:'provenance.pdf',image:{type:'jpeg',quality:.92},html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff'},jsPDF:{unit:'mm',format:'a4'}};
+return window.html2pdf().set(opt).from(wrap).output('blob').then(function(b){wrap.remove();return b;},function(){wrap.remove();return null;});
+},function(){toast('⚠ Needs internet the first time to load the PDF engine');return null;});}
+function shareBlob(blob,name,type,note){if(!blob)return;
+var file=new File([blob],name,{type:type});
+if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Provenance',text:note||''}).catch(function(){});}
+else{var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('Saved to downloads — attach it from there');}}
+function firstImageBlob(kind,id){var src=null;
+if(kind==='work'){var es=entriesOf(id);for(var i=0;i<es.length;i++){if((es[i].images||[]).length){src=es[i].images[0];break;}}}
+else{var e=state.entries.find(function(x){return x.id===id;});src=e&&(e.images||[])[0];}
+if(!src)return Promise.resolve(null);return fetch(src).then(function(r){return r.blob();}).catch(function(){return null;});}
+function openShareMenu(kind,id){closeModal();window.__shareCtx={kind:kind,id:id};
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:400px"><div class="panel-head"><h2>Share</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div><div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="shm-pdf" style="justify-content:flex-start">📄 Save PDF to device</button>'
++'<button type="button" class="btn ghost" data-action="shm-email" style="justify-content:flex-start">📧 Email as PDF</button>'
++'<button type="button" class="btn ghost" data-action="shm-signal" style="justify-content:flex-start">💬 Signal as PDF</button>'
++'<button type="button" class="btn ghost" data-action="shm-insta" style="justify-content:flex-start">📸 Instagram (photo)</button>'
++'</div><p class="hint" style="margin:10px 0 0">Email & Signal attach the PDF via your phone\u2019s share sheet; Instagram gets a photo (it can\u2019t take PDFs).</p></div></div>');}
+window.shareWorkPDF=function(id){openShareMenu('work',id);};
+window.shareEntryPDF=function(id){openShareMenu('entry',id);};
+document.addEventListener('click',function(e){var c=window.__shareCtx;if(!c)return;
+if(e.target.closest('[data-action="shm-pdf"]')){e.stopImmediatePropagation();closeModal();makePDF(c.kind,c.id).then(function(bl){if(!bl)return;var a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='provenance.pdf';a.click();toast('✓ PDF saved');});return;}
+if(e.target.closest('[data-action="shm-email"]')){e.stopImmediatePropagation();closeModal();makePDF(c.kind,c.id).then(function(bl){shareBlob(bl,'provenance.pdf','application/pdf','Provenance — my art journal');});return;}
+if(e.target.closest('[data-action="shm-signal"]')){e.stopImmediatePropagation();closeModal();makePDF(c.kind,c.id).then(function(bl){shareBlob(bl,'provenance.pdf','application/pdf');});return;}
+if(e.target.closest('[data-action="shm-insta"]')){e.stopImmediatePropagation();closeModal();firstImageBlob(c.kind,c.id).then(function(bl){shareBlob(bl,'provenance.jpg','image/jpeg');});return;}
+},true);
+})();
