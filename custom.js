@@ -130,3 +130,16 @@ if(e.target.closest('[data-action="shm-signal"]')){e.stopImmediatePropagation();
 if(e.target.closest('[data-action="shm-insta"]')){e.stopImmediatePropagation();closeModal();firstImageBlob(c.kind,c.id).then(function(bl){shareBlob(bl,'provenance.jpg','image/jpeg');});return;}
 },true);
 })();
+/* Double the invisible left/right tap-circles in the photo viewer */
+function zoomLB(){
+var lb=document.getElementById('lightbox');if(!lb)return;
+var els=[].slice.call(lb.querySelectorAll('.lb-btn,[data-lb-nav]'));
+if(!els.length){lb.querySelectorAll('*').forEach(function(el){
+var cs=getComputedStyle(el);
+if(cs.borderRadius.indexOf('50%')!==-1&&(cs.backgroundColor==='rgba(0, 0, 0, 0)'||cs.backgroundColor==='transparent')&&el.offsetWidth>10&&el.offsetWidth<160)els.push(el);});}
+els.forEach(function(el){if(el.dataset.zoomed)return;el.dataset.zoomed='1';
+var w=el.offsetWidth||64,h=el.offsetHeight||64;
+el.style.width=(w*2)+'px';el.style.height=(h*2)+'px';});
+}
+if(typeof showLB==='function'&&!showLB._zoom){var _sl=showLB;showLB=function(){var r=_sl.apply(this,arguments);setTimeout(zoomLB,40);return r;};showLB._zoom=1;}
+document.addEventListener('click',function(e){if(e.target.closest('#lightbox'))setTimeout(zoomLB,40);},true);
