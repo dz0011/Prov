@@ -11,3 +11,16 @@
 100%{transform:translate(-50%,-50%) scale(2.2) scaleX(var(--flip,1)) rotate(0)}
 }
 body:not(.fabs-go) .float-btn{display:none!important}
+/* Slower, magical entrance to the rabbit page */
+@keyframes rb-enter{0%{opacity:0;transform:scale(1.06);filter:brightness(1.25) saturate(1.3) blur(6px)}55%{opacity:1;filter:brightness(1.08) saturate(1.1) blur(1px)}100%{opacity:1;transform:scale(1);filter:none}}
+#rabbit-page{animation:rb-enter 1.15s cubic-bezier(.2,.8,.25,1) both}
+@keyframes rb-sparkle{0%{opacity:0;transform:scale(.4) rotate(0deg)}30%{opacity:.95}100%{opacity:0;transform:scale(1.6) rotate(45deg)}}
+.rb-sparkle{position:absolute;pointer-events:none;animation:rb-sparkle 1.3s ease-out both}
+/* Chomp v2: reach-stretch + head-down tilt so the mouth meets the flower */
+@keyframes rabbitchomp{
+0%{transform:translate(-50%,-50%) translate(0px,0px) scale(2.2) scaleX(var(--flip,1)) rotate(0deg)}
+30%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.3) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-14deg + var(--tilt,0deg)))}
+55%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.12) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-6deg + var(--tilt,0deg)))}
+70%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.26) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-12deg + var(--tilt,0deg)))}
+100%{transform:translate(-50%,-50%) translate(0px,0px) scale(2.2) scaleX(var(--flip,1)) rotate(0deg)}
+}
