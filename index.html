@@ -8709,3 +8709,58 @@ photoPaint(cv.getContext('2d'),cv.width,cv.height,window.__poScene,window.vT||0)
 <script src="custom.js"></script>
 </body>
 </html>
+<style>
+/* Rabbit page: GPU-composited, no flicker */
+#rabbit-page,#rabbit-page div,#rabbit-page span{will-change:transform,opacity;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+#rabbit-page{transform:translateZ(0)}
+</style>
+<script>
+/* ===== Rabbit: static distant mountains + clickable sun + smooth flights ===== */
+(function(){
+if(window.__rabbitSun)return;window.__rabbitSun=1;
+function addScenery(page){
+if(!page.querySelector('.rb-mountains-far')&&!page.querySelector('.rb-mountains')){
+var far=document.createElement('div');far.className='rb-mountains-far';
+far.style.cssText='position:absolute;left:0;right:0;top:56%;height:6%;transform:translateZ(0);background:#9db1c4;opacity:.5;clip-path:polygon(0 100%,0 60%,5% 38%,10% 55%,16% 22%,23% 50%,30% 30%,37% 58%,45% 15%,53% 48%,60% 32%,68% 55%,76% 20%,84% 50%,91% 36%,100% 55%,100% 100%);pointer-events:none;';
+page.insertBefore(far,page.firstChild);
+var near=document.createElement('div');near.className='rb-mountains-near';
+near.style.cssText='position:absolute;left:0;right:0;top:58%;height:5%;transform:translateZ(0);background:#7d92a8;opacity:.6;clip-path:polygon(0 100%,0 70%,8% 50%,16% 68%,25% 42%,34% 66%,44% 38%,54% 64%,64% 46%,74% 66%,84% 50%,92% 66%,100% 58%,100% 100%);pointer-events:none;';
+page.insertBefore(near,page.firstChild);
+}
+if(!page.querySelector('.rb-sun')){
+var sun=document.createElement('div');sun.className='rb-sun';sun.textContent='☀️';
+sun.style.cssText='position:absolute;top:5%;right:7%;font-size:46px;cursor:pointer;text-shadow:0 0 18px rgba(255,214,110,.85);z-index:5;';
+page.appendChild(sun);
+}
+}
+var mo=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var added=muts[i].addedNodes;for(var j=0;j<added.length;j++){var n=added[j];if(n.nodeType===1&&n.id==='rabbit-page')addScenery(n);}}});
+mo.observe(document.body,{childList:true});
+function findBunny(page){var ds=page.querySelectorAll('div');for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰')return ds[i];}return null;}
+/* Sun click: leap up, vanish tiny inside the sun, drop back to center */
+window.addEventListener('click',function(e){
+var page=document.getElementById('rabbit-page');if(!page)return;
+if(page._soaring){e.stopImmediatePropagation();e.preventDefault();return;}
+var sun=e.target.closest?e.target.closest('.rb-sun'):null;
+if(!sun)return;
+e.stopImmediatePropagation();e.preventDefault();
+var b=findBunny(page);if(!b)return;
+page._soaring=1;
+try{b.getAnimations().forEach(function(a){a.cancel();});}catch(err){}
+b.style.animation='none';b.style.zIndex=9;
+var pr=page.getBoundingClientRect(),sr=sun.getBoundingClientRect();
+var sx=(sr.left+sr.width/2-pr.left)/pr.width*100, sy=(sr.top+sr.height/2-pr.top)/pr.height*100;
+var anim=b.animate([
+{left:'50%',top:'56%',opacity:1,transform:'translate(-50%,-50%) scale(2.2)',offset:0,easing:'ease-in'},
+{left:sx+'%',top:(sy+6)+'%',opacity:1,transform:'translate(-50%,-50%) scale(1.1)',offset:.32,easing:'ease-in'},
+{left:sx+'%',top:sy+'%',opacity:0,transform:'translate(-50%,-50%) scale(0.12)',offset:.44,easing:'linear'},
+{left:sx+'%',top:sy+'%',opacity:0,transform:'translate(-50%,-50%) scale(0.12)',offset:.56,easing:'ease-out'},
+{left:((50+sx)/2)+'%',top:((56+sy)/2)+'%',opacity:1,transform:'translate(-50%,-50%) scale(1.2)',offset:.8,easing:'ease-out'},
+{left:'50%',top:'56%',opacity:1,transform:'translate(-50%,-50%) scale(2.2)',offset:1}
+],{duration:2600,easing:'ease-in-out'});
+setTimeout(function(){sun.animate([{transform:'scale(1)'},{transform:'scale(1.25)'},{transform:'scale(1)'}],{duration:500,easing:'ease-out'});},1100);
+anim.onfinish=function(){b.style.animation='rabbithop 1.6s ease-in-out infinite';b.style.zIndex='';b.style.opacity='';page._soaring=0;};
+},true);
+})();
+</script>
+</body>
+</html>
