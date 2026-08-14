@@ -8865,3 +8865,47 @@ anim.onfinish=function(){b.style.animation='rabbithop 1.6s ease-in-out infinite'
 </script>
 </body>
 </html>
+<script>
+/* Rabbit page: 20% grass, orangey-blue stone mountains, ONE tappable sun */
+(function(){
+var GRAS=['🌿','🌾','️','','🌱'];
+function fixPage(page){
+  /* 1) Remove the old CSS-circle sun; keep the tappable ☀️ */
+  var ds=page.querySelectorAll('div');
+  for(var i=0;i<ds.length;i++){var d=ds[i];
+    if(!d.className && !d.children.length && !(d.textContent||'').trim() &&
+       (d.style.backgroundColor||'').replace(/\s+/g,'')==='rgb(255,233,168)'){
+      d.parentNode.removeChild(d);
+    }
+  }
+  if(!page.querySelector('.rb-sun')){
+    var sun=document.createElement('div');sun.className='rb-sun';sun.textContent='☀️';
+    sun.style.cssText='position:absolute;top:5%;right:7%;font-size:46px;cursor:pointer;text-shadow:0 0 18px rgba(255,214,110,.85);z-index:5;';
+    page.appendChild(sun);
+  }
+  /* 2) Grass to 20% opacity */
+  var sp=page.querySelectorAll('span');
+  for(var j=0;j<sp.length;j++){var t=(sp[j].textContent||'').trim();
+    if(GRAS.indexOf(t)!==-1)sp[j].style.opacity='0.2';
+  }
+  /* 3) Orangey-blue stone mountains */
+  var far=page.querySelector('.rb-mountains-far');
+  if(!far){far=document.createElement('div');far.className='rb-mountains-far';
+    far.style.cssText='position:absolute;left:0;right:0;top:62%;height:6%;transform:translateY(-100%);pointer-events:none;';
+    page.insertBefore(far,page.firstChild);}
+  far.style.background='linear-gradient(to top,#5d6d80 0%,#7d8fa3 55%,#c99b7f 100%)';
+  far.style.opacity='.8';
+  if(!far.style.clipPath)far.style.clipPath='polygon(0 100%,0 60%,5% 38%,10% 55%,16% 22%,23% 50%,30% 30%,37% 58%,45% 15%,53% 48%,60% 32%,68% 55%,76% 20%,84% 50%,91% 36%,100% 55%,100% 100%)';
+  var near=page.querySelector('.rb-mountains-near');
+  if(!near){near=document.createElement('div');near.className='rb-mountains-near';
+    near.style.cssText='position:absolute;left:0;right:0;top:62%;height:5%;transform:translateY(-100%);pointer-events:none;';
+    page.insertBefore(near,far.nextSibling);}
+  near.style.background='linear-gradient(to top,#46586c 0%,#5d6d80 50%,#a87f68 100%)';
+  near.style.opacity='.85';
+  if(!near.style.clipPath)near.style.clipPath='polygon(0 100%,0 70%,8% 50%,16% 68%,25% 42%,34% 66%,44% 38%,54% 64%,64% 46%,74% 66%,84% 50%,92% 66%,100% 58%,100% 100%)';
+}
+var mo=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var added=muts[i].addedNodes;for(var j=0;j<added.length;j++){var n=added[j];if(n.nodeType===1&&n.id==='rabbit-page')fixPage(n);}}});
+mo.observe(document.body,{childList:true});
+var cur=document.getElementById('rabbit-page');if(cur)fixPage(cur);
+})();
+</script>
