@@ -8508,8 +8508,6 @@ setTimeout(function(){b.style.transition='';b.style.animation='rabbithop 1.6s ea
 </script>
 </body>
 </html>
-<link rel="stylesheet" href="custom.css">
-<script src="custom.js"></script>
 <script>
 /* ===== Viewer v10: theme-independent interior, even 3x speeds, endless variety ===== */
 (function(){
@@ -8611,5 +8609,103 @@ setTimeout(function(){cl.animate([{transform:'translate(0,0) rotate(0)'},{transf
 anim.onfinish=function(){b.style.animation='rabbithop 1.6s ease-in-out infinite';b.style.zIndex='';page._soaring=0;};
 },true);
 </script>
+</body>
+</html>
+<script>
+/* ===== FINAL OVERRIDES: instant sign-in + photos-only Viewer ===== */
+(function(){
+if(window.__finalOverrides)return;window.__finalOverrides=1;
+/* --- 1) Sign-in renders instantly from cache; cloud syncs in background --- */
+var KEY='prov.journalcache.v1';
+function cacheNow(){
+try{localStorage.setItem(KEY,JSON.stringify(state));}
+catch(e){try{var slim={paintings:state.paintings||[],entries:(state.entries||[]).map(function(en){var o={};for(var k in en)o[k]=en[k];o.images=[];return o;})};localStorage.setItem(KEY,JSON.stringify(slim));}catch(e2){}}
+}
+if(typeof window.loadJournal==='function'){
+var _lj=window.loadJournal;
+window.loadJournal=function(){
+try{var c=JSON.parse(localStorage.getItem(KEY)||'null');if(c&&(c.paintings||c.entries)){state=c;setTimeout(function(){if(typeof render==='function')render();},0);}}catch(e){}
+var p;try{p=_lj.call(this);}catch(e){p=Promise.resolve();}
+Promise.resolve(p).then(function(){cacheNow();if(typeof render==='function')render();}).catch(function(){});
+return Promise.resolve();
+};
+}
+if(typeof window.save==='function'){var _sv=window.save;window.save=function(){var r=_sv.apply(this,arguments);Promise.resolve(r).then(cacheNow).catch(function(){});return r;};}
+/* --- 2) Viewer = ONLY melted pieces of your photos (geometric wall only for empty guests) --- */
+function hasPhotos(){for(var i=0;i<(state.entries||[]).length;i++){if(((state.entries[i].images)||[]).length)return true;}return false;}
+function photoScene(){
+var rnd=mulberry32((Math.random()*1e9)>>>0);
+var s={base:[],shards:[],grain:[]};
+var srcs=[];
+(state.entries||[]).forEach(function(e){(e.images||[]).forEach(function(src){if(srcs.indexOf(src)===-1)srcs.push(src);});});
+srcs=srcs.slice(0,6);
+srcs.forEach(function(src,si){
+var ang=si*2.399963+rnd()*.6;
+var cx=.5+Math.cos(ang)*(.14+rnd()*.2), cy=.5+Math.sin(ang)*(.14+rnd()*.2);
+s.base.push({src:src,ready:null,fx:cx+(rnd()-.5)*.3,fy:cy+(rnd()-.5)*.3,rot:(rnd()-.5)*.8,dw:.9+rnd()*.7,rh:.7+rnd()*.6,sx:rnd()*.5,sy:rnd()*.5,sw:.5,sh:.5});
+var pa={src:src,ready:null,fx:cx+(rnd()-.5)*.3,fy:cy+(rnd()-.5)*.3,frags:[]};
+var nf=9+((rnd()*5)|0);
+for(var f=0;f<nf;f++){pa.frags.push({sx:rnd()*.7,sy:rnd()*.7,sw:.3+rnd()*.45,sh:.3+rnd()*.45,ox:(rnd()-.5)*.6,oy:(rnd()-.5)*.6,dw:.16+rnd()*.3,rh:.6+rnd()*.9,rot:(rnd()-.5)*1.2,al:.10+rnd()*.16,blur:rnd()<.5?(1+rnd()*3):0,dsp:.03+rnd()*.05,dph:rnd()*6.28});}
+s.shards.push(pa);
+});
+for(var g=0;g<120;g++)s.grain.push({fx:rnd(),fy:rnd(),r:.5+rnd()*2,a:.02+rnd()*.05,light:rnd()<.5});
+return s;
+}
+function photoPaint(x,W,H,s,t){
+var k=W/540;
+x.globalCompositeOperation='source-over';x.globalAlpha=1;x.filter='none';
+x.fillStyle='#16181d';x.fillRect(0,0,W,H);
+(s.base||[]).forEach(function(b){
+if(!b.ready)return;var iw=b.ready.width||4,ih=b.ready.height||3;var dw=b.dw*W,dh=dw*b.rh;
+x.save();x.translate(b.fx*W,b.fy*H);x.rotate(b.rot||0);
+x.filter='blur('+(26*k).toFixed(1)+'px)';x.globalAlpha=.45;
+x.drawImage(b.ready,(b.sx||0)*iw,(b.sy||0)*ih,Math.max(1,(b.sw||.5)*iw),Math.max(1,(b.sh||.5)*ih),-dw/2,-dh/2,dw,dh);
+x.restore();});
+x.filter='none';x.globalAlpha=1;
+(s.shards||[]).forEach(function(pa){
+if(!pa.ready)return;var iw=pa.ready.width||4,ih=pa.ready.height||3;
+(pa.frags||[]).forEach(function(fr){
+var dw=(fr.dw||.2)*W,dh=dw*(fr.rh||1);
+var dx=Math.sin(t*(fr.dsp||.04)+(fr.dph||0))*.012*W, dy=Math.cos(t*(fr.dsp||.04)*.8+(fr.dph||0))*.012*H;
+x.save();x.translate((pa.fx+(fr.ox||0))*W+dx,(pa.fy+(fr.oy||0))*H+dy);x.rotate(fr.rot||0);
+if(fr.blur)x.filter='blur('+(fr.blur*k).toFixed(1)+'px)';
+x.globalAlpha=Math.min(.34,fr.al||.18);
+x.drawImage(pa.ready,(fr.sx||0)*iw,(fr.sy||0)*ih,Math.max(1,(fr.sw||.3)*iw),Math.max(1,(fr.sh||.3)*ih),-dw/2,-dh/2,dw,dh);
+x.restore();});});
+x.save();x.filter='blur('+(6*k).toFixed(1)+'px)';
+x.globalAlpha=.22;x.drawImage(x.canvas,0,0,W,H,4*k,5*k,W,H);
+x.globalAlpha=.15;x.drawImage(x.canvas,0,0,W,H,-5*k,-4*k,W,H);
+x.restore();
+x.globalCompositeOperation='source-over';x.globalAlpha=1;x.filter='none';
+(s.grain||[]).forEach(function(g3){x.fillStyle=g3.light?'rgba(244,242,236,'+g3.a+')':'rgba(0,0,0,'+g3.a+')';x.beginPath();x.arc(g3.fx*W,g3.fy*H,g3.r,0,7);x.fill();});
+var vg=x.createRadialGradient(W/2,H/2,H/3,W/2,H/2,H*.85);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.30)');x.fillStyle=vg;x.fillRect(0,0,W,H);
+}
+var _prevDV=window.drawViewer,_prevPC=window.paintCurrent;
+function photoDraw(){
+var cv=document.getElementById('viewer-canvas');if(!cv)return;
+try{cancelAnimationFrame(vRaf);}catch(e){}
+cv.width=540;cv.height=675;
+var s=photoScene();window.__poScene=s;window.vScene=s;window.vT=0;
+var paint=function(){photoPaint(cv.getContext('2d'),cv.width,cv.height,s,window.vT||0);};
+paint();
+var seen={};
+function reg(o){if(!o.src||seen[o.src])return;seen[o.src]=1;var im=new Image();im.onload=function(){s.base.forEach(function(b){if(b.src===o.src)b.ready=im;});s.shards.forEach(function(p){if(p.src===o.src)p.ready=im;});paint();};im.src=o.src;}
+s.base.forEach(reg);s.shards.forEach(reg);
+if(typeof VSPEEDS!=='undefined'&&typeof vSpeedIdx!=='undefined'&&VSPEEDS[vSpeedIdx]>0){var loop=function(){vRaf=requestAnimationFrame(loop);if(document.hidden)return;window.vT=(window.vT||0)+0.016*VSPEEDS[vSpeedIdx];paint();};vRaf=requestAnimationFrame(loop);}
+if(typeof syncSpeedIco==='function')syncSpeedIco();
+}
+window.drawViewer=function(){
+if(!hasPhotos()){return _prevDV?_prevDV.apply(this,arguments):undefined;}
+photoDraw();
+};
+window.paintCurrent=function(){
+if(!hasPhotos()){return _prevPC?_prevPC.apply(this,arguments):undefined;}
+var cv=document.getElementById('viewer-canvas');if(!cv||!window.__poScene)return;
+photoPaint(cv.getContext('2d'),cv.width,cv.height,window.__poScene,window.vT||0);
+};
+})();
+</script>
+<link rel="stylesheet" href="custom.css">
+<script src="custom.js"></script>
 </body>
 </html>
