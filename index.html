@@ -9540,3 +9540,30 @@ if(typeof drawViewer==='function'&&!drawViewer._vrowFix){var _d=drawViewer;drawV
 setTimeout(fixRow,100);setTimeout(fixRow,600);
 })();
 </script>
+<style>
+/* Viewer controls: save LEFT · refresh CENTER · speed RIGHT */
+#view .vcontrols{display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:center;margin-top:14px;padding:0!important;position:relative!important}
+#view .vcontrols>*{justify-self:center}
+#vspeed-ico{position:static!important;transform:none!important;margin:0!important}
+#viewer-save{display:none!important}
+</style>
+<script>
+(function(){
+function fixRow(){
+var rem=document.querySelector('#view [data-action="viewer-remix"]');
+if(!rem)return;
+var row=rem.parentNode;
+row.classList.add('vcontrols');
+var sav=document.querySelector('#view [data-action="viewer-save2"]');
+var spd=document.getElementById('vspeed-ico');
+if(spd&&spd.parentNode!==row)row.appendChild(spd);
+if(sav&&sav.parentNode!==row)row.insertBefore(sav,row.firstChild);
+if(sav)sav.style.gridColumn='1';
+rem.style.gridColumn='2';
+if(spd)spd.style.gridColumn='3';
+}
+if(typeof drawViewer==='function'&&!drawViewer._rowFix){var _d=drawViewer;drawViewer=function(){var r=_d.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,300);return r;};drawViewer._rowFix=1;}
+if(typeof render==='function'&&!render._rowFix){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(fixRow,0);return r;};render._rowFix=1;}
+setTimeout(fixRow,100);setTimeout(fixRow,600);
+})();
+</script>
