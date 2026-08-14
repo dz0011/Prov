@@ -7166,7 +7166,6 @@ o.innerHTML='<div style="position:absolute;top:7%;left:10%;width:70px;height:70p
 +'<div style="position:absolute;top:24%;left:22%;font-size:34px;opacity:.8">☁️</div>'
 +grass+flowers
 +'<div style="position:absolute;left:50%;top:56%;--rs:'+scale+';transform:translate(-50%,-50%) scale('+scale+');font-size:60px;animation:rabbithop 1.6s ease-in-out infinite">🐇</div>'
-+'<div style="position:absolute;bottom:3%;left:0;right:0;text-align:center;color:#2E5A24;font:600 14px \'Space Grotesk\',sans-serif">a rabbit having a good time · tap anywhere to go back</div>';
 document.body.appendChild(o);
 o.addEventListener('click',function(){o.remove();});
 }
@@ -7370,8 +7369,8 @@ if(!page)return;
 e.stopPropagation();e.preventDefault();
 var rect=page.getBoundingClientRect();
 var cx=rect.left+rect.width/2, cy=rect.top+rect.height*0.56;
-var R=Math.min(rect.width,rect.height)*0.30;
-var dx=e.clientX-cx, dy=e.clientY-cy;
+var R=rect.width/2;
+  var dx=e.clientX-cx, dy=e.clientY-cy;
 if(Math.sqrt(dx*dx+dy*dy)<=R){
 var b=null,ds=page.querySelectorAll('div');
 for(var i=0;i<ds.length;i++){var tx=(ds[i].textContent||'').trim();if(tx==='🐇'||tx==='🐰'){b=ds[i];break;}}
@@ -7527,7 +7526,7 @@ if(!page)return;
 e.stopPropagation();e.preventDefault();
 var rect=page.getBoundingClientRect();
 var cx=rect.left+rect.width/2, cy=rect.top+rect.height*0.56;
-var R=Math.min(rect.width,rect.height)*0.30;
+var R=rect.width/2;
 var dx=e.clientX-cx, dy=e.clientY-cy;
 if(Math.sqrt(dx*dx+dy*dy)<=R){
 var b=findBunny(page);
@@ -8440,3 +8439,26 @@ if(el.textContent!==ic){el.textContent=ic;}
 el.title=label;el.setAttribute('aria-label',label);
 }
 </script>
+<style>
+/* No blue tap-flash on the rabbit page */
+#rabbit-page{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+/* + buttons never appear before the page content */
+body:not(.fabs-ok) .float-btn{opacity:0!important;pointer-events:none!important}
+</style>
+<script>
+/* Speed animal always matches movement speed (rock/turtle/rabbit/rocket) */
+function syncSpeedIco(){
+var el=document.getElementById('vspeed-ico');if(!el)return;
+var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));
+if(el.textContent!==ic)el.textContent=ic;
+var L=vSpeedIdx===0?'Stopped (tap to start)':('Speed '+vSpeedIdx+' of 10');
+el.title=L;el.setAttribute('aria-label',L);
+}
+/* Reveal + buttons only after content has loaded */
+(function(){
+function reveal(){setTimeout(function(){document.body.classList.add('fabs-ok');},250);}
+if(document.readyState==='complete')reveal();else window.addEventListener('load',reveal);
+})();
+</script>
+</body>
+</html>
