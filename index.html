@@ -8424,3 +8424,38 @@ if(document.readyState==='complete')reveal();else window.addEventListener('load'
 </body>
 </html>
 <style>#install-pop,#install-pill,#install-btn{display:none!important}</style>
+<script>
+/* Rabbit: smile ONLY on the rabbit; dead zone inside circle; outside closes */
+window.addEventListener('click',function(e){
+var page=document.getElementById('rabbit-page');if(!page)return;
+var rect=page.getBoundingClientRect();
+var cx=rect.left+rect.width/2, cy=rect.top+rect.height*0.56;
+var R=rect.width/2;
+var dx=e.clientX-cx,dy=e.clientY-cy;
+if(Math.sqrt(dx*dx+dy*dy)<=R){
+e.stopImmediatePropagation();e.preventDefault();
+var b=null,ds=page.querySelectorAll('div');
+for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰'){b=ds[i];break;}}
+if(b){var br=b.getBoundingClientRect();
+if(e.clientX>=br.left-8&&e.clientX<=br.right+8&&e.clientY>=br.top-8&&e.clientY<=br.bottom+8){
+if(!b._busy){b._busy=1;b.style.animation='rabbitshake .7s ease';b.textContent='🐰';setTimeout(function(){b.textContent='🐇';b.style.animation='rabbithop 1.6s ease-in-out infinite';b._busy=0;},900);}
+}}
+}
+},true);
+/* Back button: close an open photo first, else go to the previous app page */
+function __pushLB(){try{history.pushState({lb:1},'');}catch(e){}}
+['showLB','openLightbox','openLightboxFromPainting'].forEach(function(n){if(typeof window[n]==='function'){var _f=window[n];window[n]=function(){var r=_f.apply(this,arguments);__pushLB();return r;};}});
+window.addEventListener('popstate',function(e){
+var lb=document.getElementById('lightbox');
+var vis=lb&&lb.style.display!=='none'&&!lb.hidden;
+if(vis&&typeof hideLB==='function'){e.stopImmediatePropagation();e.preventDefault();hideLB();}
+},true);
+/* Speed icon: rock → turtle → rabbit → rocket across the 10 speeds */
+function syncSpeedIco(){var el=document.getElementById('vspeed-ico');if(!el)return;var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));if(el.textContent!==ic)el.textContent=ic;var L=vSpeedIdx===0?'Stopped (tap to start)':('Speed '+vSpeedIdx+' of 10');el.title=L;el.setAttribute('aria-label',L);}
+/* Search bars: plain text, never password-like */
+function __fixSearch(){var els=document.querySelectorAll('input.search,#q,#wk-search');els.forEach(function(i){i.setAttribute('type','text');i.setAttribute('autocomplete','off');i.setAttribute('autocapitalize','on');i.removeAttribute('inputmode');});}
+if(typeof render==='function'&&!render._searchFix){var _r=render;render=function(){var r=_r.apply(this,arguments);__fixSearch();return r;};render._searchFix=1;}
+__fixSearch();
+</script>
+</body>
+</html>
