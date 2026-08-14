@@ -9142,3 +9142,78 @@ toast(ios()?'Safari: tap Share, then "Add to Home Screen"':'Browser menu ⋮ →
 },true);
 })();
 </script>
+<script>
+/* 1) Top Viewer tab while on Viewer = same slow faded refresh as the bottom button */
+(function(){
+var snap=null,start=0;
+var _pc=paintCurrent;
+window.paintCurrent=function(){
+_pc.apply(this,arguments);
+if(snap){var cv=document.getElementById('viewer-canvas');if(!cv){snap=null;return;}
+var p=(performance.now()-start)/900;
+if(p>=1){snap=null;}else{var x=cv.getContext('2d');x.save();x.globalAlpha=Math.pow(1-p,1.35);x.drawImage(snap,0,0,cv.width,cv.height);x.restore();}}
+};
+var _dv=drawViewer;
+window.drawViewer=function(){
+var cv=document.getElementById('viewer-canvas');
+if(cv&&cv.width>4){try{var s2=document.createElement('canvas');s2.width=cv.width;s2.height=cv.height;s2.getContext('2d').drawImage(cv,0,0);snap=s2;start=performance.now();}catch(e){}}
+_dv.apply(this,arguments);
+var moving=typeof VSPEEDS!=='undefined'&&typeof vSpeedIdx!=='undefined'&&VSPEEDS[vSpeedIdx]>0;
+if(snap&&!moving){(function fr(){if(!snap)return;paintCurrent();requestAnimationFrame(fr);})();}
+};
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="goto"]');
+if(!t||t.dataset.view!=='viewer')return;
+if(typeof view==='undefined'||view.name!=='viewer')return; /* normal navigation from other pages */
+e.stopImmediatePropagation();e.preventDefault();
+drawViewer(); /* same faded refresh as the bottom button */
+},true);
+})();
+/* 2) Tiny save icon left of the refresh button: confirm, then download JPG of the frame */
+(function(){
+var _vh=viewerHTML;
+window.viewerHTML=function(){
+var h=_vh();
+if(h.indexOf('viewer-save2')===-1){
+h=h.replace('<button class="btn ghost" data-action="viewer-remix"','<button class="btn ghost" data-action="viewer-save2" aria-label="Save frame as JPG" title="Save frame as JPG" style="border-radius:999px;padding:10px 14px;font-size:13px;line-height:1">💾</button><button class="btn ghost" data-action="viewer-remix"');
+}
+return h;
+};
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="viewer-save2"]');if(!t)return;
+e.stopImmediatePropagation();e.preventDefault();
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:360px">'
++'<div class="panel-head"><h2 style="font-size:20px">Save this frame?</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="etext" style="margin:0 0 14px">Download the current Viewer frame as a JPG image.</p>'
++'<div style="display:flex;gap:8px;justify-content:flex-end">'
++'<button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
++'<button type="button" class="btn primary" data-action="viewer-save2-go">⬇ Download JPG</button>'
++'</div></div></div>');
+},true);
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="viewer-save2-go"]');if(!t)return;
+e.stopImmediatePropagation();e.preventDefault();
+closeModal();
+var cv=document.getElementById('viewer-canvas');if(!cv)return;
+try{
+var a=document.createElement('a');
+a.href=cv.toDataURL('image/jpeg',0.92);
+a.download='provenance-viewer-'+new Date().toISOString().slice(0,10)+'.jpg';
+document.body.appendChild(a);a.click();a.remove();
+toast('💾 Frame saved as JPG');
+}catch(e2){toast('Could not save the frame');}
+},true);
+})();
+/* 3) "days worked on" stat quieter than the title text */
+(function(){
+var _pd=paintingDetailHTML;
+window.paintingDetailHTML=function(id){
+var h=_pd(id);
+return h.replace(/<span><b>(\d+)<\/b> (day|days) worked on<\/span>/g,'<span class="stat-days"><b>$1</b> $2 worked on</span>');
+};
+})();
+</script>
+<style>
+.pd-stats .stat-days{color:var(--ink-soft);opacity:.72}
+.pd-stats .stat-days b{color:inherit}
+</style>
