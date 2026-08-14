@@ -71,3 +71,21 @@ try{var a=document.createElement('a');a.download='provenance-viewer.png';a.href=
 }
 if(typeof render==='function'){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(addButtons,60);return r;};}
 })();
+<script>
+/* No "Guest mode…" toast while the sign-in screen is showing
+   (fixes: guest in browser -> install -> first open lands on sign-in with a stray guest popup) */
+(function(){
+if(typeof window.toast!=='function')return;
+var _t=window.toast;
+window.toast=function(msg){
+try{
+var a=document.getElementById('auth-screen');
+var authOn=a&&getComputedStyle(a).display!=='none';
+if(authOn&&typeof msg==='string'&&/guest mode/i.test(msg))return;
+}catch(e){}
+return _t.apply(this,arguments);
+};
+})();
+</script>
+</body>
+</html>
