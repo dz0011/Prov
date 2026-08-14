@@ -9102,3 +9102,43 @@ mo.observe(document.body,{childList:true});
 var cur=document.getElementById('rabbit-page');if(cur){decorate(cur);pauseV();}
 })();
 </script>
+<script>
+/* ---- "Install as App" inside the ⚙ settings menu (fallback if the pop-up never shows) ---- */
+(function(){
+var deferred=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;},true);
+function installed(){
+try{if((JSON.parse(localStorage.getItem('provenance.install')||'{}')).installed)return true;}catch(e){}
+try{if(localStorage.getItem('provenance.installed')==='1')return true;}catch(e){}
+if(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)return true;
+if(window.navigator.standalone)return true;
+return false;
+}
+function ios(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+function getBtn(){var m=document.getElementById('menu');return m?m.querySelector('[data-action="install-app"]'):null;}
+function addBtn(){
+var m=document.getElementById('menu');if(!m||m.querySelector('[data-action="install-app"]'))return;
+var so=m.querySelector('[data-action="sign-out"]');
+var b=document.createElement('button');
+b.dataset.action='install-app';
+b.innerHTML=installed()?'📥 Installed ✓':'📥 Install as App';
+if(so)m.insertBefore(b,so);else m.appendChild(b);
+if(installed())b.disabled=true;
+}
+addBtn();
+window.addEventListener('appinstalled',function(){
+try{localStorage.setItem('provenance.installed','1');}catch(e){}
+var b=getBtn();if(b){b.innerHTML='📥 Installed ✓';b.disabled=true;}
+});
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="install-app"]');
+if(!t)return;
+var m=document.getElementById('menu');if(m)m.classList.remove('open');
+if(installed()){if(typeof toast==='function')toast('Already installed ✓');return;}
+if(deferred){deferred.prompt();deferred.userChoice.then(function(){deferred=null;});}
+else if(typeof toast==='function'){
+toast(ios()?'Safari: tap Share, then "Add to Home Screen"':'Browser menu ⋮ → "Add to Home screen" / "Install app"');
+}
+},true);
+})();
+</script>
