@@ -52,15 +52,15 @@ function addButtons(){
 var host=document.querySelector('[data-action="viewer-remix"]');if(!host)return;
 if(!document.getElementById('pin-view')){
 var pin=document.createElement('button');pin.id='pin-view';pin.type='button';pin.className='btn ghost';pin.style.borderRadius='999px';
-pin.innerHTML=localStorage.getItem(KEY)?'📌 Pinned':'📌 Pin this view';
+pin.innerHTML='📌';pin.style.opacity=localStorage.getItem(KEY)?'1':'.55';
 host.parentNode.insertBefore(pin,host.nextSibling);
 pin.addEventListener('click',function(){
-if(localStorage.getItem(KEY)){try{localStorage.removeItem(KEY);}catch(e){}pin.innerHTML='📌 Pin this view';toast('Unpinned \u2014 refreshes will vary again');}
-else{try{localStorage.setItem(KEY,JSON.stringify(window.vScene,function(k,v){return k==='ready'?undefined:v;}));pin.innerHTML='📌 Pinned';toast('Pinned \u2014 this arrangement now stays');}catch(e){toast('Could not pin this view');}}
+if(localStorage.getItem(KEY)){try{localStorage.removeItem(KEY);}catch(e){}pin.style.opacity='.55';toast('Unpinned \u2014 refreshes will vary again');}
+else{try{localStorage.setItem(KEY,JSON.stringify(window.vScene,function(k,v){return k==='ready'?undefined:v;}));pin.style.opacity='1';toast('Pinned \u2014 this arrangement now stays');}catch(e){toast('Could not pin this view');}}
 });
 }
 if(!document.getElementById('poster-view')){
-var po=document.createElement('button');po.id='poster-view';po.type='button';po.className='btn ghost';po.style.borderRadius='999px';po.innerHTML='🖼 Save poster';
+var po=document.createElement('button');po.id='poster-view';po.type='button';po.className='btn ghost';po.style.borderRadius='999px';po.innerHTML='🖼';
 var pin2=document.getElementById('pin-view');
 host.parentNode.insertBefore(po,pin2?pin2.nextSibling:host.nextSibling);
 po.addEventListener('click',function(){
