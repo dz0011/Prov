@@ -143,3 +143,13 @@ el.style.width=(w*2)+'px';el.style.height=(h*2)+'px';});
 }
 if(typeof showLB==='function'&&!showLB._zoom){var _sl=showLB;showLB=function(){var r=_sl.apply(this,arguments);setTimeout(zoomLB,40);return r;};showLB._zoom=1;}
 document.addEventListener('click',function(e){if(e.target.closest('#lightbox'))setTimeout(zoomLB,40);},true);
+/* + buttons only exist after the page decides it's not the Viewer */
+if(typeof render==='function'&&!render._fabGo){
+var _fr=render;
+render=function(){var r=_fr.apply(this,arguments);
+var shell=document.getElementById('app-shell');
+var hide=(view&&view.name==='viewer')||(shell&&shell.style.display==='none');
+document.body.classList.toggle('fabs-go',!hide);
+return r;};
+render._fabGo=1;
+}
