@@ -153,3 +153,71 @@ document.body.classList.toggle('fabs-go',!hide);
 return r;};
 render._fabGo=1;
 }
+/* ===== Rabbit page: weighted random clouds, fixed distant mountains, cloud-soar ===== */
+(function(){
+/* 1 or 6 clouds = 5% each; 2–5 split the remaining 90% equally (22.5% each) */
+function cloudCount(){
+var r=Math.random()*100;
+if(r<5)return 1;
+if(r<10)return 6;
+return 2+Math.min(3,Math.floor((r-10)/22.5));
+}
+/* The mountains are a fixed silhouette — identical every single visit */
+var MOUNTAIN='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 160" preserveAspectRatio="none"><path d="M0 160 L0 120 L90 70 L170 110 L260 40 L340 96 L430 60 L520 118 L610 30 L700 92 L790 55 L880 112 L970 48 L1060 100 L1140 70 L1200 110 L1200 160 Z" fill="#7d8fa3" opacity="0.5"/><path d="M0 160 L0 140 L120 100 L240 132 L360 92 L480 138 L600 84 L720 134 L840 96 L960 140 L1080 108 L1200 136 L1200 160 Z" fill="#5d6d80" opacity="0.6"/></svg>');
+function decorate(page){
+var ds=page.querySelectorAll('div'),i;
+for(i=0;i<ds.length;i++){if((ds[i].textContent||'').trim()==='☁️')ds[i].parentNode.removeChild(ds[i]);}
+if(!page.querySelector('.rb-mountains')){
+var m=document.createElement('div');m.className='rb-mountains';
+m.style.cssText='position:absolute;left:0;right:0;top:62%;height:12%;transform:translateY(-98%);background:url("'+MOUNTAIN+'") center bottom/100% 100% no-repeat;pointer-events:none;';
+page.insertBefore(m,page.firstChild);
+}
+if(!page.querySelector('.rb-cloud')){
+var n=cloudCount();
+for(var c=0;c<n;c++){
+var cl=document.createElement('div');cl.className='rb-cloud';cl.textContent='☁️';
+cl.style.cssText='position:absolute;top:'+(4+Math.random()*30)+'%;left:'+(4+Math.random()*88)+'%;font-size:'+(26+Math.random()*26)+'px;opacity:'+(0.7+Math.random()*0.25).toFixed(2)+';cursor:pointer;';
+page.appendChild(cl);
+}
+}
+}
+var mo=new MutationObserver(function(muts){
+for(var i=0;i<muts.length;i++){var added=muts[i].addedNodes;
+for(var j=0;j<added.length;j++){var n=added[j];if(n.nodeType===1&&n.id==='rabbit-page')decorate(n);}}
+});
+mo.observe(document.body,{childList:true});
+/* Tap a cloud: soar up, try to eat it, fail, hop home; cloud just wobbles */
+window.addEventListener('click',function(e){
+var page=document.getElementById('rabbit-page');if(!page)return;
+if(page._soaring){e.stopImmediatePropagation();e.preventDefault();return;}
+var cl=e.target.closest?e.target.closest('.rb-cloud'):null;
+if(!cl)return;
+e.stopImmediatePropagation();e.preventDefault();
+var b=null,ds=page.querySelectorAll('div');
+for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰'){b=ds[i];break;}}
+if(!b)return;
+page._soaring=1;b.style.zIndex=9;
+var rs=parseFloat(getComputedStyle(b).getPropertyValue('--rs'))||2.2;
+var pr=page.getBoundingClientRect(),cr=cl.getBoundingClientRect();
+var cxp=(cr.left+cr.width/2-pr.left)/pr.width*100, cyp=(cr.top+cr.height/2-pr.top)/pr.height*100;
+var base='translate(-50%,-50%) scale(', lean=(cxp>50?1:-1);
+b.style.animation='none';
+var anim=b.animate([
+{left:'50%',top:'56%',transform:base+rs+')',offset:0},
+{left:'50%',top:'60%',transform:base+(rs*0.8)+') rotate('+(lean*-6)+'deg)',offset:.12},
+{left:((50+cxp)/2)+'%',top:((56+cyp)/2+6)+'%',transform:base+(rs*1.45)+') rotate('+(lean*10)+'deg)',offset:.38},
+{left:cxp+'%',top:cyp+'%',transform:base+(rs*0.65)+') rotate('+(lean*4)+'deg)',offset:.55},
+{left:cxp+'%',top:cyp+'%',transform:base+(rs*0.72)+') rotate('+(lean*-8)+'deg)',offset:.63},
+{left:cxp+'%',top:cyp+'%',transform:base+(rs*0.65)+') rotate('+(lean*6)+'deg)',offset:.71},
+{left:'50%',top:'56%',transform:base+rs+') rotate(0deg)',offset:1}
+],{duration:2300,easing:'ease-in-out'});
+setTimeout(function(){cl.animate([
+{transform:'translate(0,0) rotate(0deg)'},
+{transform:'translate(-6px,2px) rotate(-4deg)'},
+{transform:'translate(5px,-2px) rotate(3deg)'},
+{transform:'translate(-3px,1px) rotate(-2deg)'},
+{transform:'translate(0,0) rotate(0deg)'}
+],{duration:600,easing:'ease-in-out'});},1250);
+anim.onfinish=function(){b.style.animation='rabbithop 1.6s ease-in-out infinite';b.style.zIndex='';page._soaring=0;};
+},true);
+})();
