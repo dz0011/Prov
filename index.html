@@ -9048,3 +9048,57 @@ walk.onfinish=function(){b.style.left='50%';b.style.zIndex='';page._soaring=0;};
 </script>
 </body>
 </html>
+<style>#rabbit-page *{will-change:auto!important}</style>
+<script>
+/* Rabbit scenery v3: realistic distant mountains, hieroglyph sky band, clean sun, perf guards */
+(function(){
+if(window.__rabbitV11)return;window.__rabbitV11=1;
+var FAR="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 100' preserveAspectRatio='none'%3E%3Cpath d='M0 100 L0 62 40 48 70 58 95 34 120 52 150 26 185 50 215 40 245 56 275 30 300 50 330 44 360 58 400 24 430 48 470 36 500 54 540 28 575 50 610 42 650 56 700 26 735 50 775 38 810 54 850 30 890 52 930 40 970 56 1010 32 1050 52 1090 44 1130 58 1170 46 1200 54 L1200 100 Z' fill='%239fb0c2' opacity='.55'/%3E%3Cpath d='M150 26 l8 10 -8 -3 -7 3 Z M400 24 l8 10 -8 -3 -7 3 Z M540 28 l8 10 -8 -3 -7 3 Z M700 26 l8 10 -8 -3 -7 3 Z M850 30 l8 10 -8 -3 -7 3 Z' fill='%23ffffff' opacity='.5'/%3E%3C/svg%3E";
+var NEAR="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 100' preserveAspectRatio='none'%3E%3Cpath d='M0 100 L0 74 60 60 110 72 160 52 220 70 280 56 340 72 400 58 460 74 520 60 580 74 640 58 700 74 760 60 820 74 880 62 940 76 1000 62 1060 76 1120 64 1200 74 L1200 100 Z' fill='%235f7488' opacity='.62'/%3E%3Cpath d='M160 52 l7 9 -7 -3 -6 3 Z M400 58 l7 9 -7 -3 -6 3 Z M640 58 l7 9 -7 -3 -6 3 Z M880 62 l7 9 -7 -3 -6 3 Z' fill='%23e8eef4' opacity='.35'/%3E%3C/svg%3E";
+var GLYPHS="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='48' viewBox='0 0 170 48'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' opacity='.8'%3E%3Ccircle cx='18' cy='24' r='7'/%3E%3Ccircle cx='18' cy='24' r='1.6' fill='%23ffffff' stroke='none'/%3E%3Cpath d='M48 16 a9 9 0 1 0 10 13 a7 7 0 1 1 -10 -13'/%3E%3Cpath d='M84 30 l7 -12 l7 12 z'/%3E%3Cpath d='M112 18 v12 M106 24 h12'/%3E%3Cpath d='M134 30 l4 -6 l4 6 l4 -6'/%3E%3C/g%3E%3C/svg%3E";
+var PUFF='position:absolute;border-radius:50%;background:radial-gradient(circle at 36% 32%, #ffffff 0%, #f6fafc 46%, rgba(246,250,252,0) 74%), radial-gradient(circle at 68% 62%, #ffffff 0%, #edf4f8 50%, rgba(237,244,248,0) 76%);box-shadow:0 2px 6px rgba(150,175,195,.16);';
+function decorate(page){
+  var ds=page.querySelectorAll('div'),i,t;
+  for(i=ds.length-1;i>=0;i--){t=(ds[i].textContent||'').trim();
+    if(t==='☁️'||t==='☀️'||t==='🌞')ds[i].parentNode.removeChild(ds[i]);
+    else if(ds[i].className!=='rb-sun'&&ds[i].style.background&&ds[i].style.background.indexOf('255, 233, 168')!==-1)ds[i].parentNode.removeChild(ds[i]);}
+  var old=page.querySelectorAll('.rb-mountains,.rb-mountains-far,.rb-mountains-near');
+  for(i=old.length-1;i>=0;i--)old[i].parentNode.removeChild(old[i]);
+  if(!page.querySelector('.rb-glyphs')){
+    var g=document.createElement('div');g.className='rb-glyphs';
+    g.style.cssText='position:absolute;top:2.5%;left:0;right:0;height:7%;background:url("'+GLYPHS+'") repeat-x center/170px 48px;opacity:.14;pointer-events:none;';
+    page.insertBefore(g,page.firstChild);
+  }
+  var far=document.createElement('div');far.className='rb-mountains-far';
+  far.style.cssText='position:absolute;left:0;right:0;top:62%;height:8%;transform:translateY(-100%);background:url("'+FAR+'") center bottom/100% 100% no-repeat;pointer-events:none;';
+  page.insertBefore(far,page.firstChild);
+  var near=document.createElement('div');near.className='rb-mountains-near';
+  near.style.cssText='position:absolute;left:0;right:0;top:62%;height:5.5%;transform:translateY(-100%);background:url("'+NEAR+'") center bottom/100% 100% no-repeat;pointer-events:none;';
+  page.insertBefore(near,page.firstChild);
+  var sun=page.querySelector('.rb-sun');
+  if(!sun){sun=document.createElement('div');sun.className='rb-sun';page.appendChild(sun);}
+  sun.textContent='';
+  sun.style.cssText='position:absolute;top:6%;left:9%;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 35% 35%, #FFF7DA 0%, #FFE9A8 45%, #F6C55B 100%);box-shadow:0 0 46px 18px rgba(255,233,168,.5);cursor:pointer;';
+  if(!page.querySelector('.rb-cloud2')){
+    for(var c=0;c<2;c++){
+      var w=110+Math.random()*60;
+      var cl=document.createElement('div');cl.className='rb-cloud2';cl.dataset.chunks='3';
+      cl.style.cssText='position:absolute;top:'+(10+Math.random()*20).toFixed(1)+'%;left:'+(8+Math.random()*70).toFixed(1)+'%;width:'+w.toFixed(0)+'px;height:'+(w*.4).toFixed(0)+'px;';
+      cl.innerHTML='<span class="rb-chunk" style="'+PUFF+'left:0;top:30%;width:46%;height:62%"></span><span class="rb-chunk" style="'+PUFF+'left:26%;top:0;width:52%;height:92%"></span><span class="rb-chunk" style="'+PUFF+'left:56%;top:26%;width:44%;height:66%"></span><span style="'+PUFF+'left:10%;top:46%;width:80%;height:46%;pointer-events:none"></span>';
+      page.appendChild(cl);
+    }
+  }
+}
+/* Pause the Viewer's animation loop while the rabbit page covers the screen */
+function pauseV(){try{if(typeof vRaf!=='undefined'&&vRaf){cancelAnimationFrame(vRaf);vRaf=0;}}catch(e){}}
+function resumeV(){try{if(typeof vLoop==='function'&&typeof VSPEEDS!=='undefined'&&typeof vSpeedIdx!=='undefined'&&VSPEEDS[vSpeedIdx]>0&&!vRaf){vPrev=performance.now();vLast=0;vRaf=requestAnimationFrame(vLoop);}}catch(e){}}
+var mo=new MutationObserver(function(muts){
+  for(var i=0;i<muts.length;i++){var j;
+    for(j=0;j<muts[i].addedNodes.length;j++){var a=muts[i].addedNodes[j];if(a.nodeType===1&&a.id==='rabbit-page'){decorate(a);pauseV();}}
+    for(j=0;j<muts[i].removedNodes.length;j++){var r=muts[i].removedNodes[j];if(r.nodeType===1&&r.id==='rabbit-page')resumeV();}
+  }
+});
+mo.observe(document.body,{childList:true});
+var cur=document.getElementById('rabbit-page');if(cur){decorate(cur);pauseV();}
+})();
+</script>
