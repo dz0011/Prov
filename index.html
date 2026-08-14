@@ -8909,3 +8909,27 @@ mo.observe(document.body,{childList:true});
 var cur=document.getElementById('rabbit-page');if(cur)fixPage(cur);
 })();
 </script>
+<style>
+/* Tiny but legible notice inside the install prompt */
+.iu-note{font-size:11px;line-height:1.3;color:var(--ink-soft,#4A4B54);opacity:.9;margin-top:3px}
+body.dark .iu-note{color:#B9B7AE}
+</style>
+<script>
+(function(){
+function addNoteTo(txt){
+if(txt&&!txt.querySelector('.iu-note')){
+var n=document.createElement('span');
+n.className='iu-note';
+n.textContent='Install may take up to 30 sec.';
+txt.appendChild(n);
+}
+}
+function addNotes(){
+addNoteTo(document.querySelector('#install-uni .iu-txt'));
+addNoteTo(document.querySelector('#install-pill .ip-txt'));
+addNoteTo(document.querySelector('#install-pop .ip-txt'));
+}
+addNotes();
+new MutationObserver(addNotes).observe(document.body,{childList:true});
+})();
+</script>
