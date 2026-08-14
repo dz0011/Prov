@@ -9383,3 +9383,39 @@ try{var s2=document.createElement('canvas');s2.width=cv.width;s2.height=cv.heigh
 },true);
 })();
 </script>
+<style>
+/* The Extra-melt toggle is confusing — hide it; melty blending is now always on */
+#menu [data-action="viewer-melt"]{display:none!important}
+</style>
+<script>
+(function(){
+/* ---- Melty blending: always on, identical on every paint path ---- */
+document.body.classList.remove('viewer-melt'); /* kill the old toggle state */
+function melt(x,W,H){
+var sc=W/1080;
+x.save();
+x.filter='blur('+(9*sc)+'px)';
+x.globalAlpha=.18;
+x.drawImage(x.canvas,0,0,W,H, 3*sc,4*sc,W,H);
+x.drawImage(x.canvas,0,0,W,H,-4*sc,-3*sc,W,H);
+x.restore();
+}
+if(typeof window.vPaintScene==='function'){
+var _v=window.vPaintScene;
+window.vPaintScene=function(x,W,H,s,t){_v(x,W,H,s,t);melt(x,W,H);};
+}
+if(typeof window.paintCurrent==='function'){
+var _p=window.paintCurrent;
+window.paintCurrent=function(){_p.apply(this,arguments);var cv=document.getElementById('viewer-canvas');if(cv)melt(cv.getContext('2d'),cv.width,cv.height);};
+}
+/* ---- About window: tap empty space inside the panel = next slide ---- */
+document.addEventListener('click',function(e){
+var next=document.getElementById('about-next');
+if(!next)return;                                   /* About not open */
+var panel=e.target.closest('.panel');
+if(!panel||!panel.contains(next))return;          /* tap outside the About panel */
+if(e.target.closest('button, a, input, textarea, select, [data-action]'))return; /* a control, not empty space */
+next.click();
+},true);
+})();
+</script>
