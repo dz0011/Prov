@@ -10,3 +10,4 @@
 70%{transform:translate(-50%,-50%) scale(2.05) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*8deg))}
 100%{transform:translate(-50%,-50%) scale(2.2) scaleX(var(--flip,1)) rotate(0)}
 }
+body:not(.fabs-go) .float-btn{display:none!important}
