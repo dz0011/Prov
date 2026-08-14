@@ -8459,3 +8459,29 @@ __fixSearch();
 </script>
 </body>
 </html>
+<script>
+/* Speed icon: rock (0-3) -> turtle (4-7) -> rabbit (8-10); no rocket */
+function syncSpeedIco(){var el=document.getElementById('vspeed-ico');if(!el)return;var ic=vSpeedIdx<=3?'🪨':(vSpeedIdx<=7?'🐢':'🐇');if(el.textContent!==ic)el.textContent=ic;var L=vSpeedIdx===0?'Stopped (tap to start)':('Speed '+vSpeedIdx+' of 10');el.title=L;el.setAttribute('aria-label',L);}
+/* While the bunny is out eating, ignore taps so the page never closes */
+window.addEventListener('click',function(ev){if(window.__rabbitEat){ev.stopImmediatePropagation();ev.preventDefault();}},true);
+/* Tap a flower -> bunny hops over, eats it, hops home */
+window.addEventListener('pointerdown',function(e){
+var page=document.getElementById('rabbit-page');if(!page)return;
+var f=e.target&&e.target.closest?e.target.closest('span'):null;
+if(!f||f.parentNode!==page)return;
+if(!/🌼||🌺||🌷||💮|🪻/.test(f.textContent||''))return;
+var b=null,ds=page.querySelectorAll('div');
+for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰'){b=ds[i];break;}}
+if(!b||b._eating)return;
+b._eating=1;window.__rabbitEat=1;
+var pr=page.getBoundingClientRect(),fr=f.getBoundingClientRect();
+b.style.transition='left .45s ease-in-out, top .45s ease-in-out';
+b.style.left=((fr.left+fr.width/2-pr.left)/pr.width*100)+'%';
+b.style.top=((fr.top+fr.height/2-pr.top)/pr.height*100)+'%';
+setTimeout(function(){f.textContent='';},480);            /* crunch: flower gone */
+setTimeout(function(){b.style.left='50%';b.style.top='56%';},750);  /* hop home */
+setTimeout(function(){b.style.transition='';b._eating=0;window.__rabbitEat=0;},1250);
+},true);
+</script>
+</body>
+</html>
