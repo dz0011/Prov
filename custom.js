@@ -472,3 +472,46 @@ if(!window.__photoScene||!state.paintings.length){return _prevPC?_prevPC.apply(t
 photoPaint(cv.getContext('2d'),cv.width,cv.height,window.__photoScene,window.vT||0);
 };
 })();
+/* ===== Rabbit v6: thin far mountains (always identical), tappable clouds, random facing ===== */
+(function(){
+if(window.__rabbitV6)return;window.__rabbitV6=1;
+var MOUNTAIN='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 90" preserveAspectRatio="none"><path d="M0 90 L0 66 L60 44 L110 60 L170 26 L230 56 L300 34 L360 62 L430 20 L500 54 L560 36 L620 60 L690 24 L760 56 L820 40 L880 62 L950 30 L1010 56 L1080 42 L1140 60 L1200 50 L1200 90 Z" fill="#8fa2b5" opacity="0.45"/><path d="M0 90 L0 78 L90 62 L180 76 L270 58 L360 78 L450 54 L540 76 L630 60 L720 78 L810 62 L900 78 L990 64 L1080 78 L1200 70 L1200 90 Z" fill="#6d7f92" opacity="0.5"/></svg>');
+function findBunny(page){var ds=page.querySelectorAll('div');for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰')return ds[i];}return null;}
+function cloudCount(){var r=Math.random()*100;if(r<5)return 1;if(r<10)return 6;return 2+Math.min(3,Math.floor((r-10)/22.5));}
+function decorate(page){
+var ds=page.querySelectorAll('div'),i;
+for(i=0;i<ds.length;i++){if((ds[i].textContent||'').trim()==='☁️'&&!ds[i].className)ds[i].parentNode.removeChild(ds[i]);}
+var m=page.querySelector('.rb-mountains');
+if(!m){m=document.createElement('div');m.className='rb-mountains';page.insertBefore(m,page.firstChild);}
+m.style.cssText='position:absolute;left:0;right:0;top:62%;height:6%;transform:translateY(-100%);background:url("'+MOUNTAIN+'") center bottom/100% 100% no-repeat;pointer-events:none;opacity:.85;';
+if(!page.querySelector('.rb-cloud')){var n=cloudCount();for(var c=0;c<n;c++){var cl=document.createElement('div');cl.className='rb-cloud';cl.textContent='☁️';cl.style.cssText='position:absolute;top:'+(7+Math.random()*27)+'%;left:'+(4+Math.random()*88)+'%;font-size:'+(26+Math.random()*26)+'px;opacity:'+(0.7+Math.random()*0.25).toFixed(2)+';cursor:pointer;';page.appendChild(cl);}}
+var b=findBunny(page);
+if(b&&!b._faced){b._faced=1;b.style.setProperty('--flip',Math.random()<.5?'1':'-1');}
+}
+var mo=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var added=muts[i].addedNodes;for(var j=0;j<added.length;j++){var n=added[j];if(n.nodeType===1&&n.id==='rabbit-page')decorate(n);}}});
+mo.observe(document.body,{childList:true});
+/* Tap a cloud: soar up, try to eat it, give up, hop home; cloud wobbles, unharmed */
+window.addEventListener('click',function(e){
+var page=document.getElementById('rabbit-page');if(!page)return;
+if(page._soaring){e.stopImmediatePropagation();e.preventDefault();return;}
+var cl=e.target.closest?e.target.closest('.rb-cloud'):null;
+if(!cl)return;
+e.stopImmediatePropagation();e.preventDefault();
+var b=findBunny(page);if(!b)return;
+page._soaring=1;b.style.zIndex=9;b.style.animation='none';
+var pr=page.getBoundingClientRect(),cr=cl.getBoundingClientRect();
+var cxp=(cr.left+cr.width/2-pr.left)/pr.width*100, cyp=Math.max(10,(cr.top+cr.height/2-pr.top)/pr.height*100);
+var flip=(cxp>50?-1:1);
+var anim=b.animate([
+{left:'50%',top:'56%',transform:'translate(-50%,-50%) scale(2.2) scaleX('+flip+')'},
+{left:'50%',top:'60%',transform:'translate(-50%,-50%) scale(1.8) scaleX('+flip+') rotate('+(flip*-6)+'deg)',offset:.12},
+{left:((50+cxp)/2)+'%',top:((56+cyp)/2+6)+'%',transform:'translate(-50%,-50%) scale(3.1) scaleX('+flip+') rotate('+(flip*10)+'deg)',offset:.38},
+{left:cxp+'%',top:cyp+'%',transform:'translate(-50%,-50%) scale(1.5) scaleX('+flip+') rotate('+(flip*4)+'deg)',offset:.55},
+{left:cxp+'%',top:cyp+'%',transform:'translate(-50%,-50%) scale(1.6) scaleX('+flip+') rotate('+(flip*-8)+'deg)',offset:.66},
+{left:cxp+'%',top:cyp+'%',transform:'translate(-50%,-50%) scale(1.5) scaleX('+flip+') rotate('+(flip*6)+'deg)',offset:.76},
+{left:'50%',top:'56%',transform:'translate(-50%,-50%) scale(2.2) scaleX('+flip+')'}
+],{duration:2300,easing:'ease-in-out'});
+setTimeout(function(){cl.animate([{transform:'translate(0,0) rotate(0)'},{transform:'translate(-6px,2px) rotate(-4deg)'},{transform:'translate(5px,-2px) rotate(3deg)'},{transform:'translate(0,0) rotate(0)'}],{duration:600,easing:'ease-in-out'});},1250);
+anim.onfinish=function(){b.style.animation='rabbithop 1.6s ease-in-out infinite';b.style.zIndex='';page._soaring=0;};
+},true);
+})();
