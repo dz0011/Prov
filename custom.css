@@ -4,3 +4,9 @@
 #pin-view{order:-1}
 #poster-view{order:1}
 #pin-view,#poster-view{width:40px;height:36px;padding:0;font-size:15px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center}
+@keyframes rabbitchomp{
+0%{transform:translate(-50%,-50%) scale(2.2) scaleX(var(--flip,1)) rotate(0)}
+40%{transform:translate(-50%,-50%) scale(2.4) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-12deg))}
+70%{transform:translate(-50%,-50%) scale(2.05) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*8deg))}
+100%{transform:translate(-50%,-50%) scale(2.2) scaleX(var(--flip,1)) rotate(0)}
+}
