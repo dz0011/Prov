@@ -8933,3 +8933,45 @@ addNotes();
 new MutationObserver(addNotes).observe(document.body,{childList:true});
 })();
 </script>
+<script>
+/* ===== Smooth, faded Viewer refresh (no abrupt flash) ===== */
+(function(){
+if(typeof drawViewer!=='function')return;
+var _dv=drawViewer;
+drawViewer=function(){
+var cv=document.getElementById('viewer-canvas');
+var snap=null;
+/* 1) snapshot the current painting BEFORE rebuilding */
+if(cv&&cv.width>4&&cv.height>4){
+try{
+snap=document.createElement('canvas');
+snap.width=cv.width;snap.height=cv.height;
+snap.getContext('2d').drawImage(cv,0,0);
+}catch(e){snap=null;}
+}
+/* 2) rebuild the new scene underneath */
+_dv.apply(this,arguments);
+if(!snap||!cv)return;
+try{vSnap=null;}catch(e){}           /* disable any older fade so we don't double-fade */
+/* 3) paint the snapshot ONCE synchronously so there is never a blank frame */
+var x=cv.getContext('2d');
+x.save();x.globalAlpha=1;x.drawImage(snap,0,0,cv.width,cv.height);x.restore();
+/* 4) crossfade old → new over ~0.9s with easing */
+if(cv.__fadeRaf)cancelAnimationFrame(cv.__fadeRaf);
+var start=performance.now(),dur=900;
+function ease(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+function frame(){
+var p=Math.min(1,(performance.now()-start)/dur);
+var x2=cv.getContext('2d');
+x2.save();
+x2.globalAlpha=1-ease(p);
+x2.drawImage(snap,0,0,cv.width,cv.height);
+x2.restore();
+if(p<1){cv.__fadeRaf=requestAnimationFrame(frame);}else{cv.__fadeRaf=0;}
+}
+cv.__fadeRaf=requestAnimationFrame(frame);
+};
+})();
+</script>
+</body>
+</html>
