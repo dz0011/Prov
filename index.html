@@ -9567,3 +9567,24 @@ if(typeof render==='function'&&!render._rowFix){var _r=render;render=function(){
 setTimeout(fixRow,100);setTimeout(fixRow,600);
 })();
 </script>
+<script>
+/* ==== Viewer controls: save LEFT-middle · refresh DEAD-center · speed RIGHT-middle ==== */
+(function(){
+function fixRow(){
+var rem=document.querySelector('#view [data-action="viewer-remix"]');
+if(!rem)return;
+var row=rem.parentNode;
+row.style.cssText='display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;margin-top:14px;padding:0;position:static';
+var sav=row.querySelector('[data-action="viewer-save2"]')||document.querySelector('#view [data-action="viewer-save2"]');
+var spd=document.getElementById('vspeed-ico');
+if(sav&&sav.parentNode!==row)row.insertBefore(sav,row.firstChild);
+if(spd&&spd.parentNode!==row)row.appendChild(spd);
+if(sav){sav.style.gridColumn='1';sav.style.justifySelf='center';sav.style.margin='0';}
+rem.style.gridColumn='2';rem.style.justifySelf='center';rem.style.margin='0';
+if(spd){spd.style.gridColumn='3';spd.style.justifySelf='center';spd.style.position='static';spd.style.transform='none';spd.style.right='auto';spd.style.top='auto';spd.style.margin='0';}
+}
+if(typeof render==='function'&&!render._rowFix2){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,120);return r;};render._rowFix2=1;}
+if(typeof drawViewer==='function'&&!drawViewer._rowFix2){var _d=drawViewer;drawViewer=function(){var r=_d.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,120);return r;};drawViewer._rowFix2=1;}
+setTimeout(fixRow,150);setTimeout(fixRow,600);
+})();
+</script>
