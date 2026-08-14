@@ -221,3 +221,46 @@ setTimeout(function(){cl.animate([
 anim.onfinish=function(){b.style.animation='rabbithop 1.6s ease-in-out infinite';b.style.zIndex='';page._soaring=0;};
 },true);
 })();
+/* ===== Rabbit v3: bunny stays fully on-screen; mouth meets the flower ===== */
+window.addEventListener('pointerdown',function(e){
+var page=document.getElementById('rabbit-page');if(!page||page._soaring)return;
+var f=e.target&&e.target.closest?e.target.closest('span'):null;
+if(!f||f.parentNode!==page)return;
+if(!/🌼||🌺||🌷||💮|/.test(f.textContent||''))return;
+var b=null,ds=page.querySelectorAll('div');
+for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰'){b=ds[i];break;}}
+if(!b)return;
+var pr=page.getBoundingClientRect(),fr=f.getBoundingClientRect();
+var fx=fr.left+fr.width/2-pr.left, fy=fr.top+fr.height/2-pr.top;
+var W=141,H=141;                 /* ~64px glyph x 2.2 scale */
+var hw=W/2+44, hh=H/2+44;        /* margin = half bunny + chomp stretch */
+var faceRight=fx>pr.width/2;
+var mouthX=(faceRight?1:-1)*0.32*W, mouthY=0.20*H;
+var cx=fx-mouthX, cy=fy-mouthY;  /* center that puts the mouth on the flower */
+var rx=Math.max(hw,Math.min(pr.width-hw,cx));
+var ry=Math.max(hh,Math.min(pr.height-hh,cy));
+b.style.left=(rx/pr.width*100)+'%';
+b.style.top=(ry/pr.height*100)+'%';
+var sx=fx-(rx+mouthX), sy=fy-(ry+mouthY);   /* residual reach when clamped */
+sx=Math.max(-34,Math.min(34,sx)); sy=Math.max(-26,Math.min(26,sy));
+b.style.setProperty('--sx',sx.toFixed(1)+'px');
+b.style.setProperty('--sy',sy.toFixed(1)+'px');
+var clamped=(rx!==cx||ry!==cy);
+b.style.setProperty('--tilt',(clamped?(faceRight?7:-7):0)+'deg');
+},true);
+/* Magical entrance sparkles + keep soar-clouds low enough to stay on-screen */
+(function(){
+var mo=new MutationObserver(function(muts){
+for(var i=0;i<muts.length;i++){var added=muts[i].addedNodes;
+for(var j=0;j<added.length;j++){var n=added[j];
+if(n.nodeType===1&&n.id==='rabbit-page'){
+var cls=n.querySelectorAll('.rb-cloud');
+for(var c=0;c<cls.length;c++){if(parseFloat(cls[c].style.top)<7)cls[c].style.top=(7+Math.random()*4)+'%';}
+for(var s=0;s<7;s++){
+var sp=document.createElement('span');sp.className='rb-sparkle';sp.textContent=(s%2?'✨':'🌟');
+sp.style.cssText='top:'+(6+Math.random()*40)+'%;left:'+(6+Math.random()*88)+'%;font-size:'+(14+Math.random()*18)+'px;animation-delay:'+(Math.random()*0.5).toFixed(2)+'s';
+n.appendChild(sp);setTimeout(function(el){return function(){el.remove();};}(sp),2000);
+}
+}}}});
+mo.observe(document.body,{childList:true});
+})();
