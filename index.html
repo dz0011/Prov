@@ -7625,16 +7625,6 @@ if(typeof save==='function')save().then(function(){render();});else render();
 function filmImages(pid){var out=[];entriesOf(pid).forEach(function(e){(e.images||[]).forEach(function(src){if(normTag(e,src)==='work')out.push({en:e,src:src,date:e.date});});});return out;}
 function workFilm(p){return filmImages(p.id);}
 function openLightboxFromPainting(pid,idx){var p=getP(pid);if(!p)return;var list=filmImages(pid);lbSet=list.map(function(o){return{src:o.src,cap:numTag(p.number)+' · '+fmtShort(o.date)};});showLB(idx);}
-/* One-time revert: every existing photo goes back to "Work" for every user */
-(function(){
-var done=false;
-function migrate(){
-if(done)return;
-try{if(localStorage.getItem('provenance.tagRevert2')){done=true;return;}}catch(e){}
-if(!state.entries.length)return;
-done=true;
-var changed=false;
-state.entries.forEach(function(e){if(e.imgTags){delete e.imgTags;changed=true;}});
 try{localStorage.setItem('provenance.tagRevert2','1');}catch(e){}
 if(changed&&typeof save==='function')save().then(function(){render();});
 }
@@ -8436,3 +8426,17 @@ if(typeof syncSpeedIco==='function')syncSpeedIco();
 </script>
 </body>
 </html>
+<style>
+/* No blue tap-flash on the rabbit page */
+#rabbit-page{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+</style>
+<script>
+/* Speed animal always matches movement speed (rock/turtle/rabbit/rocket) */
+function syncSpeedIco(){
+var el=document.getElementById('vspeed-ico');if(!el)return;
+var ic=vSpeedIdx===0?'🪨':(vSpeedIdx<=3?'🐢':(vSpeedIdx<=7?'🐇':''));
+var label=vSpeedIdx===0?'Stopped (tap to start)':'Speed '+vSpeedIdx+' of 10';
+if(el.textContent!==ic){el.textContent=ic;}
+el.title=label;el.setAttribute('aria-label',label);
+}
+</script>
