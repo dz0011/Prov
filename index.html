@@ -9322,3 +9322,64 @@ document.addEventListener('contextmenu',function(e){if(cycleTimer&&e.target.clos
 document.addEventListener('click',function(e){if(suppressClick&&e.target.closest('#lightbox')){e.stopPropagation();e.preventDefault();}},true);
 })();
 </script>
+<style>
+/* Rabbit sky: hieroglyphs hover as one coordinated, bendy line */
+.rb-glyphrow{position:absolute;top:2.5%;left:3%;right:3%;height:8%;pointer-events:none;opacity:.16;display:flex;justify-content:space-between;align-items:center;z-index:1}
+.rb-glyph{width:24px;height:24px;background:center/contain no-repeat;animation:glyphfloat 7s ease-in-out infinite;animation-delay:calc(var(--i)*-.6s)}
+@keyframes glyphfloat{0%,100%{transform:translateY(-2px) rotate(-1.5deg)}50%{transform:translateY(4px) rotate(1.5deg)}}
+</style>
+<script>
+/* ===== 1) Floating hieroglyph row (wave, not independent) ===== */
+(function(){
+if(window.__glyphWave)return;window.__glyphWave=1;
+var G=[
+"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Ccircle cx='12' cy='12' r='1.6' fill='%23ffffff' stroke='none'/%3E%3C/g%3E%3C/svg%3E",
+"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15 4a8 8 0 1 0 5 14a10 10 0 0 1-5-14' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E",
+"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 5l7 14H5z' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E",
+"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 5v14M5 12h14' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E",
+"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 16l4-6 4 6 4-6 4 6' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+];
+function buildRow(page){
+var old=page.querySelector('.rb-glyphs');if(old)old.parentNode.removeChild(old);
+if(page.querySelector('.rb-glyphrow'))return;
+var row=document.createElement('div');row.className='rb-glyphrow';
+for(var i=0;i<9;i++){
+var s=document.createElement('span');s.className='rb-glyph';
+s.style.backgroundImage='url("'+G[i%G.length]+'")';
+s.style.setProperty('--i',String(i));
+row.appendChild(s);
+}
+page.insertBefore(row,page.firstChild);
+}
+var mo=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var added=muts[i].addedNodes;for(var j=0;j<added.length;j++){var n=added[j];if(n.nodeType===1&&n.id==='rabbit-page')buildRow(n);}}});
+mo.observe(document.body,{childList:true});
+var cur=document.getElementById('rabbit-page');if(cur)buildRow(cur);
+})();
+/* ===== 2) Every Viewer change crossfades smoothly (no pop/flash) ===== */
+(function(){
+if(window.__viewerFade2)return;window.__viewerFade2=1;
+var snap=null,start=0;
+function loop(){(function fr(){if(!snap)return;window.paintCurrent();if((performance.now()-start)<950)requestAnimationFrame(fr);else snap=null;})();}
+var _pc=window.paintCurrent;
+window.paintCurrent=function(){
+_pc.apply(this,arguments);
+if(snap){var cv=document.getElementById('viewer-canvas');if(!cv){snap=null;return;}
+var p=(performance.now()-start)/850;
+if(p>=1){snap=null;}
+else if(p>0){var x=cv.getContext('2d');x.save();x.globalAlpha=Math.pow(1-p,1.4);x.drawImage(snap,0,0,cv.width,cv.height);x.restore();}}
+};
+var _dv=window.drawViewer;
+window.drawViewer=function(){
+var cv=document.getElementById('viewer-canvas');
+if(cv&&cv.width>4){try{var s2=document.createElement('canvas');s2.width=cv.width;s2.height=cv.height;s2.getContext('2d').drawImage(cv,0,0);snap=s2;start=performance.now();}catch(e){}}
+_dv.apply(this,arguments);
+loop();
+};
+/* taps on the canvas also settle softly */
+document.addEventListener('click',function(e){
+if(!e.target.closest('#viewer-canvas'))return;
+var cv=document.getElementById('viewer-canvas');if(!cv||cv.width<5)return;
+try{var s2=document.createElement('canvas');s2.width=cv.width;s2.height=cv.height;s2.getContext('2d').drawImage(cv,0,0);snap=s2;start=performance.now();loop();}catch(e){}
+},true);
+})();
+</script>
