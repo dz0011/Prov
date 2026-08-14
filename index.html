@@ -9588,3 +9588,29 @@ if(typeof drawViewer==='function'&&!drawViewer._rowFix2){var _d=drawViewer;drawV
 setTimeout(fixRow,150);setTimeout(fixRow,600);
 })();
 </script>
+<style>
+/* Neutralize every old absolute-position hack on the speed creature */
+#vspeed-ico{position:static!important;transform:none!important;right:auto!important;top:auto!important;margin:0!important}
+</style>
+<script>
+/* ==== Viewer controls: save LEFT-middle · refresh DEAD-center · creature RIGHT-middle ==== */
+function fixViewerControls(){
+var rem=document.querySelector('#view [data-action="viewer-remix"]');
+if(!rem)return;
+var row=rem.parentNode;
+var sav=document.querySelector('#view [data-action="viewer-save2"]');
+var spd=document.getElementById('vspeed-ico');
+row.innerHTML='';
+row.style.cssText='display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;margin-top:14px;padding:0;position:relative';
+var c1=document.createElement('div');c1.style.cssText='display:flex;justify-content:center';
+var c2=document.createElement('div');c2.style.cssText='display:flex;justify-content:center';
+var c3=document.createElement('div');c3.style.cssText='display:flex;justify-content:center';
+if(sav)c1.appendChild(sav);
+c2.appendChild(rem);
+if(spd)c3.appendChild(spd);
+row.appendChild(c1);row.appendChild(c2);row.appendChild(c3);
+}
+if(typeof render==='function'&&!render._vcFix){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(fixViewerControls,0);return r;};render._vcFix=1;}
+if(typeof drawViewer==='function'&&!drawViewer._vcFix){var _d=drawViewer;drawViewer=function(){var r=_d.apply(this,arguments);setTimeout(fixViewerControls,0);return r;};drawViewer._vcFix=1;}
+setTimeout(fixViewerControls,100);setTimeout(fixViewerControls,600);
+</script>
