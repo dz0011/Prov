@@ -5385,45 +5385,6 @@ setTimeout(()=>{const t=layer.querySelector('input[name=title]');if(t)t.focus();
 body.dark #install-pill{background:#2A2B33}
 body.dark #install-x{background:#3A3B44}
 </style>
-<script>
-/* Install pill: stays until the user taps the ✕ */
-(function(){
-var KEY='provenance.install';
-function installed(){try{return (JSON.parse(localStorage.getItem(KEY)||'{}')).installed}catch(e){return false}}
-function dismissed(){try{return sessionStorage.getItem(KEY+'.dismissed')==='1'}catch(e){return false}}
-var pill=document.createElement('div');
-pill.id='install-pill';
-pill.innerHTML='<button id="install-x" aria-label="Dismiss install prompt">✕</button>'
-+'<span class="ip-ico">📥</span>'
-+'<span class="ip-txt"><b>Install Provenance</b><span>Keep your studio one tap away</span></span>'
-+'<button id="install-go">Install</button>';
-document.body.appendChild(pill);
-var ip=null;
-function hide(){pill.classList.remove('show');}
-function maybeShow(){
-if(installed()||dismissed())return;
-var shell=document.getElementById('app-shell');
-var authHidden=shell&&shell.style.display==='none';
-if(document.body.classList.contains('show-install')||authHidden||/iphone|ipad|ipod/i.test(navigator.userAgent))pill.classList.add('show');
-}
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ip=e;maybeShow();});
-window.addEventListener('appinstalled',function(){
-try{var st=JSON.parse(localStorage.getItem(KEY)||'{}');st.installed=true;localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}
-hide();
-});
-maybeShow();
-pill.querySelector('#install-x').addEventListener('click',function(e){
-e.stopPropagation();
-try{sessionStorage.setItem(KEY+'.dismissed','1');}catch(e){}
-hide();
-});
-pill.querySelector('#install-go').addEventListener('click',function(e){
-e.stopPropagation();
-if(ip){ip.prompt();}
-else if(typeof toast==='function'){toast(/iphone|ipad|ipod/i.test(navigator.userAgent)?'Tap Share, then "Add to Home Screen"':'Browser menu → "Add to Home screen"');}
-});
-})();
-</script>
 <style>
 /* Speed creature: below the viewer, far right with a small buffer, centered on the refresh button */
 #view .vframe + div{position:relative}
@@ -8462,3 +8423,4 @@ if(document.readyState==='complete')reveal();else window.addEventListener('load'
 </script>
 </body>
 </html>
+<style>#install-pop,#install-pill,#install-btn{display:none!important}</style>
