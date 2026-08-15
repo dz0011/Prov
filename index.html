@@ -7586,6 +7586,9 @@ function filmImages(pid){var out=[];entriesOf(pid).forEach(function(e){(e.images
 function workFilm(p){return filmImages(p.id);}
 function openLightboxFromPainting(pid,idx){var p=getP(pid);if(!p)return;var list=filmImages(pid);lbSet=list.map(function(o){return{src:o.src,cap:numTag(p.number)+' · '+fmtShort(o.date)};});showLB(idx);}
 try{localStorage.setItem('provenance.tagRevert2','1');}catch(e){}
+if(changed&&typeof save==='function')save().then(function(){render();});
+}
+if(typeof render==='function'&&!render._tagMig){var _r=render;render=function(){var r=_r.apply(this,arguments);migrate();return r;};render._tagMig=1;}
 })();
 </script>
 <script>
@@ -9536,78 +9539,4 @@ if(typeof render==='function'&&!render._vrowFix){var _r=render;render=function()
 if(typeof drawViewer==='function'&&!drawViewer._vrowFix){var _d=drawViewer;drawViewer=function(){var r=_d.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,300);return r;};drawViewer._vrowFix=1;}
 setTimeout(fixRow,100);setTimeout(fixRow,600);
 })();
-</script>
-<style>
-/* Viewer controls: save LEFT · refresh CENTER · speed RIGHT */
-#view .vcontrols{display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:center;margin-top:14px;padding:0!important;position:relative!important}
-#view .vcontrols>*{justify-self:center}
-#vspeed-ico{position:static!important;transform:none!important;margin:0!important}
-#viewer-save{display:none!important}
-</style>
-<script>
-(function(){
-function fixRow(){
-var rem=document.querySelector('#view [data-action="viewer-remix"]');
-if(!rem)return;
-var row=rem.parentNode;
-row.classList.add('vcontrols');
-var sav=document.querySelector('#view [data-action="viewer-save2"]');
-var spd=document.getElementById('vspeed-ico');
-if(spd&&spd.parentNode!==row)row.appendChild(spd);
-if(sav&&sav.parentNode!==row)row.insertBefore(sav,row.firstChild);
-if(sav)sav.style.gridColumn='1';
-rem.style.gridColumn='2';
-if(spd)spd.style.gridColumn='3';
-}
-if(typeof drawViewer==='function'&&!drawViewer._rowFix){var _d=drawViewer;drawViewer=function(){var r=_d.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,300);return r;};drawViewer._rowFix=1;}
-if(typeof render==='function'&&!render._rowFix){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(fixRow,0);return r;};render._rowFix=1;}
-setTimeout(fixRow,100);setTimeout(fixRow,600);
-})();
-</script>
-<script>
-/* ==== Viewer controls: save LEFT-middle · refresh DEAD-center · speed RIGHT-middle ==== */
-(function(){
-function fixRow(){
-var rem=document.querySelector('#view [data-action="viewer-remix"]');
-if(!rem)return;
-var row=rem.parentNode;
-row.style.cssText='display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;margin-top:14px;padding:0;position:static';
-var sav=row.querySelector('[data-action="viewer-save2"]')||document.querySelector('#view [data-action="viewer-save2"]');
-var spd=document.getElementById('vspeed-ico');
-if(sav&&sav.parentNode!==row)row.insertBefore(sav,row.firstChild);
-if(spd&&spd.parentNode!==row)row.appendChild(spd);
-if(sav){sav.style.gridColumn='1';sav.style.justifySelf='center';sav.style.margin='0';}
-rem.style.gridColumn='2';rem.style.justifySelf='center';rem.style.margin='0';
-if(spd){spd.style.gridColumn='3';spd.style.justifySelf='center';spd.style.position='static';spd.style.transform='none';spd.style.right='auto';spd.style.top='auto';spd.style.margin='0';}
-}
-if(typeof render==='function'&&!render._rowFix2){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,120);return r;};render._rowFix2=1;}
-if(typeof drawViewer==='function'&&!drawViewer._rowFix2){var _d=drawViewer;drawViewer=function(){var r=_d.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,120);return r;};drawViewer._rowFix2=1;}
-setTimeout(fixRow,150);setTimeout(fixRow,600);
-})();
-</script>
-<style>
-/* Neutralize every old absolute-position hack on the speed creature */
-#vspeed-ico{position:static!important;transform:none!important;right:auto!important;top:auto!important;margin:0!important}
-</style>
-<script>
-/* ==== Viewer controls: save LEFT-middle · refresh DEAD-center · creature RIGHT-middle ==== */
-function fixViewerControls(){
-var rem=document.querySelector('#view [data-action="viewer-remix"]');
-if(!rem)return;
-var row=rem.parentNode;
-var sav=document.querySelector('#view [data-action="viewer-save2"]');
-var spd=document.getElementById('vspeed-ico');
-row.innerHTML='';
-row.style.cssText='display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;margin-top:14px;padding:0;position:relative';
-var c1=document.createElement('div');c1.style.cssText='display:flex;justify-content:center';
-var c2=document.createElement('div');c2.style.cssText='display:flex;justify-content:center';
-var c3=document.createElement('div');c3.style.cssText='display:flex;justify-content:center';
-if(sav)c1.appendChild(sav);
-c2.appendChild(rem);
-if(spd)c3.appendChild(spd);
-row.appendChild(c1);row.appendChild(c2);row.appendChild(c3);
-}
-if(typeof render==='function'&&!render._vcFix){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(fixViewerControls,0);return r;};render._vcFix=1;}
-if(typeof drawViewer==='function'&&!drawViewer._vcFix){var _d=drawViewer;drawViewer=function(){var r=_d.apply(this,arguments);setTimeout(fixViewerControls,0);return r;};drawViewer._vcFix=1;}
-setTimeout(fixViewerControls,100);setTimeout(fixViewerControls,600);
 </script>
