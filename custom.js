@@ -829,3 +829,117 @@ else{toast('Making PDF…');makePdfBlob(buildShareHTML(ctx.kind,ctx.id)).then(fu
 function install(){window.shareWorkPDF=function(id){openShare3('work',id);};window.shareEntryPDF=function(id){openShare3('entry',id);};}
 if(document.readyState==='complete')install();else window.addEventListener('load',install);
 })();
+/* ===== FIX A: unique share filenames (work + date + time) ===== */
+(function(){
+function slug(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'untitled';}
+function p2(n){return String(n).padStart(2,'0');}
+function stamp(){var d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+'-'+p2(d.getHours())+p2(d.getMinutes())+p2(d.getSeconds());}
+window.provFileName=function(ctx){
+if(ctx&&ctx.kind==='work'){var p=getP(ctx.id);if(p)return 'Provenance-'+(p.number?String(p.number)+'-':'')+slug(p.title)+'-'+stamp();}
+if(ctx&&ctx.kind==='entry')return 'Provenance-entry-'+stamp();
+return 'Provenance-'+stamp();
+};
+function esc2(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+function loadHtml2Pdf(){
+if(window.html2pdf)return Promise.resolve();
+return new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+}
+function buildShareHTML(kind,id){
+var h='<div style="font-family:Georgia,serif;color:#191A20;background:#ffffff;padding:24px">';
+if(kind==='work'){
+var p=getP(id);if(!p)return '';
+var es=entriesOf(id);
+h+='<div style="font-size:34px;font-weight:bold;color:#2733C9">'+(p.number?p2(p.number):'')+'</div>'
++'<h1 style="font-size:26px;margin:4px 0">'+esc2(p.title)+'</h1>'
++'<p style="color:#555;font-size:12px;margin:0 0 14px">'+esc2(p.medium||'')+(p.size?' · '+esc2(p.size):'')+' · started '+esc2(fmtShort(p.createdAt))+' · Provenance art journal</p>';
+es.forEach(function(e){
+h+='<div style="border-top:1px solid #ddd;margin:12px 0;padding-top:10px">'
++'<p style="color:#777;font-size:11px;margin:0 0 6px">'+esc2(fmtDateTime(e.date))+'</p>'
++(e.text?'<p style="font-size:13px;line-height:1.5;margin:0 0 8px">'+esc2(e.text)+'</p>':'')
++((e.images||[]).map(function(s){return '<img src="'+s+'" style="max-width:100%;border-radius:6px;margin:0 6px 6px 0">';}).join(''))+'</div>';});
+}else{
+var e=state.entries.find(function(x){return x.id===id;});if(!e)return '';
+var pw=getP(e.paintingId);
+h+='<h1 style="font-size:22px;margin:0 0 4px">'+(pw?esc2(pw.title):'Studio session')+'</h1>'
++'<p style="color:#777;font-size:11px;margin:0 0 10px">'+esc2(fmtDateTime(e.date))+' · Provenance art journal</p>'
++(e.text?'<p style="font-size:13px;line-height:1.5">'+esc2(e.text)+'</p>':'')
++((e.images||[]).map(function(s){return '<img src="'+s+'" style="max-width:100%;border-radius:6px;margin:0 6px 6px 0">';}).join(''));
+}
+return h+'</div>';
+}
+function makePdfBlob(html){
+return loadHtml2Pdf().then(function(){
+var holder=document.createElement('div');
+holder.style.cssText='position:fixed;left:-10000px;top:0;width:794px;pointer-events:none';
+holder.innerHTML=html;document.body.appendChild(holder);
+var opt={margin:10,image:{type:'jpeg',quality:.9},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4'}};
+return window.html2pdf().set(opt).from(holder).output('blob').then(function(b){holder.remove();return b;},function(){holder.remove();return null;});
+});
+}
+function shareBlob(blob,filename,mime,text){
+try{
+var f=new File([blob],filename,{type:mime});
+if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Provenance',text:text||''}).catch(function(){});return;}
+}catch(e){}
+var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+toast('Saved to Downloads — attach it from there');
+}
+function openShareMenu2(kind,id){
+window.__shareCtx2={kind:kind,id:id};
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:400px">'
++'<div class="panel-head"><h2 style="font-size:20px">Share as PDF</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="pv2-email" style="justify-content:flex-start">📧 Email the PDF</button>'
++'<button type="button" class="btn ghost" data-action="pv2-signal" style="justify-content:flex-start">💬 Signal the PDF</button>'
++'<button type="button" class="btn ghost" data-action="pv2-insta" style="justify-content:flex-start">📸 Instagram (photo)</button>'
++'<button type="button" class="btn ghost" data-action="pv2-save" style="justify-content:flex-start">📥 Save PDF to device</button>'
++'</div><p class="hint" style="margin:10px 0 0">Filenames include the work and the exact time, so every export is unique.</p></div></div>');
+}
+/* take over the Share buttons once the built-in share code has loaded */
+window.addEventListener('load',function(){
+window.shareWorkPDF=function(id){openShareMenu2('work',id);};
+window.shareEntryPDF=function(id){openShareMenu2('entry',id);};
+});
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action^="pv2-"]');if(!t)return;
+e.stopImmediatePropagation();e.preventDefault();
+var ctx=window.__shareCtx2;if(!ctx)return;
+closeModal();
+var act=t.dataset.action;
+if(act==='pv2-insta'){
+var src=null;
+if(ctx.kind==='work'){var es=entriesOf(ctx.id);for(var i=0;i<es.length&&!src;i++)src=(es[i].images||[])[0];}
+else{var en=state.entries.find(function(x){return x.id===ctx.id;});src=en&&(en.images||[])[0];}
+if(!src){toast('No photo to share yet');return;}
+fetch(src).then(function(r){return r.blob();}).then(function(b){shareBlob(b,provFileName(ctx)+'.jpg','image/jpeg','Made in Provenance');});
+}else{
+toast('Making PDF…');
+makePdfBlob(buildShareHTML(ctx.kind,ctx.id)).then(function(b){
+if(!b){toast('Could not build the PDF');return;}
+if(act==='pv2-save'){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=provFileName(ctx)+'.pdf';a.click();toast('PDF saved');}
+else shareBlob(b,provFileName(ctx)+'.pdf','application/pdf','Provenance — work log');
+});
+}
+},true);
+})();
+
+/* ===== FIX B: rabbit always in front of flowers (natural depth) ===== */
+(function(){
+var FLOW=['🌼','','🌺','','🌷','🌹','💮','🪻','🍃'];
+function fixLayers(page){
+var sp=page.querySelectorAll('span'),i,t;
+for(i=0;i<sp.length;i++){t=(sp[i].textContent||'').trim();
+if(FLOW.indexOf(t)!==-1)sp[i].style.zIndex='2';
+else if(t==='🌿'||t==='🌾'||t==='☘️'||t==='🌱')sp[i].style.zIndex='1';}
+var st=page.querySelectorAll('.rb-stem');for(i=0;i<st.length;i++)st[i].style.zIndex='2';
+var ds=page.querySelectorAll('div'),b=null;
+for(i=0;i<ds.length;i++){t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰'){b=ds[i];break;}}
+if(b)b.style.zIndex='5';
+var cl=page.querySelectorAll('.rb-cloud,.rb-cloud2');for(i=0;i<cl.length;i++)cl[i].style.zIndex='6';
+var sun=page.querySelector('.rb-sun2')||page.querySelector('.rb-sun');if(sun)sun.style.zIndex='7';
+}
+var iv=null;
+function tick(){var p=document.getElementById('rabbit-page');if(!p){if(iv){clearInterval(iv);iv=null;}return;}fixLayers(p);}
+new MutationObserver(function(){tick();if(document.getElementById('rabbit-page')&&!iv)iv=setInterval(tick,400);}).observe(document.body,{childList:true});
+tick();
+})();
