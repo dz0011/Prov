@@ -130,3 +130,7 @@ var mo=new MutationObserver(function(muts){
 mo.observe(document.body,{childList:true});
 var cur=document.getElementById('rabbit-page'); if(cur){addPeonies(cur);hideNearSunGlyph(cur);}
 })();
+/* Viewer: remove the pin button and the save icon (poster stays) */
+#pin-view,
+#viewer-save,
+[data-action="viewer-save2"]{display:none!important}
