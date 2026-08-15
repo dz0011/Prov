@@ -64,3 +64,69 @@ body:not(.fabs-go) .float-btn{display:none!important}
   80%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(4deg)}
   100%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(0)}
 }
+/* ===== Rabbit refinements (lives in custom.js, loads last, wins) ===== */
+(function(){
+if(window.__rabbitFinal)return; window.__rabbitFinal=1;
+
+/* 1) PEONIES: 🪷 is the closest standard emoji to a peony — sprinkle a few in */
+function addPeonies(page){
+  if(page.dataset.peony)return; page.dataset.peony='1';
+  for(var i=0;i<3;i++){
+    var s=document.createElement('span'); s.textContent='🪷';
+    s.style.cssText='position:absolute;bottom:'+(6+Math.random()*24)+'%;left:'+(Math.random()*92)+
+      '%;font-size:'+(12+Math.random()*10)+'px;transform:rotate('+(Math.random()*30-15)+'deg);z-index:3;';
+    page.appendChild(s);
+  }
+}
+
+/* 2) HIDE the hieroglyph closest to the sun (sun sits left ~9%, so hide the FIRST glyph) */
+function hideNearSunGlyph(page){
+  var row=page.querySelector('.rb-glyphrow'); if(!row)return;
+  var g=row.querySelectorAll('.rb-glyph'); if(g.length)g[0].style.visibility='hidden';
+}
+
+/* 3) Rabbit faces the way it walks when returning from the sun.
+   🐇 faces left by default; --flip=-1 makes it face right.
+   fromLeft  -> face RIGHT  -> --flip = -1
+   fromRight -> face LEFT   -> --flip =  1 */
+function sunTap(e){
+  var page=document.getElementById('rabbit-page'); if(!page||page._soaring)return;
+  var sun=e.target.closest?e.target.closest('.rb-sun2'):null; if(!sun)return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  var b=null,ds=page.querySelectorAll('div');
+  for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰'){b=ds[i];break;}}
+  if(!b)return;
+  page._soaring=1; try{b.getAnimations().forEach(function(a){a.cancel();});}catch(err){}
+  b.style.animation='none'; b.style.zIndex=9;
+  var pr=page.getBoundingClientRect(),sr=sun.getBoundingClientRect();
+  var sx=(sr.left+sr.width/2-pr.left)/pr.width*100, sy=(sr.top+sr.height/2-pr.top)/pr.height*100;
+  var fromLeft=Math.random()<.5;
+  b.style.setProperty('--flip', fromLeft?'-1':'1');   /* face the walking direction */
+  var up=b.animate([
+    {left:'50%',top:'56%',opacity:1,transform:'translate(-50%,-50%) scale(2.2)',offset:0,easing:'ease-in'},
+    {left:sx+'%',top:(sy+6)+'%',opacity:1,transform:'translate(-50%,-50%) scale(1.1)',offset:.7,easing:'ease-in'},
+    {left:sx+'%',top:sy+'%',opacity:0,transform:'translate(-50%,-50%) scale(0.12)',offset:1}
+  ],{duration:1100,easing:'ease-in'});
+  up.onfinish=function(){
+    b.style.opacity='0'; b.style.left=sx+'%'; b.style.top=sy+'%';
+    sun.animate([{transform:'scale(1)'},{transform:'scale(1.3)'},{transform:'scale(1)'}],{duration:600,easing:'ease-out'});
+    setTimeout(function(){
+      b.style.left=fromLeft?'-14%':'114%'; b.style.top='56%'; b.style.opacity='1';
+      b.style.setProperty('--flip', fromLeft?'-1':'1');
+      b.style.animation='rabbithop 1.6s ease-in-out infinite';
+      var walk=b.animate([{left:fromLeft?'-14%':'114%',offset:0,easing:'ease-in-out'},{left:'50%',offset:1}],{duration:2200,easing:'ease-in-out'});
+      walk.onfinish=function(){b.style.left='50%';b.style.zIndex='4';page._soaring=0;};
+    },1000);
+  };
+}
+window.addEventListener('click',sunTap,true);
+
+var mo=new MutationObserver(function(muts){
+  for(var i=0;i<muts.length;i++)for(var j=0;j<muts[i].addedNodes.length;j++){
+    var n=muts[i].addedNodes[j];
+    if(n.nodeType===1&&n.id==='rabbit-page'){addPeonies(n);hideNearSunGlyph(n);}
+  }
+});
+mo.observe(document.body,{childList:true});
+var cur=document.getElementById('rabbit-page'); if(cur){addPeonies(cur);hideNearSunGlyph(cur);}
+})();
