@@ -135,9 +135,12 @@ var cur=document.getElementById('rabbit-page'); if(cur){addPeonies(cur);hideNear
 #viewer-save,
 [data-action="viewer-save2"]{display:none!important}
 /* ===== Viewer: remove the pin and save buttons ===== */
-#pin-view,
-#viewer-save,
-[data-action="viewer-save2"]{display:none!important}
+/* Viewer buttons: remove 📌 pin and  poster; KEEP 💾 next to ↻ refresh */
+#pin-view,#poster-view{display:none!important}
+#viewer-save,[data-action="viewer-save2"]{display:inline-flex!important}
+
+/* Remove the "Install may take up to 30 sec." note entirely */
+.iu-note{display:none!important}
 
 /* keep the controls row balanced: poster left · refresh center · creature right */
 #poster-view{grid-column:1;justify-self:center}
