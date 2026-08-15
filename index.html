@@ -7585,11 +7585,6 @@ if(typeof save==='function')save().then(function(){render();});else render();
 function filmImages(pid){var out=[];entriesOf(pid).forEach(function(e){(e.images||[]).forEach(function(src){if(normTag(e,src)==='work')out.push({en:e,src:src,date:e.date});});});return out;}
 function workFilm(p){return filmImages(p.id);}
 function openLightboxFromPainting(pid,idx){var p=getP(pid);if(!p)return;var list=filmImages(pid);lbSet=list.map(function(o){return{src:o.src,cap:numTag(p.number)+' · '+fmtShort(o.date)};});showLB(idx);}
-try{localStorage.setItem('provenance.tagRevert2','1');}catch(e){}
-if(changed&&typeof save==='function')save().then(function(){render();});
-}
-if(typeof render==='function'&&!render._tagMig){var _r=render;render=function(){var r=_r.apply(this,arguments);migrate();return r;};render._tagMig=1;}
-})();
 </script>
 <script>
 /* ================= FINAL self-contained Viewer renderer ================= */
