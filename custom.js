@@ -943,3 +943,42 @@ function tick(){var p=document.getElementById('rabbit-page');if(!p){if(iv){clear
 new MutationObserver(function(){tick();if(document.getElementById('rabbit-page')&&!iv)iv=setInterval(tick,400);}).observe(document.body,{childList:true});
 tick();
 })();
+/* ===== Viewer row: 🖼 left · ↻ center · 🐢 right (after pin/save removed) ===== */
+(function(){
+function fixRow(){
+var rem=document.querySelector('#view [data-action="viewer-remix"]');
+if(!rem)return;
+var row=rem.parentNode;
+var po=document.getElementById('poster-view');
+var spd=document.getElementById('vspeed-ico');
+row.style.display='grid';
+row.style.gridTemplateColumns='1fr auto 1fr';
+row.style.alignItems='center';
+row.style.width='100%';
+if(po&&po.parentNode!==row)row.insertBefore(po,row.firstChild);
+if(po){po.style.gridColumn='1';po.style.justifySelf='center';}
+rem.style.gridColumn='2';rem.style.justifySelf='center';
+if(spd&&spd.parentNode!==row)row.appendChild(spd);
+if(spd){spd.style.gridColumn='3';spd.style.justifySelf='center';spd.style.position='static';spd.style.transform='none';}
+}
+if(typeof render==='function'&&!render._rowFix3){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,250);return r;};render._rowFix3=1;}
+if(typeof drawViewer==='function'&&!drawViewer._rowFix3){var _d=drawViewer;drawViewer=function(){var r=_d.apply(this,arguments);setTimeout(fixRow,0);setTimeout(fixRow,250);return r;};drawViewer._rowFix3=1;}
+setTimeout(fixRow,150);setTimeout(fixRow,700);
+})();
+
+/* ===== Work pages: tap the empty band (right of "← All works", below the header) toggles light/dark ===== */
+(function(){
+document.addEventListener('click',function(e){
+if(typeof view==='undefined'||view.name!=='painting')return;
+if(e.target.closest('button,a,input,select,textarea,label,.menu,.card,.panel,.film,.thumb,.entry'))return;
+var top=document.querySelector('header.top');
+var head=document.querySelector('#view .pd-head');
+if(!top||!head)return;
+var y=e.clientY;
+if(y<top.getBoundingClientRect().bottom||y>head.getBoundingClientRect().top)return;
+var dark=!document.body.classList.contains('dark');
+document.body.classList.toggle('dark',dark);
+try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
+},true);
+})();
