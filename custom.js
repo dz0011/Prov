@@ -85,7 +85,6 @@ if(authOn&&typeof msg==='string'&&/guest mode/i.test(msg))return;
 return _t.apply(this,arguments);
 };
 })();
-</script>
 /* ============ SHARE MENU: PDF via Email/Signal, photo via Instagram, Save PDF ============ */
 (function(){
 function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=function(){rej();};document.head.appendChild(s);});}
@@ -777,4 +776,56 @@ if(!hasPhotos())return _prevPC?_prevPC.apply(this,arguments):undefined;
 var cv=document.getElementById('viewer-canvas');if(!cv||!window.__poScene)return;
 photoOnlyPaint(cv.getContext('2d'),cv.width,cv.height,window.__poScene,window.vT||0);
 };
+})();
+/* ===== SHARE FIX v3: unique filenames + PDFs with real content ===== */
+(function(){
+function slug(s){s=String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');return s||'untitled';}
+function workFile(id){var p=getP(id);if(!p)return 'Provenance-work';return 'Provenance-'+(p.number?p.number+'-':'')+slug(p.title);}
+function entryFile(id){var e=null;for(var i=0;i<state.entries.length;i++){if(state.entries[i].id===id){e=state.entries[i];break;}}
+if(!e)return 'Provenance-entry';var d=new Date(e.date);var p=getP(e.paintingId);
+return 'Provenance-'+(p?(p.number?p.number+'-':'')+slug(p.title)+'-':'')+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function esc2(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+function loadHtml2Pdf(){if(window.html2pdf)return Promise.resolve();return new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+function buildShareHTML(kind,id){
+var h='<div style="font-family:Georgia,serif;color:#191A20;background:#ffffff;padding:24px">';
+if(kind==='work'){var p=getP(id);if(!p)return '<p>Missing work</p>';var es=entriesOf(id);
+h+='<div style="font-size:34px;font-weight:bold;color:#2733C9">'+(p.number?String(p.number).padStart(2,'0'):'')+'</div>'
++'<h1 style="font-size:26px;margin:4px 0">'+esc2(p.title)+'</h1>'
++'<p style="color:#555;font-size:12px;margin:0 0 14px">'+esc2(p.medium||'')+(p.size?' · '+esc2(p.size):'')+' · Provenance art journal</p>';
+es.forEach(function(e){h+='<div style="border-top:1px solid #ddd;margin:12px 0;padding-top:10px"><p style="color:#777;font-size:11px;margin:0 0 6px">'+esc2(fmtDateTime(e.date))+'</p>'+(e.text?'<p style="font-size:13px;line-height:1.5;margin:0 0 8px">'+esc2(e.text)+'</p>':'')+((e.images||[]).map(function(s){return '<img src="'+s+'" style="max-width:100%;border-radius:6px;margin:0 6px 6px 0">';}).join(''))+'</div>';});
+}else{var e=state.entries.find(function(x){return x.id===id;});if(!e)return '<p>Missing entry</p>';var p2=getP(e.paintingId);
+h+='<h1 style="font-size:22px;margin:0 0 4px">'+(p2?esc2(p2.title):'Studio session')+'</h1><p style="color:#777;font-size:11px;margin:0 0 10px">'+esc2(fmtDateTime(e.date))+' · Provenance art journal</p>'+(e.text?'<p style="font-size:13px;line-height:1.5">'+esc2(e.text)+'</p>':'')+((e.images||[]).map(function(s){return '<img src="'+s+'" style="max-width:100%;border-radius:6px;margin:0 6px 6px 0">';}).join(''));}
+return h+'</div>';}
+function makePdfBlob(html){
+return loadHtml2Pdf().then(function(){
+var cover=document.createElement('div');cover.style.cssText='position:fixed;inset:0;background:rgba(20,21,27,.94);z-index:99999;display:flex;align-items:center;justify-content:center;color:#F4F2EC;font:600 15px sans-serif;';cover.textContent='Making PDF…';
+var holder=document.createElement('div');holder.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:99998;pointer-events:none;';
+holder.innerHTML=html;document.body.appendChild(holder);document.body.appendChild(cover);
+var opt={margin:[8,8,10,8],image:{type:'jpeg',quality:.92},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},jsPDF:{unit:'mm',format:'a4'}};
+return window.html2pdf().set(opt).from(holder).output('blob').then(function(b){holder.remove();cover.remove();return b;},function(){holder.remove();cover.remove();return null;});
+});}
+function shareBlob(blob,filename,mime,text){if(!blob)return;
+var f=new File([blob],filename,{type:mime});
+if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Provenance',text:text||''}).catch(function(){});}
+else{var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove();toast('Saved to Downloads');}}
+function openShare3(kind,id){window.__shareCtx3={kind:kind,id:id};
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:400px"><div class="panel-head"><h2 style="font-size:20px">Share as PDF</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div><div style="display:flex;flex-direction:column;gap:8px">'
++'<button type="button" class="btn ghost" data-action="sh3-email" style="justify-content:flex-start">📧 Email the PDF</button>'
++'<button type="button" class="btn ghost" data-action="sh3-signal" style="justify-content:flex-start">💬 Signal the PDF</button>'
++'<button type="button" class="btn ghost" data-action="sh3-insta" style="justify-content:flex-start">📸 Instagram (photo)</button>'
++'<button type="button" class="btn ghost" data-action="sh3-save" style="justify-content:flex-start">📥 Save PDF to device</button>'
++'</div><p class="hint" style="margin:10px 0 0">Email & Signal open your phone\u2019s share sheet with the PDF attached. Instagram only accepts photos, so it receives the artwork photo.</p></div></div>');}
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action^="sh3-"]');if(!t)return;
+e.stopImmediatePropagation();e.preventDefault();
+var ctx=window.__shareCtx3;if(!ctx)return;
+closeModal();
+var name=(ctx.kind==='work')?workFile(ctx.id):entryFile(ctx.id);
+var act=t.dataset.action;
+if(act==='sh3-save'){toast('Making PDF…');makePdfBlob(buildShareHTML(ctx.kind,ctx.id)).then(function(b){if(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name+'.pdf';document.body.appendChild(a);a.click();a.remove();toast('PDF saved');}});}
+else if(act==='sh3-insta'){var src=null;if(ctx.kind==='work'){var es=entriesOf(ctx.id);for(var i=0;i<es.length&&!src;i++)src=(es[i].images||[])[0];}else{var en=state.entries.find(function(x){return x.id===ctx.id;});src=en&&(en.images||[])[0];}if(!src){toast('No photo to share yet');return;}fetch(src).then(function(r){return r.blob();}).then(function(b){shareBlob(b,name+'.jpg','image/jpeg','Made in Provenance');});}
+else{toast('Making PDF…');makePdfBlob(buildShareHTML(ctx.kind,ctx.id)).then(function(b){shareBlob(b,name+'.pdf','application/pdf','Provenance — work log');});}
+},true);
+function install(){window.shareWorkPDF=function(id){openShare3('work',id);};window.shareEntryPDF=function(id){openShare3('entry',id);};}
+if(document.readyState==='complete')install();else window.addEventListener('load',install);
 })();
