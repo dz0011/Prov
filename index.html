@@ -9585,3 +9585,62 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-acti
 if(typeof render==='function'){var _r=render;render=function(){var r=_r.apply(this,arguments);if(state.entries.length)setTimeout(shrink,2500);return r;};}})();
 })();
 </script>
+<script>
+(function(){
+if(window.__fixV2)return;window.__fixV2=1;
+/* 1) Viewer pill: halfway between Works and the right edge, vertically centered */
+function placeViewerTab(){
+var vt=document.querySelector('.tab.tab-viewer');if(!vt)return;
+var works=null,all=document.querySelectorAll('.tab');
+for(var i=0;i<all.length;i++){if((all[i].textContent||'').indexOf('Works')!==-1&&all[i]!==vt){works=all[i];break;}}
+if(!works)return;
+var bar=vt.parentElement;bar.style.position='relative';
+var wr=works.getBoundingClientRect(),br=bar.getBoundingClientRect();
+var M=(wr.right+window.innerWidth)/2;
+vt.style.position='absolute';
+vt.style.top=(wr.top-br.top+wr.height/2-vt.offsetHeight/2)+'px';
+vt.style.left=Math.max(0,M-br.left-vt.offsetWidth/2)+'px';
+vt.style.margin='0';
+}
+window.addEventListener('resize',placeViewerTab);
+setTimeout(placeViewerTab,120);setTimeout(placeViewerTab,700);setTimeout(placeViewerTab,1500);
+if(typeof render==='function'){var _r=render;render=function(){var r=_r.apply(this,arguments);setTimeout(placeViewerTab,120);return r;};}
+/* 2) Cover stickiness: after every render, force the chosen cover onto Works cards */
+function patchCovers(){
+var cards=document.querySelectorAll('#view .pcard[data-id]');
+for(var i=0;i<cards.length;i++){
+var p=getP(cards[i].getAttribute('data-id'));if(!p||!p.cover)continue;
+var img=cards[i].querySelector('.pcover img');
+if(img){if(img.getAttribute('src')!==p.cover)img.setAttribute('src',p.cover);}
+else{var g=cards[i].querySelector('.pnum-ghost');if(g){var ni=document.createElement('img');ni.src=p.cover;ni.alt='';ni.loading='lazy';g.replaceWith(ni);}}
+}
+}
+if(typeof render==='function'){var _r2=render;render=function(){var r=_r2.apply(this,arguments);setTimeout(patchCovers,0);setTimeout(patchCovers,400);return r;};}
+document.addEventListener('click',function(){setTimeout(patchCovers,450);},true);
+/* 3) Mark menu: Rotate left + Rotate right side-by-side, each half width */
+function rotImg(src,dir){return new Promise(function(res){var img=new Image();img.onload=function(){var c=document.createElement('canvas');c.width=img.height;c.height=img.width;var x=c.getContext('2d');if(dir==='r'){x.translate(c.width,0);x.rotate(Math.PI/2);}else{x.translate(0,c.height);x.rotate(-Math.PI/2);}x.drawImage(img,0,0);res(c.toDataURL('image/jpeg',.82));};img.src=src;});}
+new MutationObserver(function(ms){for(var i=0;i<ms.length;i++)for(var j=0;j<ms[i].addedNodes.length;j++){var el=ms[i].addedNodes[j];
+if(el.nodeType===1&&el.querySelector&&el.querySelector('[data-tag="delete"]')&&!el.querySelector('.rot-row')){
+var lone=el.querySelector('[data-action="rot-photo"]');if(lone)lone.remove();
+var d=el.querySelector('[data-tag="delete"]');
+var row=document.createElement('div');row.className='rot-row';row.style.cssText='display:flex;gap:8px';
+var b1=document.createElement('button');b1.type='button';b1.className='btn ghost';b1.dataset.action='rot2';b1.dataset.dir='l';b1.style.flex='1';b1.innerHTML='⟲ Left';
+var b2=document.createElement('button');b2.type='button';b2.className='btn ghost';b2.dataset.action='rot2';b2.dataset.dir='r';b2.style.flex='1';b2.innerHTML='⟳ Right';
+row.appendChild(b1);row.appendChild(b2);d.insertAdjacentElement('afterend',row);
+}}}).observe(document.getElementById('modal-root')||document.body,{childList:true});
+document.addEventListener('click',function(e){var t=e.target.closest('[data-action="rot2"]');if(!t)return;e.stopImmediatePropagation();e.preventDefault();
+var r=window.__markCtx||window.__cpCtx||window._tagPending||window.__tagCtx;if(!r||!r.en)return;
+var old=r.src,dir=t.dataset.dir;
+rotImg(old,dir).then(function(nw){var en=r.en;var idx=en.images.indexOf(old);if(idx>-1){en.images[idx]=nw;if(en.thumbs)en.thumbs[idx]=nw;}if(en.cover===old)en.cover=nw;closeModal();save().then(function(){render();toast(dir==='l'?'⟲ Rotated left':'⟳ Rotated right');});});},true);
+/* 4) One-time shrink of oversized stored photos (the real fix for "Could not save") */
+var started=false;
+function shrink(){if(started||localStorage.getItem('prov.shrunk2'))return;started=true;
+var q=[];state.entries.forEach(function(e){(e.images||[]).forEach(function(s,i){if((s||'').length>250000)q.push({e:e,i:i});});});
+if(!q.length){try{localStorage.setItem('prov.shrunk2','1');}catch(e){}return;}
+(function next(){var it=q.shift();if(!it){try{localStorage.setItem('prov.shrunk2','1');}catch(e){}save().then(function(){render();toast('Photos optimized — saves are now reliable');});return;}
+var old=it.e.images[it.i],img=new Image();
+img.onload=function(){try{var max=1000,sc=Math.min(1,max/Math.max(img.width,img.height));var c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*sc));c.height=Math.max(1,Math.round(img.height*sc));c.getContext('2d').drawImage(img,0,0,c.width,c.height);var nw=c.toDataURL('image/jpeg',.72);it.e.images[it.i]=nw;if(it.e.thumbs)it.e.thumbs[it.i]=nw;if(it.e.cover===old)it.e.cover=nw;}catch(e){}setTimeout(next,60);};
+img.onerror=function(){setTimeout(next,60);};img.src=old;})();}
+if(typeof render==='function'){var _r3=render;render=function(){var r=_r3.apply(this,arguments);if(state.entries.length)setTimeout(shrink,2500);return r;};}
+})();
+</script>
