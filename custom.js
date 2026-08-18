@@ -1665,3 +1665,25 @@ document.addEventListener('click',function(e){
 if(e.target.closest('[data-action="about"]'))setTimeout(fixAboutWords,0);
 },true);
 })();
+/* ===== GUEST BACK BUTTON: on Timeline, Back → sign-in screen ===== */
+(function(){
+if(window.__guestBackFix)return;window.__guestBackFix=1;
+function guard(){try{history.pushState({guestGuard:1},'');}catch(e){}}
+/* give guest sessions a history state so Back has somewhere to land */
+if(typeof startGuest==='function'&&!startGuest.__gb){
+  var _sg=startGuest;startGuest=function(){var r=_sg.apply(this,arguments);setTimeout(guard,0);return r;};startGuest.__gb=1;
+}
+if(typeof isGuest==='function'&&isGuest())setTimeout(guard,0);
+window.addEventListener('popstate',function(e){
+  if(typeof isGuest!=='function'||!isGuest())return;                 /* signed-in users keep normal back nav */
+  if(typeof view==='undefined'||!view||view.name!=='timeline')return;/* only act on the Timeline */
+  var mr=document.getElementById('modal-root');
+  var lb=document.getElementById('lightbox');
+  if((mr&&mr.children.length)||(lb&&lb.classList.contains('open')))return; /* let Back close modals/photos first */
+  e.stopImmediatePropagation();
+  try{localStorage.removeItem('provenance.guest');}catch(e2){}       /* leave guest mode (journal stays saved on device) */
+  state={paintings:[],entries:[]};
+  if(typeof showAuth==='function')showAuth();                        /* land on the sign-in screen */
+  setTimeout(guard,0);
+},true); /* capture: runs before the in-app back handlers */
+})();
