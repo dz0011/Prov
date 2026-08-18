@@ -982,3 +982,54 @@ try{localStorage.setItem('provenance.theme',dark?'dark':'light');}catch(e2){}
 var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#191A20':'#F2F1EC');
 },true);
 })();
+/* ===== Data rescue: device journal -> cloud, self-healing ===== */
+(function(){
+if(window.__dataRescue)return;window.__dataRescue=1;
+function count(g){return ((g&&g.paintings)||[]).length+((g&&g.entries)||[]).length;}
+function backup(){try{var raw=localStorage.getItem('provenance.local');if(raw&&count(JSON.parse(raw)))localStorage.setItem('provenance.guestbackup',raw);}catch(e){}}
+function localSrc(){try{return JSON.parse(localStorage.getItem('provenance.guestbackup')||localStorage.getItem('provenance.local')||'null');}catch(e){return null;}}
+/* one-time shrink so big payloads stop failing */
+var shrinking=false;
+function shrinkOnce(done){
+if(shrinking||localStorage.getItem('prov.shrunk2')){if(done)done();return;}
+shrinking=true;
+var q=[];(state.entries||[]).forEach(function(e){(e.images||[]).forEach(function(s,i){if((s||'').length>250000)q.push({e:e,i:i});});});
+(function next(){
+var it=q.shift();
+if(!it){try{localStorage.setItem('prov.shrunk2','1');}catch(e){}shrinking=false;if(done)done();return;}
+var old=it.e.images[it.i],img=new Image();
+img.onload=function(){try{var max=1000,sc=Math.min(1,max/Math.max(img.width,img.height));var c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*sc));c.height=Math.max(1,Math.round(img.height*sc));c.getContext('2d').drawImage(img,0,0,c.width,c.height);var nw=c.toDataURL('image/jpeg',.72);it.e.images[it.i]=nw;if(it.e.thumbs)it.e.thumbs[it.i]=nw;if(it.e.cover===old)it.e.cover=nw;}catch(e){}setTimeout(next,60);};
+img.onerror=function(){setTimeout(next,60);};
+img.src=old;
+})();
+}
+/* push device journal to cloud whenever signed in and cloud is missing it */
+function sync(){
+if(typeof db==='undefined'||!db||!db.auth)return;
+backup();
+var src=localSrc();if(!src||!count(src))return;
+db.auth.getUser().then(function(u){
+if(!u||!u.data||!u.data.user)return;
+db.from('journals').select('data').eq('user_id',u.data.user.id).maybeSingle().then(function(res){
+var cloud=(res&&res.data&&res.data.data)||null;
+var merged={paintings:(cloud&&cloud.paintings)||[],entries:(cloud&&cloud.entries)||[]};
+var changed=false;
+(src.paintings||[]).forEach(function(p){if(!merged.paintings.some(function(x){return x.id===p.id;})){merged.paintings.push(p);changed=true;}});
+(src.entries||[]).forEach(function(en){if(!merged.entries.some(function(x){return x.id===en.id;})){merged.entries.push(en);changed=true;}});
+if(!changed)return;
+shrinkOnce(function(){
+state=merged;
+save().then(function(){render();toast('Device journal synced to your account ✓');});
+});
+});
+});
+}
+/* if a signed-in load ever shows empty while cloud has data, re-load */
+function reloadIfEmpty(){
+if(typeof isGuest==='function'&&isGuest())return;
+if(count(state))return;
+if(typeof loadJournal==='function')loadJournal().then(function(){render();});
+}
+window.addEventListener('load',function(){setTimeout(sync,2000);setTimeout(reloadIfEmpty,3500);});
+if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,ses){if((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&ses){setTimeout(sync,2000);setTimeout(reloadIfEmpty,3500);}});
+})();
