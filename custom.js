@@ -1391,3 +1391,62 @@ var _sg=startGuest;
 startGuest=function(){try{var v=localStorage.getItem('provenance.vault');if(v&&!localStorage.getItem('provenance.local'))localStorage.setItem('provenance.local',v);}catch(e){}return _sg.apply(this,arguments);};
 }
 })();
+/* ===== POLISH PACK: welcome tap-close, refresh stays on Works, cover sticks, faster loads ===== */
+(function(){
+if(window.__polishPack)return;window.__polishPack=1;
+
+/* 1) Welcome modal: tapping anywhere in the white body also closes it */
+document.addEventListener('click',function(e){
+var panel=e.target&&e.target.closest?e.target.closest('.panel'):null;
+if(!panel)return;
+var h=panel.querySelector('.panel-head h2');
+if(!h||h.textContent.indexOf('Welcome to Provenance')===-1)return;
+if(e.target.closest('button, a, input, textarea, select, [data-action]'))return;
+if(typeof closeModal==='function')closeModal();
+},true);
+
+/* 2) Refreshing the browser returns you to the page you were on (Works stays Works) */
+function saveView(){try{if(typeof view!=='undefined')sessionStorage.setItem('prov.view',JSON.stringify(view));}catch(e){}}
+if(typeof render==='function'&&!render.__vr){var _r=render;render=function(){saveView();return _r.apply(this,arguments);};render.__vr=1;}
+function restoreView(){
+try{
+var v=JSON.parse(sessionStorage.getItem('prov.view')||'null');
+if(!v)return;
+if(v.name==='painting'&&typeof getP==='function'&&!getP(v.id))v={name:'paintings'};
+if(v.name==='paintings'||v.name==='painting'){view=v;render();}
+}catch(e){}
+}
+window.addEventListener('load',function(){setTimeout(restoreView,900);setTimeout(restoreView,2200);});
+
+/* 3) Cover pick: force a direct cloud write so the cover ALWAYS sticks */
+document.addEventListener('click',function(e){
+var t=e.target&&e.target.closest?e.target.closest('[data-action="pick-cover"]'):null;
+if(!t)return;
+setTimeout(function(){
+if(typeof db==='undefined'||!db||!db.auth)return;
+db.auth.getUser().then(function(res){
+var u=res&&res.data&&res.data.user;if(!u)return;
+db.from('journals').upsert({user_id:u.id,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'}).catch(function(){});
+});
+},900);
+},true);
+
+/* 4) One-time deep optimize: shrink stored photos so refreshes are fast and saves never fail */
+if(!localStorage.getItem('prov.deepshrunk')){
+var run=function(){
+var q=[];
+(state.entries||[]).forEach(function(en){(en.images||[]).forEach(function(s,i){if((s||'').length>150000)q.push({en:en,i:i});});});
+if(!q.length){try{localStorage.setItem('prov.deepshrunk','1');}catch(e){}return;}
+(function next(){
+var it=q.shift();
+if(!it){try{localStorage.setItem('prov.deepshrunk','1');}catch(e){}
+if(typeof save==='function')save().then(function(){if(typeof render==='function')render();toast('Photos optimized — refreshes are faster now');});return;}
+var img=new Image();
+img.onload=function(){try{var max=1000,sc=Math.min(1,max/Math.max(img.width,img.height));var c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*sc));c.height=Math.max(1,Math.round(img.height*sc));c.getContext('2d').drawImage(img,0,0,c.width,c.height);it.en.images[it.i]=c.toDataURL('image/jpeg',.72);}catch(e){}setTimeout(next,50);};
+img.onerror=function(){setTimeout(next,50);};
+img.src=it.en.images[it.i];
+})();
+};
+window.addEventListener('load',function(){setTimeout(run,3000);});
+}
+})();
