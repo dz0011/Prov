@@ -1033,3 +1033,38 @@ if(typeof loadJournal==='function')loadJournal().then(function(){render();});
 window.addEventListener('load',function(){setTimeout(sync,2000);setTimeout(reloadIfEmpty,3500);});
 if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,ses){if((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&ses){setTimeout(sync,2000);setTimeout(reloadIfEmpty,3500);}});
 })();
+/* ===== In-App Welcome Message for New Users (No SMTP needed) ===== */
+(function(){
+  if(window.__inAppWelcome) return;
+  window.__inAppWelcome = 1;
+
+  function showWelcome() {
+    if(typeof openModal !== 'function') return;
+    openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:520px">'
+      +'<div class="panel-head"><h2 style="font-size:22px;margin:0">Welcome to Provenance</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
+      +'<div style="display:flex;flex-direction:column;gap:18px;font-size:15px;line-height:1.6;color:var(--ink);padding:4px 0">'
+        +'<div><b style="font-size:16px">Your art journal.</b><br>Catalog each work, then log sessions as it develops — notes, progress photos, and the exact colors on your palette. Everything lands on your <b>Timeline</b>, while <b>Works</b> keeps one card per piece.</div>'
+        +'<div><b style="font-size:16px">Getting around.</b><br><b>+ New Work</b> catalogs a piece; <b>+ New Entry</b> logs a session. Hold any photo to mark it Work, Other, or delete it. Sort and search from either page, and use the ⚙ menu for backups and settings.</div>'
+        +'<div><b style="font-size:16px">The Viewer.</b><br>A living visualization composed from your photos and palettes. Tap it to cycle its movement, or hit ↻ for a brand-new arrangement.</div>'
+      +'</div>'
+      +'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn primary" data-action="close-modal">Start exploring</button></div>'
+      +'</div></div>');
+  }
+
+  // Trigger only on the very first login of a specific user
+  if (typeof db !== 'undefined' && db && db.auth) {
+    db.auth.onAuthStateChange(function(ev, ses) {
+      if ((ev === 'SIGNED_IN' || ev === 'INITIAL_SESSION') && ses && ses.user) {
+        var uid = ses.user.id;
+        var key = 'prov.welcomed.' + uid;
+        try {
+          if (!localStorage.getItem(key)) {
+            localStorage.setItem(key, '1');
+            // slight delay so the app UI renders behind the modal
+            setTimeout(showWelcome, 600); 
+          }
+        } catch(e) {}
+      }
+    });
+  }
+})();
