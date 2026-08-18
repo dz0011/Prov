@@ -9926,3 +9926,49 @@ location.reload();
 },true); /* window-capture: runs before the older blocked handler */
 })();
 </script>
+<script>
+/* ===== FAST account delete: never longer than ~5 seconds ===== */
+(function(){
+if(window.__fastDelete)return;window.__fastDelete=1;
+function withTimeout(p,ms){return Promise.race([p,new Promise(function(res){setTimeout(res,ms);})]);}
+window.addEventListener('click',function(e){
+var btn=e.target&&e.target.closest?e.target.closest('button'):null;
+if(!btn)return;
+var isDel=(btn.dataset&&(btn.dataset.action==='delete-account'||btn.dataset.action==='del-account'))||/delete\s*(my\s*)?account/i.test(btn.textContent||'');
+if(!isDel)return;
+e.stopImmediatePropagation();e.preventDefault();   /* kills the old slow handler */
+if(typeof closeModal==='function')closeModal();
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:380px">'
++'<div class="panel-head"><h2 style="font-size:20px">Delete account?</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<p class="etext" style="margin:0 0 10px">Type <b>DELETE</b> to erase your journal and account. This cannot be undone.</p>'
++'<input type="text" id="del-conf" autocomplete="off" placeholder="DELETE">'
++'<div class="auth-msg" id="del-msg"></div>'
++'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
++'<button type="button" class="btn primary" id="del-go">Delete forever</button></div></div></div>');
+document.getElementById('del-go').addEventListener('click',function(){
+var inp=document.getElementById('del-conf'),msg=document.getElementById('del-msg'),go=document.getElementById('del-go');
+if((inp.value||'').trim()!=='DELETE'){msg.textContent='Please type DELETE exactly.';return;}
+go.disabled=true;go.textContent='Deleting…';
+var done=false;
+function finish(){if(done)return;done=true;
+try{if(typeof db!=='undefined'&&db&&db.auth)db.auth.signOut().catch(function(){});}catch(e){}
+try{Object.keys(localStorage).forEach(function(k){if(/^sb-/.test(k))localStorage.removeItem(k);});}catch(e){}
+location.reload();}
+setTimeout(finish,4500);               /* hard deadline: reloads no matter what */
+(async function(){
+try{
+if(typeof db!=='undefined'&&db){
+var u=await withTimeout(db.auth.getUser(),1500).catch(function(){return null;});
+var id=u&&u.data&&u.data.user?u.data.user.id:null;
+if(id){await Promise.all([
+withTimeout(db.from('journals').delete().eq('user_id',id),2500).catch(function(){}),
+withTimeout(db.rpc('delete_own_account'),2500).catch(function(){})
+]);}
+}
+}catch(e){}
+finish();
+})();
+});
+},true);
+})();
+</script>
