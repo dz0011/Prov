@@ -1,3 +1,19 @@
+/* ===== NO WELCOME POPUP + ABOUT AT TOP OF ⚙ MENU ===== */
+window.__inAppWelcome = 1;   /* kills the "Welcome to Provenance" popup completely */
+
+(function(){
+if(window.__aboutTop)return;window.__aboutTop=1;
+function moveAbout(){
+var m=document.getElementById('menu');if(!m)return;
+var about=m.querySelector('[data-action="about"]');if(!about)return;
+var theme=m.querySelector('[data-action="theme-toggle-menu"]');
+var ref=theme||m.firstElementChild;
+if(about!==ref&&about.nextElementSibling!==ref)m.insertBefore(about,ref);
+}
+new MutationObserver(moveAbout).observe(document.body,{childList:true,subtree:true});
+document.addEventListener('click',function(e){if(e.target.closest('[data-action="menu-toggle"]'))setTimeout(moveAbout,0);},true);
+setTimeout(moveAbout,600);setTimeout(moveAbout,1600);
+})();
 /* ===== GUEST DATA GATE: guest data only moves to an account created from THIS guest session ===== */
 (function(){
 if(window.__guestGate)return;window.__guestGate=1;
