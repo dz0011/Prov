@@ -9863,3 +9863,66 @@ img.src=old;})();
 },1500);});
 })();
 </script>
+<script>
+/* ===== ABOUT v3: backup buttons back on page 4 + Delete account that really works ===== */
+(function(){
+window.openAboutGuide=function(){
+var w=openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:560px">'
++'<div class="panel-head"><h2>About</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
++'<div id="about-swipe" style="overflow:hidden;touch-action:pan-y"><div id="about-track" style="display:flex;transition:transform .3s ease;align-items:stretch">'
++'<div style="min-width:100%;padding:2px"><h3 class="h3" style="margin:4px 0 10px">1 · Your art journal</h3><p class="etext" style="margin:0 0 10px">Provenance is a quiet ledger for making. Catalog each work, then log sessions as it develops — notes, progress photos, and the exact colors on your palette.</p><p class="etext" style="margin:0">Everything lands on your <b>Timeline</b>, grouped by day, while <b>Works</b> keeps one card per piece.</p></div>'
++'<div style="min-width:100%;padding:2px"><h3 class="h3" style="margin:4px 0 10px">2 · Getting around</h3><p class="etext" style="margin:0 0 10px"><b>+ New Work</b> catalogs a piece; <b>+ New Entry</b> logs a session. Hold any photo to mark it <b>Work</b>, <b>Other</b>, or delete it.</p><p class="etext" style="margin:0">Sort and search from either page, tap a work card for its page, and use the ⚙ menu for theme and exports.</p></div>'
++'<div style="min-width:100%;padding:2px"><h3 class="h3" style="margin:4px 0 10px">3 · The Viewer</h3><p class="etext" style="margin:0">The <b>Viewer</b> composes a living visualization from your photos and palettes — tap it to cycle its movement, ↻ for a brand-new arrangement.</p></div>'
++'<div style="min-width:100%;padding:2px"><h3 class="h3" style="margin:4px 0 10px">4 · Your data is safe</h3><p class="etext" style="margin:0 0 12px">Everything saves automatically (cloud when signed in, this device in Guest Mode). Keep your own copy anytime:</p><div style="display:flex;flex-direction:column;gap:8px"><button type="button" class="btn ghost" data-action="export" style="justify-content:flex-start">⬇ Download backup (.json)</button><button type="button" class="btn ghost" data-action="import-click" style="justify-content:flex-start">⬆ Restore a backup</button></div></div>'
++'<div style="min-width:100%;padding:2px"><h3 class="h3" style="margin:4px 0 10px">5 · Delete account</h3><p class="etext" style="margin:0 0 12px">Permanently deletes your journal and your account, then returns to the sign-in page. The e-mail becomes free for a new account. This cannot be undone.</p><button type="button" class="btn ghost danger-btn" data-action="delete-account" style="justify-content:flex-start">🗑 Delete account &amp; all data</button></div>'
++'</div></div>'
++'<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px"><button type="button" class="icon-btn" id="about-prev" aria-label="Previous">‹</button><span id="about-dots" style="display:flex;gap:6px"></span><button type="button" class="icon-btn" id="about-next" aria-label="Next">›</button></div>'
++'<div class="panel-foot"><span class="spacer"></span><button type="button" class="btn ghost" data-action="close-modal">Close</button></div></div></div>');
+var N=5,idx=0,track=w.querySelector('#about-track'),dots=w.querySelector('#about-dots');
+for(var i=0;i<N;i++){var d=document.createElement('span');d.style.cssText='width:8px;height:8px;border-radius:50%;background:'+(i===0?'var(--ink)':'rgba(128,128,128,.4)');dots.appendChild(d);}
+function go(i){idx=Math.max(0,Math.min(N-1,i));track.style.transform='translateX(-'+(idx*100)+'%)';for(var k=0;k<N;k++)dots.children[k].style.background=(k===idx?'var(--ink)':'rgba(128,128,128,.4)');}
+go(0);
+for(var j=0;j<dots.children.length;j++)(function(dot,i){dot.addEventListener('click',function(){go(i);});})(dots.children[j],j);
+w.querySelector('#about-prev').addEventListener('click',function(){go(idx-1);});
+w.querySelector('#about-next').addEventListener('click',function(){go(idx+1);});
+var sx=null,sw=w.querySelector('#about-swipe');
+sw.addEventListener('touchstart',function(e){sx=e.changedTouches[0].clientX;},{passive:true});
+sw.addEventListener('touchend',function(e){if(sx===null)return;var dx=e.changedTouches[0].clientX-sx;sx=null;if(dx<-40)go(idx+1);else if(dx>40)go(idx-1);},{passive:true});
+};
+/* tapping a backup button inside About closes About, then the normal export/import runs */
+window.addEventListener('click',function(e){
+var t=e.target.closest?e.target.closest('#about-track [data-action="export"],#about-track [data-action="import-click"]'):null;
+if(t)closeModal();
+},true);
+/* Delete account: in-app confirmation (works in installed apps), real server-side deletion */
+window.addEventListener('click',function(e){
+var t=e.target.closest?e.target.closest('[data-action="delete-account"]'):null;
+if(!t)return;
+e.stopImmediatePropagation();e.preventDefault();
+if(window.__deleting)return;
+closeModal();
+if(typeof isGuest==='function'&&isGuest()){
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:380px"><div class="panel-head"><h2 style="font-size:20px">Delete guest data?</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div><p class="etext" style="margin:4px 0 12px">This wipes everything stored on this device. This cannot be undone.</p><div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button><button type="button" class="btn primary" id="gd-yes">Delete</button></div></div></div>');
+document.getElementById('gd-yes').addEventListener('click',function(){['provenance.local','provenance.guest','provenance.guestbackup'].forEach(function(k){try{localStorage.removeItem(k);}catch(e2){}});location.reload();});
+return;
+}
+if(typeof db==='undefined'||!db)return;
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:380px"><div class="panel-head"><h2 style="font-size:20px">Delete account?</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div><p class="etext" style="margin:4px 0 10px">Type <b>DELETE</b> to permanently remove your journal and account. Your e-mail becomes free for a new account.</p><input type="text" id="del-conf" placeholder="DELETE" autocomplete="off"><div class="auth-msg" id="del-msg"></div><div class="panel-foot"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button><button type="button" class="btn primary" id="del-yes">Delete forever</button></div></div></div>');
+document.getElementById('del-yes').addEventListener('click',function(){
+var v=(document.getElementById('del-conf').value||'').trim();
+var msg=document.getElementById('del-msg');
+if(v!=='DELETE'){msg.textContent='Please type DELETE exactly.';return;}
+window.__deleting=1;msg.textContent='Deleting…';
+db.auth.getUser().then(function(r){
+var u=r&&r.data&&r.data.user;if(!u){location.reload();return;}
+return db.from('journals').delete().eq('user_id',u.id).then(function(){
+return db.rpc('delete_own_account').catch(function(err){console.warn('delete rpc:',err);});
+}).then(function(){return db.auth.signOut().catch(function(){});}).then(function(){
+['provenance.local','provenance.guest','provenance.guestbackup','provenance.view','provenance.theme','provenance.pinnedScene'].forEach(function(k){try{localStorage.removeItem(k);}catch(e2){}});
+location.reload();
+});
+});
+});
+},true); /* window-capture: runs before the older blocked handler */
+})();
+</script>
