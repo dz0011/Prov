@@ -10023,3 +10023,113 @@ withTimeout(db.rpc('delete_own_account'),2000).catch(function(){})
 }
 })();
 </script>
+<script>
+/* ============ DATA ISOLATION + POLISH (keep at VERY bottom) ============ */
+(function(){
+if(window.__isoV2)return;window.__isoV2=1;
+var LS=localStorage;
+function isG(){try{return LS.getItem('provenance.guest')==='1';}catch(e){return false;}}
+function uidOf(){return (typeof db!=='undefined'&&db&&db.auth)?db.auth.getUser().then(function(r){return r&&r.data&&r.data.user?r.data.user.id:null;}).catch(function(){return null;}):Promise.resolve(null);}
+
+/* 1) Quarantine old shared guest data when NOT in guest mode */
+if(!isG()){try{
+  var loc=LS.getItem('provenance.local');
+  if(loc){if(!LS.getItem('prov.mergePendingData'))LS.setItem('prov.mergePendingData',loc);LS.removeItem('provenance.local');}
+  var gb=LS.getItem('provenance.guestbackup');
+  if(gb){if(!LS.getItem('prov.mergePendingData'))LS.setItem('prov.mergePendingData',gb);LS.removeItem('provenance.guestbackup');}
+}catch(e){}}
+
+/* 2) Auth-screen taps decide what may merge */
+document.addEventListener('click',function(e){
+var t=e.target&&e.target.closest?e.target.closest('button'):null;if(!t)return;
+if(t.id==='auth-signin'){ /* existing account: guest data must NOT follow */
+  try{var l=LS.getItem('provenance.local');
+  if(l){if(!LS.getItem('prov.mergePendingData'))LS.setItem('prov.mergePendingData',l);LS.removeItem('provenance.local');}
+  LS.removeItem('provenance.guestbackup');}catch(e){}
+}else if(t.id==='auth-signup'){ /* creating an account: guest data MAY follow */
+  try{var l2=LS.getItem('provenance.local');if(l2){LS.setItem('prov.mergePendingData',l2);LS.setItem('prov.mergePending','1');}}catch(e){}
+}else if(t.id==='guest-btn'){ /* back to guest: give back unclaimed guest data */
+  try{if(!LS.getItem('provenance.local')&&!LS.getItem('prov.mergeBound')){
+    var pd=LS.getItem('prov.mergePendingData');
+    if(pd){LS.setItem('provenance.local',pd);LS.removeItem('prov.mergePendingData');LS.removeItem('prov.mergePending');}
+  }}catch(e){}
+}
+},true);
+
+/* 3) Per-user journal cache + clean load (no cross-account bleed) */
+var CACHE='prov.cache.';
+window.loadJournal=function(){
+state={paintings:[],entries:[]};
+return uidOf().then(function(uid){
+  if(!uid){try{var g=JSON.parse(LS.getItem('provenance.local')||'null');if(g&&g.paintings)state=g;}catch(e){}
+    if(typeof render==='function')render();return;}
+  var c=null;try{c=JSON.parse(LS.getItem(CACHE+uid)||'null');}catch(e){}
+  if(c&&c.paintings){state=c;if(typeof render==='function')render();}
+  return db.from('journals').select('data').eq('user_id',uid).maybeSingle().then(function(res){
+    state=(res&&res.data&&res.data.data)||{paintings:[],entries:[]};
+    try{LS.setItem(CACHE+uid,JSON.stringify(state));}catch(e){}
+    if(typeof render==='function')render();
+  }).catch(function(){if(c){state=c;}if(typeof render==='function')render();});
+});
+};
+if(typeof window.save==='function'){var _sv=window.save;
+window.save=function(){var r=_sv.apply(this,arguments);
+Promise.resolve(r).then(function(){uidOf().then(function(uid){if(uid){try{LS.setItem(CACHE+uid,JSON.stringify(state));}catch(e){}}});});
+return r;};}
+
+/* 4) Merge guest data ONLY into the account created from that guest */
+if(typeof db!=='undefined'&&db&&db.auth){
+db.auth.onAuthStateChange(function(ev,ses){
+if(!((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&ses&&ses.user))return;
+var uid=ses.user.id;
+setTimeout(function(){try{
+  var pd=LS.getItem('prov.mergePendingData');if(!pd)return;
+  var allowed=LS.getItem('prov.mergePending')==='1';
+  var bound=LS.getItem('prov.mergeBound');
+  if(bound&&bound!==uid)return;          /* already claimed by another account */
+  if(!allowed&&bound!==uid)return;       /* not created from guest */
+  var g=JSON.parse(pd);if(!g)return;
+  var added=false;
+  (g.paintings||[]).forEach(function(p){if(!state.paintings.some(function(x){return x.id===p.id;})){state.paintings.push(p);added=true;}});
+  (g.entries||[]).forEach(function(en){if(!state.entries.some(function(x){return x.id===en.id;})){state.entries.push(en);added=true;}});
+  LS.setItem('prov.mergeBound',uid);
+  if(added){if(typeof save==='function')save().then(function(ok){
+    if(ok){LS.removeItem('prov.mergePendingData');LS.removeItem('prov.mergePending');try{LS.removeItem('provenance.guest');}catch(e){}}
+    if(typeof render==='function')render();if(typeof toast==='function')toast('Guest journal merged ✓');});}
+  else{LS.removeItem('prov.mergePendingData');LS.removeItem('prov.mergePending');}
+}catch(e){}},1200);
+});
+/* 5) Flag "create from guest" at signUp time */
+if(db.auth.signUp&&!db.auth.signUp.__iso){var _su=db.auth.signUp.bind(db.auth);db.auth.signUp.__iso=1;
+db.auth.signUp=function(){try{if(isG()){var l=LS.getItem('provenance.local');if(l){LS.setItem('prov.mergePendingData',l);LS.setItem('prov.mergePending','1');}}}catch(e){}return _su.apply(this,arguments);};}
+}
+
+/* 6) Welcome modal: tap anywhere in the white body closes it */
+document.addEventListener('click',function(e){
+var panel=e.target&&e.target.closest?e.target.closest('.panel'):null;if(!panel)return;
+var head=panel.querySelector('.panel-head h2');
+if(!head||head.textContent.indexOf('Welcome to Provenance')===-1)return;
+if(e.target.closest('button, a, input, textarea, select, [data-action]'))return;
+if(typeof closeModal==='function')closeModal();
+},true);
+
+/* 7) Refresh lands back on the same page (Works stays Works) */
+window.addEventListener('load',function(){setTimeout(function(){try{
+var v=JSON.parse(sessionStorage.getItem('provenance.view')||'null');
+if(v&&v.name&&typeof view!=='undefined'&&view.name!==v.name){
+  if(v.name==='painting'&&typeof getP==='function'&&!getP(v.id))v={name:'paintings'};
+  view=v;if(typeof render==='function')render();}
+}catch(e){}},1500);});
+
+/* 8) Cover pick: write straight to the cloud so it sticks */
+document.addEventListener('click',function(e){
+var t=e.target&&e.target.closest?e.target.closest('[data-action="pick-cover"]'):null;if(!t)return;
+setTimeout(function(){
+if(typeof db==='undefined'||!db||!db.auth)return;
+db.auth.getUser().then(function(r){var u=r&&r.data&&r.data.user;if(!u)return;
+db.from('journals').upsert({user_id:u.id,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'}).catch(function(){});
+return uidOf().then(function(uid){if(uid){try{LS.setItem(CACHE+uid,JSON.stringify(state));}catch(e){}}});});
+},700);
+},true);
+})();
+</script>
