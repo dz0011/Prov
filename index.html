@@ -10133,3 +10133,228 @@ return uidOf().then(function(uid){if(uid){try{LS.setItem(CACHE+uid,JSON.stringif
 },true);
 })();
 </script>
+<script>
+/* ===== FINAL FIX: Cover Photo Stickiness + No Email Confirmation ===== */
+(function(){
+  if(window.__finalCoverAndAuthFix) return;
+  window.__finalCoverAndAuthFix = 1;
+
+  /* ==========================================
+     1. COVER PHOTO: BULLETPROOF OVERRIDE
+     ========================================== */
+  
+  // Override openPaintingForm to explicitly handle the cover property
+  window.openPaintingForm = function(pid, onSaved) {
+    var p = pid ? getP(pid) : null;
+    var isOther = p && (p.medium === 'Other' || MEDIUMS.indexOf(p.medium) === -1);
+    var otherVal = isOther ? (p.medium === 'Other' ? '' : p.medium) : '';
+    var es = p ? entriesOf(p.id) : [];
+    var allImgs = es.flatMap(e => e.images || []);
+    
+    // Clean up invalid covers
+    if(p && p.cover && !allImgs.includes(p.cover)) p.cover = '';
+
+    var coverHTML = p && allImgs.length ? (
+      '<label>Cover photo</label>' +
+      '<input type="hidden" name="cover" value="' + esc(p.cover || '') + '">' +
+      '<div class="thumbs" id="cover-picker" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px;">' + 
+      allImgs.map(src => '<button type="button" class="thumb cover-opt' + (p.cover === src ? ' sel' : '') + '" data-action="pick-cover" data-src="' + src + '" style="width:80px;height:80px;position:relative;padding:0;border-radius:8px;overflow:hidden;"><img src="' + src + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"></button>').join('') + 
+      '</div><p class="hint" style="margin-top:-8px;">Tap a photo to choose the Works-tab cover.</p>'
+    ) : '';
+
+    var layer = openModal('<div class="overlay" data-action="overlay-close"><form class="panel" id="pform">'
+      + '<div class="panel-head"><h2>' + (p ? 'Edit work' : 'New work') + '</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
+      + '<div class="grid2"><div><label>Number (optional)</label><input type="number" name="number" min="1" placeholder="leave blank for none" value="' + (p ? (p.number || '') : '') + '"></div>'
+      + '<div><label>Medium</label><select name="medium"><option value="">—</option>' + MEDIUMS.map(m => '<option value="' + m + '" ' + ((p && (p.medium === m || (m === 'Other' && isOther))) ? 'selected' : '') + '>' + m + '</option>').join('') + '</select></div></div>'
+      + '<div id="other-medium-wrap" style="display:' + (isOther ? 'block' : 'none') + '"><label>Describe your medium</label><input type="text" name="mediumOther" placeholder="e.g. spray paint, collage, encaustic…" value="' + esc(otherVal) + '"></div>'
+      + '<label>Title (optional)</label><input type="text" name="title" placeholder="Leave blank for untitled" value="' + (p && p.title !== 'Untitled' ? esc(p.title) : '') + '">'
+      + (p ? '<div class="grid2"><div><label>Status</label><select name="status"><option value="in-progress" ' + (p.status === 'in-progress' ? 'selected' : '') + '>In progress</option>'
+      + '<option value="finished" ' + (p.status === 'finished' ? 'selected' : '') + '>Finished</option></select></div>'
+      + '<div><label>Size</label><input type="text" name="size" value="' + esc(p.size || '') + '"></div></div>' : '')
+      + coverHTML
+      + '<div class="panel-foot">' + (p ? '<button type="button" class="btn ghost danger-btn" data-action="delete-painting" data-id="' + p.id + '">🗑 Delete</button><span class="spacer"></span>' : '<span class="spacer"></span>') + '<button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
+      + '<button class="btn primary">' + (p ? 'Save changes' : 'Create work') + '</button></div></form></div>');
+
+    layer.querySelector('#pform').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const f = new FormData(ev.target);
+      const title = (f.get('title') || '').trim();
+      let med = (f.get('medium') || '').trim();
+      if (med === 'Other') { const mo = (f.get('mediumOther') || '').trim(); if (mo) med = mo; }
+      
+      // CRITICAL: Grab the cover explicitly from the hidden input or memory
+      const chosenCover = f.get('cover') || (p ? p.cover : '');
+
+      const rec = {
+        id: p ? p.id : uid(),
+        number: parseInt(f.get('number')) || 0,
+        title: title || 'Untitled',
+        medium: med,
+        size: (f.get('size') || '').trim(),
+        status: f.get('status') || (p ? p.status : 'in-progress'),
+        cover: chosenCover, // <--- Explicitly saves the cover to the database record
+        createdAt: p ? p.createdAt : Date.now()
+      };
+      
+      if (p) Object.assign(p, rec); 
+      else state.paintings.push(rec);
+      
+      if (await save()) {
+        toast(p ? 'Work updated' : 'Work ' + numTag(rec.number) + ' created');
+        closeModal();
+        render();
+        if (onSaved) onSaved(rec.id);
+      }
+    });
+    setTimeout(() => { const t = layer.querySelector('input[name=title]'); if (t) t.focus(); }, 60);
+  };
+
+  // Override pick-cover to instantly update UI, hidden input, and memory
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-action="pick-cover"]') : null;
+    if(!t) return;
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    
+    var src = t.getAttribute('data-src');
+    var p = (window._editingPainting && typeof getP === 'function') ? getP(window._editingPainting) : null;
+    
+    // 1. Update visual state
+    document.querySelectorAll('#cover-picker .cover-opt').forEach(function(o){
+      o.classList.toggle('sel', o.getAttribute('data-src') === src);
+    });
+    
+    // 2. Update hidden input
+    var hiddenInput = document.querySelector('#pform input[name="cover"]');
+    if(hiddenInput) hiddenInput.value = src;
+    
+    // 3. Update memory
+    if(p) p.cover = src;
+    
+    // 4. Force background save
+    if(typeof save === 'function') save().catch(function(){});
+    
+  }, true);
+
+  // Force pcardHTML to respect p.cover on the Works grid
+  if(typeof pcardHTML === 'function' && !pcardHTML.__coverFinal){
+    var _origPcard = pcardHTML;
+    pcardHTML = function(p, i){
+      var h = _origPcard(p, i);
+      if(p && p.cover){
+        var tmp = document.createElement('div');
+        tmp.innerHTML = h;
+        var img = tmp.querySelector('.pcover img');
+        if(img){
+          img.setAttribute('src', p.cover);
+        } else {
+          var ghost = tmp.querySelector('.pnum-ghost');
+          if(ghost){
+            var ni = document.createElement('img');
+            ni.src = p.cover; ni.alt = ''; ni.className = 'pcover-img';
+            ni.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:inherit;';
+            ghost.replaceWith(ni);
+          }
+        }
+        h = tmp.innerHTML;
+      }
+      return h;
+    };
+    pcardHTML.__coverFinal = 1;
+  }
+
+  /* ==========================================
+     2. AUTH: NO EMAIL CONFIRMATION & CLEANUP
+     ========================================== */
+  
+  // Strip old listeners by cloning buttons to prevent double-firing
+  ['auth-signin', 'auth-signup', 'forgot-btn', 'resend-confirm'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && el.parentNode){
+      var clone = el.cloneNode(true);
+      el.parentNode.replaceChild(clone, el);
+    }
+  });
+  
+  // Remove resend button completely since we disabled confirmations
+  var resendBtn = document.getElementById('resend-confirm');
+  if(resendBtn && resendBtn.parentNode) resendBtn.parentNode.removeChild(resendBtn);
+
+  var authMsg = function(t){ var m = document.getElementById('auth-msg'); if(m) m.textContent = t; };
+  var emailVal = function(){ return (document.getElementById('auth-email') && document.getElementById('auth-email').value || '').trim(); };
+
+  var signupBtn = document.getElementById('auth-signup');
+  if(signupBtn){
+    signupBtn.addEventListener('click', async function(){
+      if(typeof db === 'undefined' || !db){ authMsg('Still connecting...'); return; }
+      var email = emailVal(), pw = document.getElementById('auth-password').value || '';
+      if(!email || !pw){ authMsg('Enter your email and password.'); return; }
+      if(pw.length < 6){ authMsg('Password needs at least 6 characters.'); return; }
+      
+      this.disabled = true;
+      authMsg('Creating account & signing in...');
+      
+      // Supabase returns a session immediately if "Confirm email" is OFF in the dashboard
+      var r = await db.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: location.origin } });
+      this.disabled = false;
+      
+      if(r.error){
+        authMsg('Sign up failed: ' + r.error.message);
+        return;
+      }
+      
+      if(r.data && r.data.session){
+        authMsg(''); // Success, onAuthStateChange will handle the UI transition
+      } else {
+        authMsg('Account created! If you don\'t see the app, check your email to confirm.');
+      }
+    });
+  }
+
+  var signinBtn = document.getElementById('auth-signin');
+  if(signinBtn){
+    signinBtn.addEventListener('click', async function(){
+      if(typeof db === 'undefined' || !db){ authMsg('Still connecting...'); return; }
+      var email = emailVal(), pw = document.getElementById('auth-password').value || '';
+      if(!email || !pw){ authMsg('Enter your email and password.'); return; }
+      
+      this.disabled = true;
+      authMsg('Signing in...');
+      var r = await db.auth.signInWithPassword({ email: email, password: pw });
+      this.disabled = false;
+      
+      if(r.error){
+        authMsg('Sign in failed: ' + r.error.message);
+      } else {
+        authMsg('');
+      }
+    });
+  }
+
+  var forgotBtn = document.getElementById('forgot-btn');
+  if(forgotBtn){
+    forgotBtn.addEventListener('click', async function(){
+      if(typeof db === 'undefined' || !db){ authMsg('Still connecting...'); return; }
+      var email = emailVal();
+      if(!email){ authMsg('Type your email first.'); return; }
+      
+      this.disabled = true;
+      authMsg('Sending reset link...');
+      var r = await db.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+      this.disabled = false;
+      
+      if(r.error){
+        // Handle the rate limit gracefully instead of showing a raw error
+        if(r.error.message && r.error.message.toLowerCase().indexOf('rate limit') !== -1){
+          authMsg('Too many reset emails sent. Please wait an hour before trying again.');
+        } else {
+          authMsg('Could not send: ' + r.error.message);
+        }
+      } else {
+        authMsg('Reset link sent! Check your inbox.');
+      }
+    });
+  }
+
+})();
+</script>
