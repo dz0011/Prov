@@ -1485,3 +1485,29 @@ auth.resetPasswordForEmail=function(em,o){o=o||{};if(!o.redirectTo)o.redirectTo=
 if(typeof db!=='undefined'&&db&&db.auth)patchAuth(db.auth);
 if(typeof supabase!=='undefined'&&supabase.createClient){var _cc=supabase.createClient.bind(supabase);supabase.createClient=function(u,k,o){var c=_cc(u,k,o);patchAuth(c.auth);return c;};}
 })();
+/* ===== Menu: never show guest options while signed in ===== */
+(function(){
+if(window.__guestUIFix)return;window.__guestUIFix=1;
+function sync(){
+var g=(typeof isGuest==='function')&&isGuest();
+var so=document.querySelector('[data-action="sign-out"]');
+if(so)so.textContent=g?'Exit Guest Mode':'Sign out';
+var gc=document.querySelector('[data-action="guest-create"]');
+if(gc)gc.style.display=g?'':'none';
+if(typeof updateUserEmail==='function')updateUserEmail();
+}
+function clearStale(){
+if(typeof db==='undefined'||!db||!db.auth)return;
+db.auth.getUser().then(function(r){
+var u=r&&r.data&&r.data.user;if(!u)return;
+setTimeout(function(){
+var hasLocal=false;try{hasLocal=!!(localStorage.getItem('provenance.local'));}catch(e){}
+if(!hasLocal){try{localStorage.removeItem('provenance.guest');}catch(e){}}
+sync();
+},1500);
+}).catch(function(){});
+}
+if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,ses){if((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&ses)clearStale();});
+document.addEventListener('click',function(e){if(e.target.closest('[data-action="menu-toggle"]'))setTimeout(sync,0);},true);
+setTimeout(sync,1000);
+})();
