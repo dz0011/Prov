@@ -26,7 +26,7 @@ body:not(.fabs-go) .float-btn{display:none!important}
 #lightbox .lb-next{left:auto!important;right:0!important}
 /* viewer pill level with Timeline/Works */
 #tabs-row{align-items:center}
-.tab.tab-viewer{position:relative!important;top:0!important;left:auto!important;right:auto!important;margin:0 0 0 12px;align-self:center}
 /* viewer page fits horizontally */
 html,body{overflow-x:hidden!important}
 #view .page-head .sub{white-space:normal!important;max-width:100%}
+#lightbox .lb-prev,#lightbox .lb-next{width:28%!important}
