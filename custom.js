@@ -1068,3 +1068,99 @@ if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,se
     });
   }
 })();
+/* ===== DEFINITIVE COVER PHOTO FIX ===== */
+(function(){
+  if(window.__coverFixFinal) return;
+  window.__coverFixFinal = 1;
+
+  // 1. Intercept cover pick and force a DIRECT cloud write (bypasses the failing save wrapper)
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-action="pick-cover"]') : null;
+    if(!t) return;
+    var pid = window._editingPainting;
+    var p = (typeof getP === 'function') ? getP(pid) : null;
+    if(!p) return;
+    
+    var newCover = t.dataset.src;
+    p.cover = newCover; // Update memory immediately
+    
+    // Force direct cloud upsert after a slight delay
+    setTimeout(function(){
+      if(typeof db !== 'undefined' && db && db.auth){
+        db.auth.getUser().then(function(res){
+          var u = res && res.data && res.data.user;
+          if(!u) return;
+          db.from('journals').upsert({
+            user_id: u.id,
+            data: state,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' }).then(function(){
+            if(typeof toast === 'function') toast('Cover saved to cloud ✓');
+          }).catch(function(err){
+            console.error('Cover cloud save failed:', err);
+          });
+        });
+      }
+    }, 800); 
+  }, true); 
+
+  // 2. Force the Works grid to display the chosen cover after every render
+  function patchCovers(){
+    var cards = document.querySelectorAll('.pcard[data-id]');
+    for(var i=0; i<cards.length; i++){
+      var id = cards[i].getAttribute('data-id');
+      var p = (typeof getP === 'function') ? getP(id) : null;
+      if(!p || !p.cover) continue;
+      
+      var img = cards[i].querySelector('.pcover img');
+      if(img){
+        if(img.getAttribute('src') !== p.cover) img.setAttribute('src', p.cover);
+      } else {
+        var ghost = cards[i].querySelector('.pnum-ghost');
+        if(ghost){
+          var ni = document.createElement('img');
+          ni.src = p.cover; ni.alt = ''; ni.loading = 'lazy';
+          ni.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:inherit;';
+          ghost.replaceWith(ni);
+        }
+      }
+    }
+  }
+
+  if(typeof render === 'function' && !render.__coverPatch){
+    var _origRender = render;
+    render = function(){
+      var r = _origRender.apply(this, arguments);
+      setTimeout(patchCovers, 50);
+      setTimeout(patchCovers, 600);
+      return r;
+    };
+    render.__coverPatch = 1;
+  }
+
+  // 3. Override pcardHTML to ensure it ALWAYS respects p.cover when drawing cards
+  if(typeof pcardHTML === 'function' && !pcardHTML.__coverPatch){
+    var _origPcard = pcardHTML;
+    pcardHTML = function(p, i){
+      var h = _origPcard(p, i);
+      if(p && p.cover){
+        var tmp = document.createElement('div');
+        tmp.innerHTML = h;
+        var im = tmp.querySelector('.pcover img');
+        if(im) im.setAttribute('src', p.cover);
+        else {
+          var ghost = tmp.querySelector('.pnum-ghost');
+          if(ghost){
+            var ni = document.createElement('img');
+            ni.src = p.cover; ni.alt=''; ni.className='pcover-img';
+            ni.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:inherit;';
+            ghost.replaceWith(ni);
+          }
+        }
+        h = tmp.innerHTML;
+      }
+      return h;
+    };
+    pcardHTML.__coverPatch = 1;
+  }
+})();
