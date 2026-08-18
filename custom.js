@@ -1164,3 +1164,109 @@ if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,se
     pcardHTML.__coverPatch = 1;
   }
 })();
+/* ===== BULLETPROOF FIXES: Delete, Medium Default, No Autofocus Flash ===== */
+(function(){
+  if(window.__bulletproofFixes) return;
+  window.__bulletproofFixes = 1;
+
+  /* 1. DELETE ACCOUNT: Never freezes, hard-failsafe reload */
+  document.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest ? e.target.closest('[data-action="delete-account"]') : null;
+    if(!btn) return;
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    if(typeof closeModal === 'function') closeModal();
+
+    if(typeof isGuest === 'function' && isGuest()){
+      if(confirm('Delete all guest data on this device?')){
+        try{ localStorage.clear(); sessionStorage.clear(); }catch(err){}
+        location.reload();
+      }
+      return;
+    }
+
+    openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:360px">'
+      +'<div class="panel-head"><h2 style="font-size:20px">Delete account?</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div>'
+      +'<p class="etext" style="margin:4px 0 12px">This permanently deletes your journal and account. Type <b>DELETE</b> to confirm.</p>'
+      +'<input type="text" id="nuke-conf" placeholder="DELETE" autocomplete="off" style="width:100%;padding:10px;font-size:16px;">'
+      +'<div class="panel-foot" style="margin-top:12px;"><button type="button" class="btn ghost" data-action="close-modal">Cancel</button>'
+      +'<button type="button" class="btn primary" id="nuke-go" style="background:#d32f2f;color:white;">Delete forever</button></div></div></div>');
+
+    document.getElementById('nuke-go').addEventListener('click', function(){
+      var val = (document.getElementById('nuke-conf').value || '').trim();
+      if(val !== 'DELETE'){
+        alert('Please type DELETE exactly.');
+        return;
+      }
+      
+      closeModal();
+      
+      var overlay = document.createElement('div');
+      overlay.id = 'nuke-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-family:sans-serif;';
+      overlay.textContent = 'Deleting account...';
+      document.body.appendChild(overlay);
+
+      var done = false;
+      function finish(){
+        if(done) return;
+        done = true;
+        try{ localStorage.clear(); sessionStorage.clear(); }catch(err){}
+        // Force hard redirect to clear app state and break any frozen loops
+        window.location.href = window.location.origin + window.location.pathname + '?_=' + Date.now();
+      }
+
+      // Hard failsafe: reload after 3 seconds NO MATTER WHAT
+      setTimeout(finish, 3000);
+
+      if(typeof db !== 'undefined' && db && db.auth){
+        db.auth.getUser().then(function(res){
+          var u = res && res.data && res.data.user;
+          if(u){
+            // Fire requests without awaiting to prevent hanging on slow Supabase responses
+            try{ db.from('journals').delete().eq('user_id', u.id).catch(function(){}); }catch(err){}
+            try{ db.rpc('delete_own_account').catch(function(){}); }catch(err){}
+            try{ db.auth.signOut().catch(function(){}); }catch(err){}
+          }
+          // Give network 1.5s to process, then force reload
+          setTimeout(finish, 1500);
+        }).catch(function(){
+          setTimeout(finish, 500);
+        });
+      } else {
+        setTimeout(finish, 500);
+      }
+    });
+  }, true);
+
+  /* 2 & 3. NEW WORK MODAL: Medium default + No autofocus flash */
+  var mo = new MutationObserver(function(muts){
+    for(var i=0; i<muts.length; i++){
+      for(var j=0; j<muts[i].addedNodes.length; j++){
+        var el = muts[i].addedNodes[j];
+        if(el.nodeType === 1 && el.querySelector && el.querySelector('#pform')){
+          
+          // Fix Medium: Force empty selection for New Work
+          var sel = el.querySelector('select[name="medium"]');
+          if(sel){
+            var titleInp = el.querySelector('input[name="title"]');
+            if(!titleInp || !titleInp.value){
+              sel.value = ''; // Selects the default "—" option
+            }
+          }
+
+          // Fix Autofocus Flash: Override the .focus() method on the title input
+          var titleInput = el.querySelector('input[name="title"]');
+          if(titleInput){
+            // Swallows the core app's auto-focus script so the keyboard doesn't flash
+            titleInput.focus = function(){ /* do nothing */ };
+            titleInput.blur();
+            titleInput.removeAttribute('autofocus');
+          }
+        }
+      }
+    }
+  });
+  mo.observe(document.body, {childList: true, subtree: true});
+
+})();
