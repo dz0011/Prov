@@ -755,7 +755,7 @@ if($('#auth-signup'))$('#auth-signup').addEventListener('click',async()=>{
   if(!email||!password){setAuthMsg('Enter your email and password.');return;}
   if(password.length<6){setAuthMsg('Password needs at least 6 characters.');return;}
   setAuthMsg('Creating your account…');
-  const{data,error}=await db.auth.signUp({email,password});
+  const{data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin}});
   if(error){setAuthMsg('Could not sign up: '+error.message);return;}
   if(data&&!data.session)setAuthMsg('Account created! Check your email to confirm, then sign in.');
 });
