@@ -50,3 +50,6 @@ html,body{overflow-x:hidden!important}
   outline:none!important;
   box-shadow:none!important;
 }
+#lightbox, #lightbox *{-webkit-tap-highlight-color:transparent!important;}
+#lightbox .lb-prev,#lightbox .lb-next{ background:transparent!important; outline:none!important; ... }
+#lightbox .lb-prev:hover,...:active,...:focus,...:focus-visible{ background:transparent!important; outline:none!important; box-shadow:none!important; }
