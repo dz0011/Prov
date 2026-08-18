@@ -1511,3 +1511,83 @@ if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,se
 document.addEventListener('click',function(e){if(e.target.closest('[data-action="menu-toggle"]'))setTimeout(sync,0);},true);
 setTimeout(sync,1000);
 })();
+/* ===== Auth v2: resend confirmation + friendly rate-limit messages ===== */
+(function(){
+if(window.__authV2)return;window.__authV2=1;
+function el(id){return document.getElementById(id);}
+function msg(t){var m=el('auth-msg');if(m)m.textContent=t;}
+function emailVal(){return (el('auth-email')&&el('auth-email').value||'').trim();}
+/* clone the buttons so ONLY these handlers run (no double-sends -> no rate limits) */
+['auth-signin','auth-signup','forgot-btn'].forEach(function(id){
+var n=el(id);if(n){var c=n.cloneNode(true);n.parentNode.replaceChild(c,n);}
+});
+/* resend button */
+var card=document.querySelector('#auth-screen .auth-card');
+var resend=document.createElement('button');
+resend.type='button';resend.id='resend-confirm';
+resend.style.cssText='display:block;background:none;border:0;color:#4A4B54;text-decoration:underline;font:500 12.5px "Space Grotesk",sans-serif;margin:8px auto 0;cursor:pointer;';
+resend.textContent='Resend confirmation email';
+if(card)card.appendChild(resend);
+
+el('auth-signup').addEventListener('click',async function(){
+if(typeof db==='undefined'||!db){msg('Still connecting — try again in a moment.');return;}
+var email=emailVal(),pw=el('auth-password').value||'';
+if(!email||!pw){msg('Enter your email and password.');return;}
+if(pw.length<6){msg('Password needs at least 6 characters.');return;}
+this.disabled=true;msg('Creating your account…');
+var r=await db.auth.signUp({email:email,password:pw,options:{emailRedirectTo:location.origin}});
+this.disabled=false;
+if(r.error){
+var m=(r.error.message||'').toLowerCase();
+if(m.indexOf('rate limit')!==-1){msg('Too many emails to this address. Wait ~60 seconds, then use “Resend confirmation email”.');resend.style.display='block';}
+else if(m.indexOf('already registered')!==-1||m.indexOf('already exists')!==-1){msg('That email already has an account. Sign in — or resend the confirmation email if you never confirmed it.');resend.style.display='block';}
+else msg('Could not sign up: '+r.error.message);
+return;
+}
+if(r.data&&r.data.session){msg('');}
+else{msg('Account created! Check your inbox (and spam) to confirm, then sign in.');resend.style.display='block';}
+});
+
+el('auth-signin').addEventListener('click',async function(){
+if(typeof db==='undefined'||!db){msg('Still connecting — try again in a moment.');return;}
+var email=emailVal(),pw=el('auth-password').value||'';
+if(!email||!pw){msg('Enter your email and password.');return;}
+this.disabled=true;msg('Signing in…');
+var r=await db.auth.signInWithPassword({email:email,password:pw});
+this.disabled=false;
+if(r.error){
+var m=(r.error.message||'').toLowerCase();
+if(m.indexOf('not confirmed')!==-1){msg('That account still needs its confirmation email. Tap “Resend confirmation email”.');resend.style.display='block';}
+else msg('Could not sign in: '+r.error.message);
+}
+});
+
+resend.addEventListener('click',async function(){
+if(typeof db==='undefined'||!db||!db.auth.resend){msg('Still connecting — try again in a moment.');return;}
+var email=emailVal();
+if(!email){msg('Type your email first, then resend.');return;}
+resend.disabled=true;resend.textContent='Sending…';
+var r=await db.auth.resend({type:'signup',email:email,options:{emailRedirectTo:location.origin}});
+resend.disabled=false;resend.textContent='Resend confirmation email';
+if(r.error){
+var m=(r.error.message||'').toLowerCase();
+if(m.indexOf('rate limit')!==-1)msg('Still too soon — wait a minute, then try again.');
+else msg('Could not resend: '+r.error.message);
+}else msg('Confirmation email sent — check your inbox (and spam).');
+});
+
+var fb=el('forgot-btn');
+if(fb)fb.addEventListener('click',async function(){
+if(typeof db==='undefined'||!db){msg('Still connecting — try again in a moment.');return;}
+var email=emailVal();
+if(!email){msg('Type your email above first, then tap “Forgot password?”.');return;}
+fb.disabled=true;msg('Sending reset link…');
+var r=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
+fb.disabled=false;
+if(r.error){
+var m=(r.error.message||'').toLowerCase();
+if(m.indexOf('rate limit')!==-1)msg('Too many reset emails — wait ~60 seconds and try again.');
+else msg('Could not send: '+r.error.message);
+}else msg('Reset link sent — check your inbox (and spam).');
+});
+})();
