@@ -1472,3 +1472,16 @@ toast('Work deleted');
 if(typeof save==='function')save();                /* cloud sync in the background */
 },true);
 })();
+/* ===== Confirmation links always point at the live site ===== */
+(function(){
+if(window.__redirectPatch)return;window.__redirectPatch=1;
+function patchAuth(auth){
+if(!auth||auth.__rp)return;auth.__rp=1;
+var _su=auth.signUp.bind(auth);
+auth.signUp=function(creds){creds=creds||{};creds.options=creds.options||{};if(!creds.options.emailRedirectTo)creds.options.emailRedirectTo=location.origin;return _su(creds);};
+var _rp=auth.resetPasswordForEmail.bind(auth);
+auth.resetPasswordForEmail=function(em,o){o=o||{};if(!o.redirectTo)o.redirectTo=location.origin;return _rp(em,o);};
+}
+if(typeof db!=='undefined'&&db&&db.auth)patchAuth(db.auth);
+if(typeof supabase!=='undefined'&&supabase.createClient){var _cc=supabase.createClient.bind(supabase);supabase.createClient=function(u,k,o){var c=_cc(u,k,o);patchAuth(c.auth);return c;};}
+})();
