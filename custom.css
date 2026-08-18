@@ -1,146 +1,32 @@
-/* Provenance custom styles — new styling goes here, not in index.html */
+/* Provenance custom styles — CSS ONLY (never put JavaScript in this file) */
 #pig-detail .btn{padding:8px 12px;font-size:13px}
 #view .vframe + div{gap:16px}
-#pin-view{order:-1}
-#poster-view{order:1}
-#pin-view,#poster-view{width:40px;height:36px;padding:0;font-size:15px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center}
-
-@keyframes rabbitchomp{
-  0%{transform:translate(-50%,-50%) scale(2.2) scaleX(var(--flip,1)) rotate(0)}
-  40%{transform:translate(-50%,-50%) scale(2.4) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-12deg))}
-  70%{transform:translate(-50%,-50%) scale(2.05) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*8deg))}
-  100%{transform:translate(-50%,-50%) scale(2.2) scaleX(var(--flip,1)) rotate(0)}
-}
-
 body:not(.fabs-go) .float-btn{display:none!important}
 
-/* Slower, magical entrance to the rabbit page */
-@keyframes rb-enter{
-  0%{opacity:0;transform:scale(1.06);filter:brightness(1.25) saturate(1.3) blur(6px)}
-  55%{opacity:1;filter:brightness(1.08) saturate(1.1) blur(1px)}
-  100%{opacity:1;transform:scale(1);filter:none}
-}
+@keyframes rabbitchomp{0%{transform:translate(-50%,-50%) translate(0,0) scale(2.2) scaleX(var(--flip,1)) rotate(0)}30%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.3) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-14deg + var(--tilt,0deg)))}55%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.12) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-6deg + var(--tilt,0deg)))}70%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.26) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-12deg + var(--tilt,0deg)))}100%{transform:translate(-50%,-50%) translate(0,0) scale(2.2) scaleX(var(--flip,1)) rotate(0)}}
+@keyframes rb-enter{0%{opacity:0;transform:scale(1.07);filter:brightness(1.3) saturate(1.2)}45%{opacity:1}100%{opacity:1;transform:scale(1);filter:brightness(1) saturate(1)}}
 #rabbit-page{animation:rb-enter 1.15s cubic-bezier(.2,.8,.25,1) both}
-
-@keyframes rb-sparkle{
-  0%{opacity:0;transform:scale(.4) rotate(0deg)}
-  30%{opacity:.95}
-  100%{opacity:0;transform:scale(1.6) rotate(45deg)}
-}
+@keyframes rb-sparkle{0%{opacity:0;transform:scale(.4) rotate(0)}30%{opacity:.95}100%{opacity:0;transform:scale(1.6) rotate(45deg)}}
 .rb-sparkle{position:absolute;pointer-events:none;animation:rb-sparkle 1.3s ease-out both}
-
-/* Chomp v2: reach-stretch + head-down tilt so the mouth meets the flower */
-@keyframes rabbitchomp{
-  0%{transform:translate(-50%,-50%) translate(0px,0px) scale(2.2) scaleX(var(--flip,1)) rotate(0deg)}
-  30%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.3) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-14deg + var(--tilt,0deg)))}
-  55%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.12) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-6deg + var(--tilt,0deg)))}
-  70%{transform:translate(-50%,-50%) translate(var(--sx,0px),var(--sy,0px)) scale(2.26) scaleX(var(--flip,1)) rotate(calc(var(--flip,1)*-12deg + var(--tilt,0deg)))}
-  100%{transform:translate(-50%,-50%) translate(0px,0px) scale(2.2) scaleX(var(--flip,1)) rotate(0deg)}
-}
-
-/* Magical but SHARP entrance (no blur) */
-@keyframes rb-enter{
-  0%{opacity:0;transform:scale(1.07);filter:brightness(1.3) saturate(1.2)}
-  45%{opacity:1}
-  100%{opacity:1;transform:scale(1);filter:brightness(1) saturate(1)}
-}
-
-@keyframes rb-petal{
-  0%{opacity:0;transform:translateY(0) scale(.6) rotate(0deg)}
-  25%{opacity:1}
-  100%{opacity:0;transform:translateY(26px) scale(1.1) rotate(60deg)}
-}
+@keyframes rb-petal{0%{opacity:0;transform:translateY(0) scale(.6) rotate(0)}25%{opacity:1}100%{opacity:0;transform:translateY(26px) scale(1.1) rotate(60deg)}}
 .rb-petal{position:absolute;pointer-events:none;color:#F291B5;animation:rb-petal .95s ease-in both}
+@keyframes rabbithop{0%,100%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) translateY(0)}50%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) translateY(-14px)}}
+@keyframes rabbitshake{0%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(0)}30%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(6deg)}60%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(-5deg)}80%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(4deg)}100%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(0)}}
 
-@keyframes rabbithop{
-  0%,100%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) translateY(0)}
-  50%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) translateY(-14px)}
-}
-
-@keyframes rabbitshake{
-  0%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(0)}
-  30%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(6deg)}
-  60%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(-5deg)}
-  80%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(4deg)}
-  100%{transform:translate(-50%,-50%) scale(var(--rs,2.2)) scaleX(var(--flip,1)) rotate(0)}
-}
-/* ===== Rabbit refinements (lives in custom.js, loads last, wins) ===== */
-(function(){
-if(window.__rabbitFinal)return; window.__rabbitFinal=1;
-
-/* 1) PEONIES: 🪷 is the closest standard emoji to a peony — sprinkle a few in */
-function addPeonies(page){
-  if(page.dataset.peony)return; page.dataset.peony='1';
-  for(var i=0;i<3;i++){
-    var s=document.createElement('span'); s.textContent='🪷';
-    s.style.cssText='position:absolute;bottom:'+(6+Math.random()*24)+'%;left:'+(Math.random()*92)+
-      '%;font-size:'+(12+Math.random()*10)+'px;transform:rotate('+(Math.random()*30-15)+'deg);z-index:3;';
-    page.appendChild(s);
-  }
-}
-
-/* 2) HIDE the hieroglyph closest to the sun (sun sits left ~9%, so hide the FIRST glyph) */
-function hideNearSunGlyph(page){
-  var row=page.querySelector('.rb-glyphrow'); if(!row)return;
-  var g=row.querySelectorAll('.rb-glyph'); if(g.length)g[0].style.visibility='hidden';
-}
-
-/* 3) Rabbit faces the way it walks when returning from the sun.
-   🐇 faces left by default; --flip=-1 makes it face right.
-   fromLeft  -> face RIGHT  -> --flip = -1
-   fromRight -> face LEFT   -> --flip =  1 */
-function sunTap(e){
-  var page=document.getElementById('rabbit-page'); if(!page||page._soaring)return;
-  var sun=e.target.closest?e.target.closest('.rb-sun2'):null; if(!sun)return;
-  e.stopImmediatePropagation(); e.preventDefault();
-  var b=null,ds=page.querySelectorAll('div');
-  for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰'){b=ds[i];break;}}
-  if(!b)return;
-  page._soaring=1; try{b.getAnimations().forEach(function(a){a.cancel();});}catch(err){}
-  b.style.animation='none'; b.style.zIndex=9;
-  var pr=page.getBoundingClientRect(),sr=sun.getBoundingClientRect();
-  var sx=(sr.left+sr.width/2-pr.left)/pr.width*100, sy=(sr.top+sr.height/2-pr.top)/pr.height*100;
-  var fromLeft=Math.random()<.5;
-  b.style.setProperty('--flip', fromLeft?'-1':'1');   /* face the walking direction */
-  var up=b.animate([
-    {left:'50%',top:'56%',opacity:1,transform:'translate(-50%,-50%) scale(2.2)',offset:0,easing:'ease-in'},
-    {left:sx+'%',top:(sy+6)+'%',opacity:1,transform:'translate(-50%,-50%) scale(1.1)',offset:.7,easing:'ease-in'},
-    {left:sx+'%',top:sy+'%',opacity:0,transform:'translate(-50%,-50%) scale(0.12)',offset:1}
-  ],{duration:1100,easing:'ease-in'});
-  up.onfinish=function(){
-    b.style.opacity='0'; b.style.left=sx+'%'; b.style.top=sy+'%';
-    sun.animate([{transform:'scale(1)'},{transform:'scale(1.3)'},{transform:'scale(1)'}],{duration:600,easing:'ease-out'});
-    setTimeout(function(){
-      b.style.left=fromLeft?'-14%':'114%'; b.style.top='56%'; b.style.opacity='1';
-      b.style.setProperty('--flip', fromLeft?'-1':'1');
-      b.style.animation='rabbithop 1.6s ease-in-out infinite';
-      var walk=b.animate([{left:fromLeft?'-14%':'114%',offset:0,easing:'ease-in-out'},{left:'50%',offset:1}],{duration:2200,easing:'ease-in-out'});
-      walk.onfinish=function(){b.style.left='50%';b.style.zIndex='4';page._soaring=0;};
-    },1000);
-  };
-}
-window.addEventListener('click',sunTap,true);
-
-var mo=new MutationObserver(function(muts){
-  for(var i=0;i<muts.length;i++)for(var j=0;j<muts[i].addedNodes.length;j++){
-    var n=muts[i].addedNodes[j];
-    if(n.nodeType===1&&n.id==='rabbit-page'){addPeonies(n);hideNearSunGlyph(n);}
-  }
-});
-mo.observe(document.body,{childList:true});
-var cur=document.getElementById('rabbit-page'); if(cur){addPeonies(cur);hideNearSunGlyph(cur);}
-})();
-/* Viewer: remove the pin button and the save icon (poster stays) */
-#pin-view,
-#viewer-save,
-[data-action="viewer-save2"]{display:none!important}
-/* ===== Viewer: remove the pin and save buttons ===== */
-/* Viewer buttons: remove 📌 pin and  poster; KEEP 💾 next to ↻ refresh */
+/* gear menu: hide Your Pigments */
+#menu [data-action="open-pigments"]{display:none!important}
+/* viewer: hide pin + poster, KEEP save next to refresh */
 #pin-view,#poster-view{display:none!important}
 #viewer-save,[data-action="viewer-save2"]{display:inline-flex!important}
-
-/* Remove the "Install may take up to 30 sec." note entirely */
+/* hide install note */
 .iu-note{display:none!important}
-
-/* keep the controls row balanced: poster left · refresh center · creature right */
-#poster-view{grid-column:1;justify-self:center}
+/* lightbox: full-height left/right tap bands */
+#lightbox .lb-prev,#lightbox .lb-next{position:absolute!important;top:0!important;bottom:0!important;height:100%!important;width:34%!important;border-radius:0!important;border:0!important;background:transparent!important;transform:none!important}
+#lightbox .lb-prev{left:0!important}
+#lightbox .lb-next{left:auto!important;right:0!important}
+/* viewer pill level with Timeline/Works */
+#tabs-row{align-items:center}
+.tab.tab-viewer{position:relative!important;top:0!important;left:auto!important;right:auto!important;margin:0 0 0 12px;align-self:center}
+/* viewer page fits horizontally */
+html,body{overflow-x:hidden!important}
+#view .page-head .sub{white-space:normal!important;max-width:100%}
