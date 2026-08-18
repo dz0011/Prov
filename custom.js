@@ -1270,3 +1270,70 @@ if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,se
   mo.observe(document.body, {childList: true, subtree: true});
 
 })();
+/* ===== EXIT APP ON BACK BUTTON (Sign-in page only) ===== */
+(function(){
+  if(window.__authBackExit) return;
+  window.__authBackExit = 1;
+
+  var exitPending = false;
+  
+  // Pushes a dummy history state so the back button has something to "pop"
+  function ensureAuthSentinel(){
+    var auth = document.getElementById('auth-screen');
+    var authOn = auth && getComputedStyle(auth).display !== 'none';
+    if(authOn && !exitPending){
+      try{ 
+        history.replaceState({appRoot:1}, '');
+        history.pushState({authSentinel:1}, ''); 
+      }catch(e){}
+    }
+  }
+
+  // Watch for the auth screen becoming visible
+  var authEl = document.getElementById('auth-screen');
+  if(authEl){
+    var mo = new MutationObserver(ensureAuthSentinel);
+    mo.observe(authEl, {attributes: true, attributeFilter: ['style', 'class']});
+  }
+  setTimeout(ensureAuthSentinel, 800);
+
+  // Intercept the back button
+  window.addEventListener('popstate', function(e){
+    var auth = document.getElementById('auth-screen');
+    var authOn = auth && getComputedStyle(auth).display !== 'none';
+    
+    if(authOn){
+      if(exitPending){
+        // Second back press -> EXIT APP
+        if(window.navigator.app && window.navigator.app.exitApp){
+          window.navigator.app.exitApp(); // Android native wrapper
+        } else {
+          window.close(); // Works if the PWA was launched from home screen
+          // Fallback for stubborn browsers: blanking the window effectively "closes" the PWA view
+          setTimeout(function(){ window.location.href = 'about:blank'; }, 100);
+        }
+      } else {
+        exitPending = true;
+        if(typeof toast === 'function') toast('Tap back again to exit');
+        
+        // Re-push sentinel so the NEXT back press fires this event again
+        setTimeout(function(){
+          try{ history.pushState({authSentinel:1}, ''); }catch(err){}
+        }, 50);
+        
+        // Auto-reset if they don't press back again within 3 seconds
+        setTimeout(function(){ 
+          exitPending = false; 
+          ensureAuthSentinel();
+        }, 3000);
+      }
+    }
+  }, true);
+  
+  // Reset the pending exit if they tap the screen instead of hitting back again
+  document.addEventListener('click', function(e){
+    if(exitPending && e.target.closest('#auth-screen')){
+      exitPending = false;
+    }
+  }, true);
+})();
