@@ -9673,3 +9673,92 @@ g.animate([{transform:'scale(1)',opacity:.16},{transform:'scale(1.7) rotate(20de
 },true);
 })();
 </script>
+<script>
+(function(){
+/* 1) Mediums list: Tempera -> Photography */
+if(typeof MEDIUMS!=='undefined'){var ti=MEDIUMS.indexOf('Tempera');if(ti>-1)MEDIUMS[ti]='Photography';}
+
+/* 2) Forgot password — simple + functional */
+function authMsg(m){var el=document.getElementById('auth-msg');if(el)el.textContent=m;}
+(function(){
+var card=document.querySelector('#auth-screen .auth-card');
+if(card&&!document.getElementById('forgot-btn')){
+var b=document.createElement('button');b.id='forgot-btn';b.type='button';b.className='btn ghost';
+b.style.cssText='width:100%;justify-content:center;margin-top:8px;font-size:12.5px;color:var(--ink-soft)';
+b.textContent='Forgot password?';
+var signup=document.getElementById('auth-signup');
+if(signup)card.insertBefore(b,signup);else card.appendChild(b);
+b.addEventListener('click',async function(){
+if(typeof db==='undefined'||!db){authMsg('Not connected yet — try again in a moment.');return;}
+var em=(document.getElementById('auth-email').value||'').trim();
+if(!em){authMsg('Type your email above first, then tap “Forgot password?”.');return;}
+authMsg('Sending reset link…');
+var r=await db.auth.resetPasswordForEmail(em,{redirectTo:location.origin});
+if(r.error)authMsg('Could not send: '+r.error.message);
+else authMsg('Reset link sent to '+em+' — open it on this device.');
+});
+}
+})();
+/* When the reset link is opened: elegant "choose a new password" card */
+if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev){
+if(ev!=='PASSWORD_RECOVERY')return;
+setTimeout(function(){
+openModal('<div class="overlay" data-action="overlay-close"><div class="panel" style="max-width:360px"><div class="panel-head"><h2 style="font-size:20px">Choose a new password</h2><button type="button" class="icon-btn" data-action="close-modal">✕</button></div><label>New password</label><input type="password" id="rec-pass" placeholder="at least 6 characters"><div class="auth-msg" id="rec-msg"></div><div class="panel-foot"><span class="spacer"></span><button type="button" class="btn primary" id="rec-save">Save password</button></div></div></div>');
+document.getElementById('rec-save').addEventListener('click',async function(){
+var np=document.getElementById('rec-pass').value;var msg=document.getElementById('rec-msg');
+if(!np||np.length<6){msg.textContent='Password needs at least 6 characters.';return;}
+var r=await db.auth.updateUser({password:np});
+if(r.error){msg.textContent='Could not update: '+r.error.message;return;}
+closeModal();toast('Password updated ✓');
+});
+},600);
+});
+
+/* 3) Settings: hide "Create account" unless in Guest Mode */
+document.addEventListener('click',function(e){
+if(!e.target.closest('[data-action="menu-toggle"]'))return;
+setTimeout(function(){
+var b=document.querySelector('[data-action="guest-create"]');
+if(b)b.style.display=(typeof isGuest==='function'&&isGuest())?'':'none';
+var ib=document.querySelector('[data-action="install-app"]');
+if(ib){ib.disabled=false;ib.innerHTML='📥 Install as App';}
+},0);
+},true);
+
+/* 4) Install button stays usable after install */
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__deferredPrompt=e;},true);
+document.addEventListener('click',function(e){
+var t=e.target.closest('[data-action="install-app"]');if(!t)return;
+e.stopImmediatePropagation();
+var m=document.getElementById('menu');if(m)m.classList.remove('open');
+if(window.__deferredPrompt){window.__deferredPrompt.prompt();window.__deferredPrompt.userChoice.then(function(){window.__deferredPrompt=null;});}
+else if(typeof toast==='function')toast('Browser menu ⋮ → “Add to Home screen” / “Install app”');
+},true);
+
+/* 5) Installed-app data safety net: the cloud always gets your studio */
+(function(){
+try{var loc=localStorage.getItem('provenance.local');if(loc)localStorage.setItem('provenance.guestbackup',loc);}catch(e){}
+function pushIfMissing(){
+if(typeof db==='undefined'||!db||!db.auth)return;
+db.auth.getUser().then(function(u){
+if(!u||!u.data||!u.data.user)return;
+var bak=null;try{bak=JSON.parse(localStorage.getItem('provenance.guestbackup')||localStorage.getItem('provenance.local')||'null');}catch(e){}
+if(!bak||(!(bak.paintings||[]).length&&!(bak.entries||[]).length))return;
+db.from('journals').select('data').eq('user_id',u.data.user.id).maybeSingle().then(function(res){
+var cloud=(res&&res.data&&res.data.data)||null;
+var cc=cloud?((cloud.entries||[]).length):0;
+if(cc===0){
+var merged={paintings:(cloud&&cloud.paintings)||[],entries:(cloud&&cloud.entries)||[]};
+(bak.paintings||[]).forEach(function(p){if(!merged.paintings.some(function(x){return x.id===p.id;}))merged.paintings.push(p);});
+(bak.entries||[]).forEach(function(en){if(!merged.entries.some(function(x){return x.id===en.id;}))merged.entries.push(en);});
+state=merged;
+save().then(function(){try{localStorage.removeItem('provenance.guest');}catch(e){}render();toast('Your studio is synced ✓');});
+}
+});
+});
+}
+window.addEventListener('load',function(){setTimeout(pushIfMissing,1500);});
+if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,ses){if((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&ses)setTimeout(pushIfMissing,1500);});
+})();
+})();
+</script>
