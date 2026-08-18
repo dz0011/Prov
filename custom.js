@@ -1,3 +1,36 @@
+/* ===== GUEST DATA GATE: guest data only moves to an account created from THIS guest session ===== */
+(function(){
+if(window.__guestGate)return;window.__guestGate=1;
+/* remember which auth action the user chose on the sign-in screen */
+document.addEventListener('click',function(e){
+if(e.target.closest&&e.target.closest('#auth-signup')){try{sessionStorage.setItem('prov.auth.mode','create');}catch(e2){}}
+else if(e.target.closest&&e.target.closest('#auth-signin')){try{sessionStorage.setItem('prov.auth.mode','signin');}catch(e2){}}
+},true);
+function allowed(uid){
+try{if(localStorage.getItem('prov.guestbound.'+uid)==='1')return true;}catch(e){}
+try{if(sessionStorage.getItem('prov.auth.mode')==='create')return true;}catch(e){}
+return false;
+}
+if(typeof db!=='undefined'&&db&&db.auth){
+db.auth.onAuthStateChange(function(ev,ses){
+if(!(ses&&ses.user))return;
+var uid=ses.user.id;
+try{
+if(allowed(uid)){
+/* account created from guest (or previously bound): make guest data visible to the merge */
+var v=localStorage.getItem('provenance.vault');
+if(v&&!localStorage.getItem('provenance.local'))localStorage.setItem('provenance.local',v);
+}else{
+/* unrelated account: lock guest data away so it can NOT be absorbed */
+var l=localStorage.getItem('provenance.local');
+if(l){localStorage.setItem('provenance.vault',l);localStorage.removeItem('provenance.local');}
+var g=localStorage.getItem('provenance.guestbackup');
+if(g){localStorage.setItem('provenance.vault',g);localStorage.removeItem('provenance.guestbackup');}
+}
+}catch(e){}
+});
+}
+})();
 /* ================= 1) PIGMENT CLOUD ================= */
 (function(){
 function addItem(){
@@ -1336,4 +1369,25 @@ if(typeof db!=='undefined'&&db&&db.auth)db.auth.onAuthStateChange(function(ev,se
       exitPending = false;
     }
   }, true);
+})();
+/* ===== GUEST GATE finalize: mark the bound account; keep vault for guest sessions ===== */
+(function(){
+if(window.__guestGate2)return;window.__guestGate2=1;
+if(typeof db!=='undefined'&&db&&db.auth){
+db.auth.onAuthStateChange(function(ev,ses){
+if(!(ses&&ses.user))return;
+var uid=ses.user.id,mode=null;
+try{mode=sessionStorage.getItem('prov.auth.mode');}catch(e){}
+if(mode!=='create')return;
+try{localStorage.setItem('prov.guestbound.'+uid,'1');}catch(e){}
+if(!localStorage.getItem('provenance.local')){ /* merge succeeded */
+try{localStorage.removeItem('provenance.vault');sessionStorage.removeItem('prov.auth.mode');}catch(e){}
+}
+});
+}
+/* re-entering Guest Mode unlocks the vault so the guest keeps their own work */
+if(typeof startGuest==='function'){
+var _sg=startGuest;
+startGuest=function(){try{var v=localStorage.getItem('provenance.vault');if(v&&!localStorage.getItem('provenance.local'))localStorage.setItem('provenance.local',v);}catch(e){}return _sg.apply(this,arguments);};
+}
 })();
