@@ -1450,3 +1450,25 @@ img.src=it.en.images[it.i];
 window.addEventListener('load',function(){setTimeout(run,3000);});
 }
 })();
+/* ===== DELETE WORK: closes the Edit window, lands on Works, works first try ===== */
+(function(){
+if(window.__delWorkFix)return;window.__delWorkFix=1;
+document.addEventListener('click',function(e){
+var t=e.target&&e.target.closest?e.target.closest('[data-action="delete-painting"]'):null;
+if(!t)return;
+e.stopImmediatePropagation();
+e.preventDefault();
+var id=t.getAttribute('data-id');
+var p=(typeof getP==='function')?getP(id):null;
+if(!p)return;
+var label=(p.title&&p.title!=='Untitled')?p.title:(p.number?('Work '+p.number):'this work');
+if(!window.confirm('Delete \u201C'+label+'\u201D and all of its entries?'))return;
+state.paintings=state.paintings.filter(function(x){return x.id!==id;});
+state.entries=state.entries.filter(function(x){return x.paintingId!==id;});
+if(typeof closeModal==='function')closeModal();   /* the Edit window actually closes now */
+view={name:'paintings',q:''};                      /* straight back to the Works page */
+render();
+toast('Work deleted');
+if(typeof save==='function')save();                /* cloud sync in the background */
+},true);
+})();
