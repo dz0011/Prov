@@ -10358,3 +10358,67 @@ return uidOf().then(function(uid){if(uid){try{LS.setItem(CACHE+uid,JSON.stringif
 
 })();
 </script>
+<script>
+/* ===== FIX 1: Permanently enforce chosen cover photo in Works grid ===== */
+(function(){
+    // Override pcardHTML to strictly use p.cover if it exists, ignoring the allImgs fallback
+    if (typeof pcardHTML === 'function') {
+        var _origPcard = pcardHTML;
+        pcardHTML = function(p, i) {
+            var h = _origPcard(p, i);
+            if (p && p.cover) {
+                var t = document.createElement('div');
+                t.innerHTML = h;
+                var pcover = t.querySelector('.pcover');
+                if (pcover) {
+                    // Force the chosen cover, removing any ghost fallbacks or hue styles
+                    pcover.innerHTML = '<img src="' + p.cover + '" alt="" loading="lazy">';
+                    pcover.removeAttribute('style'); 
+                }
+                h = t.innerHTML;
+            }
+            return h;
+        };
+    }
+
+    // Patch the save function to auto-heal broken cover links (e.g. from photo shrinking)
+    var _origSave = window.save;
+    window.save = function() {
+        var allValidImgs = new Set();
+        state.entries.forEach(function(e) {
+            (e.images || []).forEach(function(src) { allValidImgs.add(src); });
+        });
+        state.paintings.forEach(function(p) {
+            if (p.cover && !allValidImgs.has(p.cover)) {
+                // Cover URL is dead/shrunk, fallback to the latest valid image
+                var es = state.entries.filter(function(e) { return e.paintingId === p.id; });
+                var latestImg = null;
+                for (var i = es.length - 1; i >= 0; i--) {
+                    if (es[i].images && es[i].images.length) {
+                        latestImg = es[i].images[es[i].images.length - 1];
+                        break;
+                    }
+                }
+                p.cover = latestImg || '';
+            }
+        });
+        return _origSave.apply(this, arguments);
+    };
+})();
+
+/* ===== FIX 2: Tappable empty space on Work Detail Page (view.name === 'painting') ===== */
+document.addEventListener('click', function(e) {
+    if (typeof view === 'undefined' || view.name !== 'painting') return;
+    if (e.target.closest('.top, .modal-layer, #lightbox, .fab, .float-btn')) return;
+    
+    // Ignore all interactive elements, text, cards, and images
+    var ignore = 'button, a, input, select, textarea, label, .menu, .pcard, .thumb, .film, .tabs, .tab-viewer, .etools, .empty, h1, h2, h3, h4, h5, h6, p, span, b, i, em, strong, .sub, .display, .search, .chip, .backlink, .pd-head, .card, .entry, .pd-stats, .pd-actions, img, .filmstrip > button, .filmstrip > img';
+    if (e.target.closest(ignore)) return;
+    
+    var dark = !document.body.classList.contains('dark');
+    document.body.classList.toggle('dark', dark);
+    try { localStorage.setItem('provenance.theme', dark ? 'dark' : 'light'); } catch(e2) {}
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', dark ? '#191A20' : '#F2F1EC');
+}, true);
+</script>
