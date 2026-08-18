@@ -1591,3 +1591,77 @@ else msg('Could not send: '+r.error.message);
 }else msg('Reset link sent — check your inbox (and spam).');
 });
 })();
+/* ===== FIX PACK: cover sticks on Works page · remove "Explain the Viewer" · About wording ===== */
+(function(){
+if(window.__fixPack3)return;window.__fixPack3=1;
+
+/* --- 1) Works page ALWAYS shows the chosen cover --- */
+if(typeof pcardHTML==='function'){
+var _pc=pcardHTML;
+pcardHTML=function(p,i){
+var h=_pc(p,i);
+if(p&&p.cover){
+var tmp=document.createElement('div');tmp.innerHTML=h;
+var img=tmp.querySelector('.pcover img');
+if(img){if(img.getAttribute('src')!==p.cover)img.setAttribute('src',p.cover);}
+else{
+var ghost=tmp.querySelector('.pnum-ghost');
+if(ghost){var ni=document.createElement('img');ni.src=p.cover;ni.alt='';ni.loading='lazy';ghost.replaceWith(ni);}
+}
+h=tmp.innerHTML;
+}
+return h;
+};
+}
+/* tiny persistent cover map: survives reloads even if a cloud save hiccups */
+function coversGet(){try{return JSON.parse(localStorage.getItem('prov.covers.v1')||'{}');}catch(e){return {};}}
+function coversSet(m){try{localStorage.setItem('prov.covers.v1',JSON.stringify(m));}catch(e){}}
+function applyCoverMap(){
+var map=coversGet(),changed=false;
+Object.keys(map).forEach(function(pid){
+var p=(typeof getP==='function')?getP(pid):null;if(!p)return;
+var ref=map[pid],en=null;
+for(var i=0;i<state.entries.length;i++){if(state.entries[i].id===ref.e){en=state.entries[i];break;}}
+var src=(en&&en.images)?en.images[ref.i]:null;
+if(src&&p.cover!==src){p.cover=src;changed=true;}
+});
+if(changed&&typeof save==='function')save();
+if(typeof render==='function')render();
+}
+if(typeof loadJournal==='function'){
+var _lj=loadJournal;
+loadJournal=function(){var p=_lj.apply(this,arguments);Promise.resolve(p).then(applyCoverMap).catch(function(){});return p;};
+}
+/* pick-cover: apply instantly + remember which entry photo it is */
+window.addEventListener('click',function(e){
+var t=e.target&&e.target.closest?e.target.closest('[data-action="pick-cover"]'):null;
+if(!t)return;
+var p=(window._editingPainting&&typeof getP==='function')?getP(window._editingPainting):null;
+if(!p)return;
+var src=t.getAttribute('data-src');
+p.cover=src;
+for(var i=0;i<state.entries.length;i++){var en=state.entries[i];var idx=(en.images||[]).indexOf(src);
+if(idx>-1){var m=coversGet();m[p.id]={e:en.id,i:idx};coversSet(m);break;}}
+if(typeof render==='function')render();
+},true);
+
+/* --- 2) Remove "Explain the Viewer" from the gear menu, keep it gone --- */
+function stripExplain(){var b=document.querySelector('[data-action="viewer-explain"]');if(b&&b.parentNode)b.parentNode.removeChild(b);}
+stripExplain();
+new MutationObserver(stripExplain).observe(document.body,{childList:true,subtree:true});
+
+/* --- 3) About, page 3: "movement" -> "speed" --- */
+function fixAboutWords(){
+var els=document.querySelectorAll('#modal-root p, #modal-root .etext');
+for(var i=0;i<els.length;i++){
+if(els[i].innerHTML.indexOf('movement')!==-1)els[i].innerHTML=els[i].innerHTML.replace(/movement/g,'speed');
+}
+}
+if(typeof openAboutGuide==='function'){
+var _ag=openAboutGuide;
+openAboutGuide=function(){var r=_ag.apply(this,arguments);fixAboutWords();return r;};
+}
+document.addEventListener('click',function(e){
+if(e.target.closest('[data-action="about"]'))setTimeout(fixAboutWords,0);
+},true);
+})();
