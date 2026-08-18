@@ -9644,3 +9644,32 @@ img.onerror=function(){setTimeout(next,60);};img.src=old;})();}
 if(typeof render==='function'){var _r3=render;render=function(){var r=_r3.apply(this,arguments);if(state.entries.length)setTimeout(shrink,2500);return r;};}
 })();
 </script>
+<script>
+(function(){
+if(window.__glyphTrip)return;window.__glyphTrip=1;
+/* make the sky hieroglyphs tappable */
+var st=document.createElement('style');
+st.textContent='.rb-glyph{pointer-events:auto;cursor:pointer}';
+document.head.appendChild(st);
+/* tap a hieroglyph -> trippy recolor of the rabbit */
+window.addEventListener('click',function(e){
+var g=e.target&&e.target.closest?e.target.closest('.rb-glyph'):null;
+if(!g)return;
+e.stopImmediatePropagation();e.preventDefault();   /* never closes the page */
+var page=document.getElementById('rabbit-page');if(!page)return;
+var b=null,ds=page.querySelectorAll('div');
+for(var i=0;i<ds.length;i++){var t=(ds[i].textContent||'').trim();if(t==='🐇'||t==='🐰'){b=ds[i];break;}}
+if(!b)return;
+var from=parseFloat(b.dataset.hue||'0');
+var to=(from+120+Math.random()*240)%360;
+b.dataset.hue=String(to);
+b.animate([
+{filter:'hue-rotate('+from+'deg) saturate(2)'},
+{filter:'hue-rotate('+((from+180)%360)+'deg) saturate(5) invert(.2)',offset:.5},
+{filter:'hue-rotate('+to+'deg) saturate(3)'}
+],{duration:1500,easing:'ease-in-out'});
+b.style.filter='hue-rotate('+to+'deg) saturate(3)';   /* stays recolored */
+g.animate([{transform:'scale(1)',opacity:.16},{transform:'scale(1.7) rotate(20deg)',opacity:.6},{transform:'scale(1)',opacity:.16}],{duration:700,easing:'ease-out'});
+},true);
+})();
+</script>
